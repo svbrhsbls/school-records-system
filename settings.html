@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="kn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>School Records System - Settings</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{
+    box-sizing:border-box;
+}
+
+body{
+    margin:0;
+    font-family:Arial,"Noto Sans Kannada",sans-serif;
+    background:#f1f5f9;
+    color:#1e293b;
+}
+
+.header{
+    background:#1e3a8a;
+    color:white;
+    padding:18px 25px;
+    font-size:24px;
+    font-weight:bold;
+}
+
+.container{
+    max-width:900px;
+    margin:30px auto;
+    padding:0 20px;
+}
+
+.card{
+    background:white;
+    border-radius:14px;
+    padding:28px;
+    box-shadow:0 5px 20px rgba(0,0,0,.08);
+    margin-bottom:20px;
+}
+
+h2{
+    margin-top:0;
+    color:#1e3a8a;
+}
+
+.form-group{
+    margin-bottom:20px;
+}
+
+label{
+    display:block;
+    margin-bottom:7px;
+    font-weight:bold;
+}
+
+input,select{
+    width:100%;
+    padding:13px;
+    border:1px solid #cbd5e1;
+    border-radius:8px;
+    font-size:16px;
+    background:white;
+}
+
+input:focus,
+select:focus{
+    outline:none;
+    border-color:#2563eb;
+}
+
+.date-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+}
+
+button{
+    border:none;
+    border-radius:8px;
+    padding:13px 22px;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.save-btn{
+    background:#16a34a;
+    color:white;
+}
+
+.save-btn:hover{
+    background:#15803d;
+}
+
+.add-btn{
+    background:#2563eb;
+    color:white;
+    margin-top:10px;
+}
+
+.add-btn:hover{
+    background:#1d4ed8;
+}
+
+.message{
+    display:none;
+    margin-top:15px;
+    padding:12px;
+    border-radius:8px;
+    text-align:center;
+}
+
+.success{
+    background:#dcfce7;
+    color:#166534;
+}
+
+.error{
+    background:#fee2e2;
+    color:#991b1b;
+}
+
+.year-list{
+    margin-top:20px;
+}
+
+.year-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px 15px;
+    border:1px solid #e2e8f0;
+    border-radius:8px;
+    margin-bottom:8px;
+}
+
+.active-year{
+    font-weight:bold;
+    color:#15803d;
+}
+
+.small-btn{
+    padding:7px 12px;
+    font-size:13px;
+    background:#475569;
+    color:white;
+}
+
+@media(max-width:600px){
+
+    .date-row{
+        grid-template-columns:1fr;
+    }
+
+    .header{
+        font-size:20px;
+    }
+
+    .card{
+        padding:20px;
+    }
+
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+    ⚙️ School Records System - Settings
+</div>
+
+<div class="container">
+
+    <!-- SCHOOL SETTINGS -->
+
+    <div class="card">
+
+        <h2>🏫 School Information</h2>
+
+        <div class="form-group">
+
+            <label for="departmentName">
+                Department Name
+            </label>
+
+            <input
+                type="text"
+                id="departmentName"
+                placeholder="Department Name ನಮೂದಿಸಿ"
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="schoolName">
+                School Name
+            </label>
+
+            <input
+                type="text"
+                id="schoolName"
+                placeholder="School Name ನಮೂದಿಸಿ"
+            >
+
+        </div>
+
+
+        <button
+            class="save-btn"
+            id="saveSchoolBtn"
+            onclick="saveSchoolSettings()"
+        >
+            Save School Settings
+        </button>
+
+        <div
+            id="schoolMessage"
+            class="message"
+        ></div>
+
+    </div>
+
+
+    <!-- ACADEMIC YEAR -->
+
+    <div class="card">
+
+        <h2>📅 Academic Year</h2>
+
+        <div class="form-group">
+
+            <label for="yearName">
+                Academic Year
+            </label>
+
+            <input
+                type="text"
+                id="yearName"
+                placeholder="ಉದಾ: 2026-27"
+                maxlength="7"
+                oninput="updateDates()"
+            >
+
+        </div>
+
+
+        <div class="date-row">
+
+            <div class="form-group">
+
+                <label for="startDate">
+                    Start Date
+                </label>
+
+                <input
+                    type="date"
+                    id="startDate"
+                    readonly
+                >
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label for="endDate">
+                    End Date
+                </label>
+
+                <input
+                    type="date"
+                    id="endDate"
+                    readonly
+                >
+
+            </div>
+
+        </div>
+
+
+        <button
+            class="add-btn"
+            id="addYearBtn"
+            onclick="addAcademicYear()"
+        >
+            + Add Academic Year
+        </button>
+
+        <div
+            id="yearMessage"
+            class="message"
+        ></div>
+
+
+        <div class="year-list">
+
+            <h3>Academic Years</h3>
+
+            <div id="yearList">
+                Loading...
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   SUPABASE CONFIGURATION
+   ========================================================= */
+
+const SUPABASE_URL =
+    "https://xhskrohrrsxlfbdbhyji.supabase.co";
+
+const SUPABASE_KEY =
+    "sb_publishable_0amt5yG7ZIm6JD7oub6JTw_Hv5Nx2cl";
+
+
+const supabaseClient =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+/* =========================================================
+   MESSAGE
+   ========================================================= */
+
+function showMessage(elementId,text,type){
+
+    const el =
+        document.getElementById(elementId);
+
+    el.textContent = text;
+
+    el.className =
+        "message " + type;
+
+    el.style.display = "block";
+
+}
+
+
+/* =========================================================
+   CHECK LOGIN
+   ========================================================= */
+
+async function checkLogin(){
+
+    const { data, error } =
+        await supabaseClient.auth.getSession();
+
+    if(
+        error ||
+        !data ||
+        !data.session
+    ){
+
+        window.location.href =
+            "login.html";
+
+        return false;
+    }
+
+    return true;
+}
+
+
+/* =========================================================
+   GET SCHOOL ID
+   ========================================================= */
+
+async function getSchoolId(){
+
+    const { data, error } =
+        await supabaseClient
+        .rpc("get_my_school_id");
+
+    if(error){
+
+        console.error(error);
+
+        throw error;
+    }
+
+    if(!data){
+
+        throw new Error(
+            "ಈ Login userಗೆ School mapping ಇಲ್ಲ."
+        );
+    }
+
+    return data;
+}
+
+
+/* =========================================================
+   LOAD SCHOOL SETTINGS
+   ========================================================= */
+
+async function loadSchoolSettings(){
+
+    try{
+
+        const schoolId =
+            await getSchoolId();
+
+
+        const { data, error } =
+            await supabaseClient
+            .from("school_cashbook_settings")
+            .select(
+                "department_name,school_name"
+            )
+            .eq(
+                "school_id",
+                schoolId
+            )
+            .maybeSingle();
+
+
+        if(error){
+
+            throw error;
+
+        }
+
+
+        if(data){
+
+            document.getElementById(
+                "departmentName"
+            ).value =
+                data.department_name || "";
+
+
+            document.getElementById(
+                "schoolName"
+            ).value =
+                data.school_name || "";
+
+        }
+
+    }catch(error){
+
+        console.error(error);
+
+        showMessage(
+            "schoolMessage",
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   SAVE SCHOOL SETTINGS
+   ========================================================= */
+
+async function saveSchoolSettings(){
+
+    const button =
+        document.getElementById(
+            "saveSchoolBtn"
+        );
+
+    const departmentName =
+        document.getElementById(
+            "departmentName"
+        ).value.trim();
+
+
+    const schoolName =
+        document.getElementById(
+            "schoolName"
+        ).value.trim();
+
+
+    if(!departmentName){
+
+        showMessage(
+            "schoolMessage",
+            "Department Name ನಮೂದಿಸಿ.",
+            "error"
+        );
+
+        return;
+    }
+
+
+    if(!schoolName){
+
+        showMessage(
+            "schoolMessage",
+            "School Name ನಮೂದಿಸಿ.",
+            "error"
+        );
+
+        return;
+    }
+
+
+    button.disabled = true;
+
+
+    try{
+
+        const schoolId =
+            await getSchoolId();
+
+
+        const { error } =
+            await supabaseClient
+            .from("school_cashbook_settings")
+            .upsert({
+
+                school_id: schoolId,
+
+                department_name:
+                    departmentName,
+
+                school_name:
+                    schoolName
+
+            },{
+                onConflict:
+                    "school_id"
+            });
+
+
+        if(error){
+
+            throw error;
+
+        }
+
+
+        showMessage(
+            "schoolMessage",
+            "School Settings ಯಶಸ್ವಿಯಾಗಿ Save ಆಗಿದೆ.",
+            "success"
+        );
+
+
+    }catch(error){
+
+        console.error(error);
+
+        showMessage(
+            "schoolMessage",
+            error.message,
+            "error"
+        );
+
+    }finally{
+
+        button.disabled = false;
+
+    }
+
+}
+
+
+/* =========================================================
+   ACADEMIC YEAR DATE CALCULATION
+   ========================================================= */
+
+function updateDates(){
+
+    const value =
+        document.getElementById(
+            "yearName"
+        ).value.trim();
+
+
+    const pattern =
+        /^(\d{4})-(\d{2})$/;
+
+
+    const match =
+        value.match(pattern);
+
+
+    const start =
+        document.getElementById(
+            "startDate"
+        );
+
+
+    const end =
+        document.getElementById(
+            "endDate"
+        );
+
+
+    start.value = "";
+    end.value = "";
+
+
+    if(!match){
+
+        return;
+
+    }
+
+
+    const startYear =
+        Number(match[1]);
+
+
+    const expectedEnd =
+        String(
+            (startYear + 1) % 100
+        ).padStart(2,"0");
+
+
+    if(match[2] !== expectedEnd){
+
+        return;
+
+    }
+
+
+    start.value =
+        `${startYear}-04-01`;
+
+
+    end.value =
+        `${startYear + 1}-03-31`;
+
+}
+
+
+/* =========================================================
+   LOAD ACADEMIC YEARS
+   ========================================================= */
+
+async function loadAcademicYears(){
+
+    const list =
+        document.getElementById(
+            "yearList"
+        );
+
+
+    try{
+
+        const schoolId =
+            await getSchoolId();
+
+
+        const { data, error } =
+            await supabaseClient
+            .from(
+                "school_cashbook_academic_years"
+            )
+            .select(
+                "id,year_name,start_date,end_date,is_active"
+            )
+            .eq(
+                "school_id",
+                schoolId
+            )
+            .order(
+                "year_name",
+                { ascending:false }
+            );
+
+
+        if(error){
+
+            throw error;
+
+        }
+
+
+        if(!data || data.length === 0){
+
+            list.innerHTML =
+                "<p>ಯಾವುದೇ Academic Year ಇಲ್ಲ.</p>";
+
+            return;
+
+        }
+
+
+        list.innerHTML = "";
+
+
+        data.forEach(function(year){
+
+            const row =
+                document.createElement("div");
+
+            row.className =
+                "year-row";
+
+
+            const info =
+                document.createElement("div");
+
+
+            info.innerHTML = `
+                <strong>${year.year_name}</strong>
+                <br>
+                <small>
+                    ${formatDate(year.start_date)}
+                    →
+                    ${formatDate(year.end_date)}
+                </small>
+            `;
+
+
+            const right =
+                document.createElement("div");
+
+
+            if(year.is_active){
+
+                right.innerHTML =
+                    `<span class="active-year">
+                        Active
+                    </span>`;
+
+            }else{
+
+                const button =
+                    document.createElement("button");
+
+                button.className =
+                    "small-btn";
+
+                button.textContent =
+                    "Set Active";
+
+                button.onclick =
+                    function(){
+
+                        setActiveYear(year.id);
+
+                    };
+
+
+                right.appendChild(button);
+
+            }
+
+
+            row.appendChild(info);
+
+            row.appendChild(right);
+
+            list.appendChild(row);
+
+        });
+
+
+    }catch(error){
+
+        console.error(error);
+
+        list.innerHTML =
+            `<p style="color:#b91c1c">
+                ${error.message}
+            </p>`;
+
+    }
+
+}
+
+
+/* =========================================================
+   FORMAT DATE
+   ========================================================= */
+
+function formatDate(dateString){
+
+    if(!dateString){
+
+        return "";
+
+    }
+
+
+    const parts =
+        dateString.split("-");
+
+
+    if(parts.length !== 3){
+
+        return dateString;
+
+    }
+
+
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+
+}
+
+
+/* =========================================================
+   ADD ACADEMIC YEAR
+   ========================================================= */
+
+async function addAcademicYear(){
+
+    const button =
+        document.getElementById(
+            "addYearBtn"
+        );
+
+
+    const yearName =
+        document.getElementById(
+            "yearName"
+        ).value.trim();
+
+
+    if(!/^\d{4}-\d{2}$/.test(yearName)){
+
+        showMessage(
+            "yearMessage",
+            "Academic Year ಅನ್ನು 2026-27 ರೀತಿಯಲ್ಲಿ ನಮೂದಿಸಿ.",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    const startYear =
+        Number(
+            yearName.substring(0,4)
+        );
+
+
+    const endCode =
+        yearName.substring(5,7);
+
+
+    const expectedEnd =
+        String(
+            (startYear + 1) % 100
+        ).padStart(2,"0");
+
+
+    if(endCode !== expectedEnd){
+
+        showMessage(
+            "yearMessage",
+            "Academic Year ಸರಿಯಾಗಿಲ್ಲ. ಉದಾ: 2026-27",
+            "error"
+        );
+
+        return;
+
+    }
+
+
+    button.disabled = true;
+
+
+    try{
+
+        const schoolId =
+            await getSchoolId();
+
+
+        const { data: existingYears, error: checkError } =
+            await supabaseClient
+            .from(
+                "school_cashbook_academic_years"
+            )
+            .select("id")
+            .eq(
+                "school_id",
+                schoolId
+            );
+
+
+        if(checkError){
+
+            throw checkError;
+
+        }
+
+
+        const makeActive =
+            !existingYears ||
+            existingYears.length === 0;
+
+
+        const { error } =
+            await supabaseClient
+            .from(
+                "school_cashbook_academic_years"
+            )
+            .insert({
+
+                school_id:
+                    schoolId,
+
+                year_name:
+                    yearName,
+
+                is_active:
+                    makeActive
+
+            });
+
+
+        if(error){
+
+            if(error.code === "23505"){
+
+                throw new Error(
+                    "ಈ Academic Year ಈಗಾಗಲೇ ಇದೆ."
+                );
+
+            }
+
+            throw error;
+
+        }
+
+
+        showMessage(
+            "yearMessage",
+            "Academic Year ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ.",
+            "success"
+        );
+
+
+        document.getElementById(
+            "yearName"
+        ).value = "";
+
+
+        document.getElementById(
+            "startDate"
+        ).value = "";
+
+
+        document.getElementById(
+            "endDate"
+        ).value = "";
+
+
+        await loadAcademicYears();
+
+
+    }catch(error){
+
+        console.error(error);
+
+        showMessage(
+            "yearMessage",
+            error.message,
+            "error"
+        );
+
+    }finally{
+
+        button.disabled = false;
+
+    }
+
+}
+
+
+/* =========================================================
+   SET ACTIVE YEAR
+   ========================================================= */
+
+async function setActiveYear(yearId){
+
+    try{
+
+        const schoolId =
+            await getSchoolId();
+
+
+        /*
+         * First deactivate all years
+         */
+
+        const { error: deactivateError } =
+            await supabaseClient
+            .from(
+                "school_cashbook_academic_years"
+            )
+            .update({
+                is_active:false
+            })
+            .eq(
+                "school_id",
+                schoolId
+            );
+
+
+        if(deactivateError){
+
+            throw deactivateError;
+
+        }
+
+
+        /*
+         * Then activate selected year
+         */
+
+        const { error: activateError } =
+            await supabaseClient
+            .from(
+                "school_cashbook_academic_years"
+            )
+            .update({
+                is_active:true
+            })
+            .eq(
+                "id",
+                yearId
+            )
+            .eq(
+                "school_id",
+                schoolId
+            );
+
+
+        if(activateError){
+
+            throw activateError;
+
+        }
+
+
+        showMessage(
+            "yearMessage",
+            "Academic Year Active ಆಗಿದೆ.",
+            "success"
+        );
+
+
+        await loadAcademicYears();
+
+
+    }catch(error){
+
+        console.error(error);
+
+        showMessage(
+            "yearMessage",
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   INITIALIZE
+   ========================================================= */
+
+async function initialize(){
+
+    const loggedIn =
+        await checkLogin();
+
+
+    if(!loggedIn){
+
+        return;
+
+    }
+
+
+    await loadSchoolSettings();
+
+    await loadAcademicYears();
+
+}
+
+
+initialize();
+
+</script>
+
+</body>
+</html>
