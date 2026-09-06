@@ -535,31 +535,44 @@ function academicMonths(){
     const y = academicYears.find(x => x.id === selectedYearId);
     if(!y) return [];
 
-    // Always build the academic year strictly from YEAR_NAME:
-    // 2026-27 = April-2026 through March-2027.
-    const parts = String(y.year_name || '').split('-');
-    const startYear = Number(parts[0]);
-    if(!startYear) return [];
+    /*
+      Academic Year is ALWAYS 12 months:
+      2026-27 = Apr-2026 ... Mar-2027
+      Do not use database start_date/end_date ordering for the display.
+    */
+    const yearName = String(y.year_name || "").trim();
+    const match = yearName.match(/^(\d{4})-(\d{2})$/);
+    if(!match) return [];
 
-    const out = [];
+    const startYear = Number(match[1]);
+    const endYear = startYear + 1;
 
-    for(let offset = 0; offset < 12; offset++){
-        const d = new Date(startYear, 3 + offset, 1);
-        const yy = d.getFullYear();
-        const mm = d.getMonth() + 1;
-        const from = `${yy}-${String(mm).padStart(2,'0')}-01`;
-        const lastDay = new Date(yy, mm, 0).getDate();
-        const to = `${yy}-${String(mm).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
+    const monthData = [
+        {month:4,  year:startYear, name:"ಏಪ್ರಿಲ್"},
+        {month:5,  year:startYear, name:"ಮೇ"},
+        {month:6,  year:startYear, name:"ಜೂನ್"},
+        {month:7,  year:startYear, name:"ಜುಲೈ"},
+        {month:8,  year:startYear, name:"ಆಗಸ್ಟ್"},
+        {month:9,  year:startYear, name:"ಸೆಪ್ಟೆಂಬರ್"},
+        {month:10, year:startYear, name:"ಅಕ್ಟೋಬರ್"},
+        {month:11, year:startYear, name:"ನವೆಂಬರ್"},
+        {month:12, year:startYear, name:"ಡಿಸೆಂಬರ್"},
+        {month:1,  year:endYear,   name:"ಜನವರಿ"},
+        {month:2,  year:endYear,   name:"ಫೆಬ್ರವರಿ"},
+        {month:3,  year:endYear,   name:"ಮಾರ್ಚ್"}
+    ];
 
-        out.push({
-            key:`${yy}-${String(mm).padStart(2,'0')}`,
-            label:`${monthNames[d.getMonth()]}-${yy}`,
-            from,
-            to
-        });
-    }
+    return monthData.map(m => {
+        const mm = String(m.month).padStart(2,"0");
+        const lastDay = new Date(m.year,m.month,0).getDate();
 
-    return out;
+        return {
+            key:`${m.year}-${mm}`,
+            label:`${m.name}-${m.year}`,
+            from:`${m.year}-${mm}-01`,
+            to:`${m.year}-${mm}-${String(lastDay).padStart(2,"0")}`
+        };
+    });
 }
 
 function monthItemTotals(month,type){
@@ -569,8 +582,8 @@ function monthItemTotals(month,type){
     entries.forEach(e => {
         if(
             e.entry_type === type &&
-            String(e.entry_date) >= month.from &&
-            String(e.entry_date) <= month.to &&
+            String(e.entry_date).slice(0,10) >= month.from &&
+            String(e.entry_date).slice(0,10) <= month.to &&
             totals[e.item_id] !== undefined
         ){
             totals[e.item_id] += num(e.amount);
