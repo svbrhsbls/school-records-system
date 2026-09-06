@@ -28,8 +28,8 @@ body{margin:0;font-family:"Noto Sans Kannada","Nirmala UI",Arial,sans-serif;back
 @media(max-width:900px){.sidebar{width:220px}.main{margin-left:220px;width:calc(100% - 220px);padding:16px}.cards{grid-template-columns:1fr}.school-name{padding-right:0}.today{position:static;display:inline-block;margin-top:14px}}
 @media(max-width:600px){.sidebar{position:static;width:100%;min-height:auto}.layout{display:block}.main{margin-left:0;width:100%;padding:12px}.brand{font-size:18px}.school{padding:20px}.school-name{font-size:23px}.today{font-size:15px}.year{font-size:17px}}
 
-/* ===== Dashboard menu + right display only ===== */
-#pageViewer{
+/* ===== RIGHT PAGE VIEW ONLY ===== */
+#srsPageFrame{
   display:none;
   position:fixed;
   left:265px;
@@ -40,15 +40,17 @@ body{margin:0;font-family:"Noto Sans Kannada","Nirmala UI",Arial,sans-serif;back
   margin:0;
   padding:0;
   background:#fff;
-  z-index:20;
+  z-index:50;
 }
 @media(max-width:900px){
- #pageViewer{left:220px;width:calc(100vw - 220px)}
+  #srsPageFrame{left:220px;width:calc(100vw - 220px)}
 }
 @media(max-width:600px){
- #pageViewer{left:0;width:100vw;height:100vh}
+  #srsPageFrame{left:0;width:100vw}
 }
-@media print{#pageViewer{display:none!important}}
+@media print{
+  #srsPageFrame{display:none!important}
+}
 
 </style>
 </head>
@@ -121,7 +123,6 @@ body{margin:0;font-family:"Noto Sans Kannada","Nirmala UI",Arial,sans-serif;back
         </div>
 
     </section>
-<iframe id="pageViewer" title="Page Display Area"></iframe>
 </main>
 </div>
 
@@ -367,56 +368,39 @@ async function init(){
 
 init();
 </script>
+<iframe id="srsPageFrame" title="School Record System Page"></iframe>
 
 <script>
 (function(){
-  const viewer=document.getElementById("pageViewer");
-  const dashboard=document.querySelector(".main");
-  const links=document.querySelectorAll(".menu a");
+  const frame = document.getElementById("srsPageFrame");
+  const main = document.querySelector(".main");
+  const links = document.querySelectorAll(".menu a");
 
-  async function openPage(url){
-    dashboard.style.display="none";
-    viewer.style.display="block";
-    viewer.src="about:blank";
+  function showDashboard(){
+    frame.style.display = "none";
+    frame.removeAttribute("src");
+    main.style.display = "";
+  }
 
-    try{
-      const response=await fetch(url,{cache:"no-store"});
-      if(!response.ok) throw new Error("Page load failed: "+response.status);
-      let html=await response.text();
-
-      // Make all relative links/scripts/styles/images inside the loaded page resolve
-      // against the real GitHub Pages location.
-      const base=document.createElement("base");
-      base.href=new URL(url,location.href).href;
-      const doc=new DOMParser().parseFromString(html,"text/html");
-      doc.head.prepend(base);
-
-      viewer.srcdoc="<!DOCTYPE html>"+doc.documentElement.outerHTML;
-    }catch(err){
-      console.error(err);
-      // Reliable fallback: if fetch is blocked, let the browser load the page normally
-      // inside the same right-side frame.
-      viewer.removeAttribute("srcdoc");
-      viewer.src=url;
-    }
+  function showPage(url){
+    main.style.display = "none";
+    frame.style.display = "block";
+    frame.src = url;
   }
 
   links.forEach(link=>{
-    link.addEventListener("click",function(e){
-      const target=this.getAttribute("href");
-      if(!target) return;
-      e.preventDefault();
+    link.addEventListener("click", function(e){
+      const url = this.getAttribute("href");
+      if(!url) return;
 
+      e.preventDefault();
       links.forEach(a=>a.classList.remove("active"));
       this.classList.add("active");
 
-      if(target==="dashboard.html"){
-        viewer.style.display="none";
-        viewer.src="about:blank";
-        viewer.removeAttribute("srcdoc");
-        dashboard.style.display="";
+      if(url === "dashboard.html"){
+        showDashboard();
       }else{
-        openPage(target);
+        showPage(url);
       }
     });
   });
