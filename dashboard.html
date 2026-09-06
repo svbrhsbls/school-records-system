@@ -27,6 +27,20 @@ body{margin:0;font-family:"Noto Sans Kannada","Nirmala UI",Arial,sans-serif;back
 .balance-label{margin-top:25px;font-size:14px;font-weight:800;color:#65746b}.balance{margin-top:5px;font-size:34px;font-weight:900;color:#14915c}.card:nth-child(2) .balance{color:#654bc0}.updated{margin-top:13px;font-size:12px;color:#65746b}.loading{font-size:14px;color:#65746b}.error{color:#a33b32;font-size:13px}
 @media(max-width:900px){.sidebar{width:220px}.main{margin-left:220px;width:calc(100% - 220px);padding:16px}.cards{grid-template-columns:1fr}.school-name{padding-right:0}.today{position:static;display:inline-block;margin-top:14px}}
 @media(max-width:600px){.sidebar{position:static;width:100%;min-height:auto}.layout{display:block}.main{margin-left:0;width:100%;padding:12px}.brand{font-size:18px}.school{padding:20px}.school-name{font-size:23px}.today{font-size:15px}.year{font-size:17px}}
+
+/* Dashboard shell: other pages open only in the right display area */
+#pageViewer{
+  display:none;
+  width:100%;
+  height:calc(100vh - 50px);
+  min-height:700px;
+  border:0;
+  background:#fff;
+  border-radius:18px;
+  box-shadow:0 8px 25px #164e3210;
+}
+.menu a{cursor:pointer}
+
 </style>
 </head>
 <body>
@@ -99,6 +113,7 @@ body{margin:0;font-family:"Noto Sans Kannada","Nirmala UI",Arial,sans-serif;back
 
     </section>
 </main>
+<iframe id="pageViewer" title="Page Display Area"></iframe>
 </div>
 
 <script>
@@ -343,5 +358,36 @@ async function init(){
 
 init();
 </script>
+
+<script>
+(function(){
+  const viewer = document.getElementById("pageViewer");
+  const dashboardMain = document.querySelector(".main");
+  const links = document.querySelectorAll(".menu a");
+
+  links.forEach(link=>{
+    link.addEventListener("click", function(e){
+      const target = this.getAttribute("href");
+      if(!target) return;
+
+      e.preventDefault();
+
+      links.forEach(a=>a.classList.remove("active"));
+      this.classList.add("active");
+
+      if(target === "dashboard.html"){
+        viewer.style.display = "none";
+        dashboardMain.style.display = "";
+        viewer.src = "";
+      }else{
+        dashboardMain.style.display = "none";
+        viewer.style.display = "block";
+        viewer.src = target;
+      }
+    });
+  });
+})();
+</script>
+
 </body>
 </html>
