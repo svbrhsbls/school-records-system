@@ -28,7 +28,7 @@ body{margin:0;font-family:"Noto Sans Kannada","Nirmala UI",Arial,sans-serif;back
 @media(max-width:900px){.sidebar{width:220px}.main{margin-left:220px;width:calc(100% - 220px);padding:16px}.cards{grid-template-columns:1fr}.school-name{padding-right:0}.today{position:static;display:inline-block;margin-top:14px}}
 @media(max-width:600px){.sidebar{position:static;width:100%;min-height:auto}.layout{display:block}.main{margin-left:0;width:100%;padding:12px}.brand{font-size:18px}.school{padding:20px}.school-name{font-size:23px}.today{font-size:15px}.year{font-size:17px}}
 
-/* ===== Dashboard page display area only ===== */
+/* ===== Dashboard menu + right display only ===== */
 #pageViewer{
   display:none;
   position:fixed;
@@ -40,27 +40,15 @@ body{margin:0;font-family:"Noto Sans Kannada","Nirmala UI",Arial,sans-serif;back
   margin:0;
   padding:0;
   background:#fff;
-  z-index:100;
+  z-index:20;
 }
 @media(max-width:900px){
-  #pageViewer{
-    left:220px;
-    width:calc(100vw - 220px);
-  }
+ #pageViewer{left:220px;width:calc(100vw - 220px)}
 }
 @media(max-width:600px){
-  #pageViewer{
-    position:fixed;
-    left:0;
-    top:0;
-    width:100vw;
-    height:100vh;
-    z-index:100;
-  }
+ #pageViewer{left:0;width:100vw;height:100vh}
 }
-@media print{
-  #pageViewer{display:none!important}
-}
+@media print{#pageViewer{display:none!important}}
 
 </style>
 </head>
@@ -382,30 +370,54 @@ init();
 
 <script>
 (function(){
-  const viewer = document.getElementById("pageViewer");
-  const dashboard = document.querySelector(".main");
-  const links = document.querySelectorAll(".menu a");
+  const viewer=document.getElementById("pageViewer");
+  const dashboard=document.querySelector(".main");
+  const links=document.querySelectorAll(".menu a");
+
+  async function openPage(url){
+    dashboard.style.display="none";
+    viewer.style.display="block";
+    viewer.src="about:blank";
+
+    try{
+      const response=await fetch(url,{cache:"no-store"});
+      if(!response.ok) throw new Error("Page load failed: "+response.status);
+      let html=await response.text();
+
+      // Make all relative links/scripts/styles/images inside the loaded page resolve
+      // against the real GitHub Pages location.
+      const base=document.createElement("base");
+      base.href=new URL(url,location.href).href;
+      const doc=new DOMParser().parseFromString(html,"text/html");
+      doc.head.prepend(base);
+
+      viewer.srcdoc="<!DOCTYPE html>"+doc.documentElement.outerHTML;
+    }catch(err){
+      console.error(err);
+      // Reliable fallback: if fetch is blocked, let the browser load the page normally
+      // inside the same right-side frame.
+      viewer.removeAttribute("srcdoc");
+      viewer.src=url;
+    }
+  }
 
   links.forEach(link=>{
-    link.addEventListener("click", function(e){
-      const target = this.getAttribute("href");
+    link.addEventListener("click",function(e){
+      const target=this.getAttribute("href");
       if(!target) return;
-
       e.preventDefault();
 
       links.forEach(a=>a.classList.remove("active"));
       this.classList.add("active");
 
-      if(target === "dashboard.html"){
-        viewer.style.display = "none";
-        viewer.src = "";
-        dashboard.style.display = "";
-        return;
+      if(target==="dashboard.html"){
+        viewer.style.display="none";
+        viewer.src="about:blank";
+        viewer.removeAttribute("srcdoc");
+        dashboard.style.display="";
+      }else{
+        openPage(target);
       }
-
-      dashboard.style.display = "none";
-      viewer.src = target;
-      viewer.style.display = "block";
     });
   });
 })();
