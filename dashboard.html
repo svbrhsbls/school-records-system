@@ -28,18 +28,39 @@ body{margin:0;font-family:"Noto Sans Kannada","Nirmala UI",Arial,sans-serif;back
 @media(max-width:900px){.sidebar{width:220px}.main{margin-left:220px;width:calc(100% - 220px);padding:16px}.cards{grid-template-columns:1fr}.school-name{padding-right:0}.today{position:static;display:inline-block;margin-top:14px}}
 @media(max-width:600px){.sidebar{position:static;width:100%;min-height:auto}.layout{display:block}.main{margin-left:0;width:100%;padding:12px}.brand{font-size:18px}.school{padding:20px}.school-name{font-size:23px}.today{font-size:15px}.year{font-size:17px}}
 
-/* Dashboard shell: other pages open only in the right display area */
+/* ===== Dashboard page display area only ===== */
 #pageViewer{
   display:none;
-  width:100%;
-  height:calc(100vh - 50px);
-  min-height:700px;
+  position:fixed;
+  left:265px;
+  top:0;
+  width:calc(100vw - 265px);
+  height:100vh;
   border:0;
+  margin:0;
+  padding:0;
   background:#fff;
-  border-radius:18px;
-  box-shadow:0 8px 25px #164e3210;
+  z-index:100;
 }
-.menu a{cursor:pointer}
+@media(max-width:900px){
+  #pageViewer{
+    left:220px;
+    width:calc(100vw - 220px);
+  }
+}
+@media(max-width:600px){
+  #pageViewer{
+    position:fixed;
+    left:0;
+    top:0;
+    width:100vw;
+    height:100vh;
+    z-index:100;
+  }
+}
+@media print{
+  #pageViewer{display:none!important}
+}
 
 </style>
 </head>
@@ -112,8 +133,8 @@ body{margin:0;font-family:"Noto Sans Kannada","Nirmala UI",Arial,sans-serif;back
         </div>
 
     </section>
-</main>
 <iframe id="pageViewer" title="Page Display Area"></iframe>
+</main>
 </div>
 
 <script>
@@ -362,7 +383,7 @@ init();
 <script>
 (function(){
   const viewer = document.getElementById("pageViewer");
-  const dashboardMain = document.querySelector(".main");
+  const dashboard = document.querySelector(".main");
   const links = document.querySelectorAll(".menu a");
 
   links.forEach(link=>{
@@ -377,13 +398,14 @@ init();
 
       if(target === "dashboard.html"){
         viewer.style.display = "none";
-        dashboardMain.style.display = "";
         viewer.src = "";
-      }else{
-        dashboardMain.style.display = "none";
-        viewer.style.display = "block";
-        viewer.src = target;
+        dashboard.style.display = "";
+        return;
       }
+
+      dashboard.style.display = "none";
+      viewer.src = target;
+      viewer.style.display = "block";
     });
   });
 })();
