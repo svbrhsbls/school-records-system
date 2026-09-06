@@ -3343,22 +3343,21 @@ function balanceRows(
 
 
     /*
-     * ಅತ್ಯಂತ ಮುಖ್ಯ:
+     * Daily flow:
      *
-     * Opening
-     * ↓
-     * JAMA
-     * ↓
-     * JAMA Closing
-     * ↓
-     * KHARCHU Opening
-     * ↓
-     * KHARCHU
-     * ↓
-     * Final Closing
+     * ಯಾವ type ಮೊದಲು entry ಆಗಿದೆಯೋ
+     * ಅದೇ ಮೊದಲು ನಡೆಯುತ್ತದೆ.
      *
-     * Entry ಇಲ್ಲದ typeಗೆ
-     * "ಯಾವುದೇ ... ಇರುವುದಿಲ್ಲ"
+     * JAMA ಮೊದಲು:
+     * Opening → JAMA → JAMA Closing
+     * → KHARCHU Opening → KHARCHU → Final Closing
+     *
+     * KHARCHU ಮೊದಲು:
+     * Opening → KHARCHU → KHARCHU Closing
+     * → JAMA Opening → JAMA → JAMA Closing
+     *
+     * ಹೀಗೆ ಯಾವ type ಮೊದಲು entry ಆಗಿದೆಯೋ
+     * ಅದರ closing ಮುಂದಿನ typeಗೆ opening ಆಗುತ್ತದೆ.
      */
 
 
@@ -3369,6 +3368,8 @@ function balanceRows(
         const kharchuMap = {};
 
         const jamaClosing = {};
+
+        const jamaOpening = {};
 
         const kharchuOpening = {};
 
@@ -3411,26 +3412,100 @@ function balanceRows(
                 );
 
 
-            jamaMap[item.id] =
-                j;
-
-
-            kharchuMap[item.id] =
-                k;
-
-
-            jamaClosing[item.id] =
-                runningOpening[item.id] + j;
-
-
-            kharchuOpening[item.id] =
-                jamaClosing[item.id];
-
-
-            kharchuClosing[item.id] =
-                kharchuOpening[item.id] - k;
+            jamaMap[item.id] = j;
+            kharchuMap[item.id] = k;
 
         });
+
+
+        /*
+         * ಆ ದಿನದ ಮೊದಲ saved entry ಯಾವ type ಅನ್ನುವುದನ್ನು ಕಂಡುಹಿಡಿಯುವುದು.
+         * createdAt ಇದ್ದರೆ ಅದನ್ನು ಬಳಸಲಾಗುತ್ತದೆ.
+         */
+        const dateEntries =
+            [
+                ...jama.map(x => ({
+                    ...x,
+                    entryType: "jama"
+                })),
+                ...kharchu.map(x => ({
+                    ...x,
+                    entryType: "kharchu"
+                }))
+            ]
+            .filter(x => x.date === date)
+            .sort(function(a,b){
+
+                const at =
+                    a.createdAt
+                    ? new Date(a.createdAt).getTime()
+                    : Number.MAX_SAFE_INTEGER;
+
+                const bt =
+                    b.createdAt
+                    ? new Date(b.createdAt).getTime()
+                    : Number.MAX_SAFE_INTEGER;
+
+                return at - bt;
+
+            });
+
+
+        const firstType =
+            dateEntries.length
+            ? dateEntries[0].entryType
+            : "jama";
+
+
+        if(firstType === "kharchu"){
+
+            /*
+             * KHARCHU ಮೊದಲು.
+             * KHARCHU Closing → JAMA Opening
+             */
+            items.forEach(function(item){
+
+                kharchuOpening[item.id] =
+                    runningOpening[item.id];
+
+                kharchuClosing[item.id] =
+                    kharchuOpening[item.id] -
+                    kharchuMap[item.id];
+
+                jamaOpening[item.id] =
+                    kharchuClosing[item.id];
+
+                jamaClosing[item.id] =
+                    jamaOpening[item.id] +
+                    jamaMap[item.id];
+
+            });
+
+        }else{
+
+            /*
+             * JAMA ಮೊದಲು.
+             * JAMA Closing → KHARCHU Opening
+             */
+            items.forEach(function(item){
+
+                jamaOpening[item.id] =
+                    runningOpening[item.id];
+
+                jamaClosing[item.id] =
+                    jamaOpening[item.id] +
+                    jamaMap[item.id];
+
+                kharchuOpening[item.id] =
+                    jamaClosing[item.id];
+
+                kharchuClosing[item.id] =
+                    kharchuOpening[item.id] -
+                    kharchuMap[item.id];
+
+            });
+
+        }
 
 
         if(
@@ -3439,34 +3514,26 @@ function balanceRows(
 
             rows.push({
 
-                date:
-                    date,
+                date: date,
 
-                opening:
-                    {...runningOpening},
+                opening: {...jamaOpening},
 
-                jama:
-                    {...jamaMap},
+                jama: {...jamaMap},
 
-                jamaClosing:
-                    {...jamaClosing},
+                jamaClosing: {...jamaClosing},
 
-                kharchuOpening:
-                    {...kharchuOpening},
+                kharchuOpening: {...kharchuOpening},
 
-                kharchu:
-                    {...kharchuMap},
+                kharchu: {...kharchuMap},
 
-                kharchuClosing:
-                    {...kharchuClosing},
+                kharchuClosing: {...kharchuClosing},
 
                 jamaTotal:
                     Object.values(
                         jamaMap
                     ).reduce(
                         (s,n) =>
-                            s +
-                            Number(n || 0),
+                            s + Number(n || 0),
                         0
                     ),
 
@@ -3475,8 +3542,7 @@ function balanceRows(
                         kharchuMap
                     ).reduce(
                         (s,n) =>
-                            s +
-                            Number(n || 0),
+                            s + Number(n || 0),
                         0
                     )
 
@@ -3486,14 +3552,14 @@ function balanceRows(
 
 
         /*
-         * ಮುಂದಿನ ದಿನದ Opening
-         * ಹಿಂದಿನ ದಿನದ Final Closing
+         * ಮುಂದಿನ ದಿನದ Opening = ಆ ದಿನದ ಅಂತಿಮ Closing
          */
-
         items.forEach(function(item){
 
             runningOpening[item.id] =
-                kharchuClosing[item.id];
+                firstType === "kharchu"
+                ? jamaClosing[item.id]
+                : kharchuClosing[item.id];
 
         });
 
