@@ -530,6 +530,7 @@ function buildDailyFlow(){
 }
 
 
+
 function academicMonths(){
     const y = academicYears.find(x => x.id === selectedYearId);
     if(!y) return [];
@@ -539,7 +540,6 @@ function academicMonths(){
     const out = [];
 
     let d = new Date(start.getFullYear(), start.getMonth(), 1);
-
     while(d <= end){
         const yy = d.getFullYear();
         const mm = d.getMonth() + 1;
@@ -548,225 +548,194 @@ function academicMonths(){
         const to = `${yy}-${String(mm).padStart(2,"0")}-${String(lastDay).padStart(2,"0")}`;
 
         out.push({
-            key: `${yy}-${String(mm).padStart(2,"0")}`,
-            label: `${monthNames[d.getMonth()]}-${yy}`,
-            from,
-            to
+            key:`${yy}-${String(mm).padStart(2,"0")}`,
+            label:`${monthNames[d.getMonth()]}-${yy}`,
+            from,to
         });
-
-        d = new Date(d.getFullYear(), d.getMonth()+1, 1);
+        d = new Date(d.getFullYear(),d.getMonth()+1,1);
     }
     return out;
 }
 
-function buildMonthlyReport(){
-    const months = academicMonths();
-    const monthly = months.map(m => ({
-        ...m,
-        opening:{},
-        jama:{},
-        jamaClosing:{},
-        kharchu:{},
-        kharchuOpening:{},
-        kharchuClosing:{}
-    }));
+function monthItemTotals(month,type){
+    const totals = {};
+    items.forEach(i => totals[i.id] = 0);
 
-    items.forEach(i => {
-        let balance = num(openingBalance[i.id]);
-
-        monthly.forEach(m => {
-            m.opening[i.id] = balance;
-            m.jama[i.id] = 0;
-            m.kharchu[i.id] = 0;
-            m.jamaClosing[i.id] = balance;
-            m.kharchuOpening[i.id] = balance;
-            m.kharchuClosing[i.id] = balance;
-        });
-    });
-
-    // Process entries in exact date/created order so first-entry flow is preserved.
-    const ordered = entries.slice().sort((a,b) => {
-        const d = String(a.entry_date).localeCompare(String(b.entry_date));
-        if(d !== 0) return d;
-        return String(a.created_at || "").localeCompare(String(b.created_at || ""));
-    });
-
-    const monthIndex = {};
-    monthly.forEach((m,i) => monthIndex[m.key] = i);
-
-    // Current running balance is per item. For each month we retain
-    // the balance after JAMA and after KHARCHU separately.
-    const running = {};
-    items.forEach(i => running[i.id] = num(openingBalance[i.id]));
-
-    ordered.forEach(e => {
-        const key = String(e.entry_date).slice(0,7);
-        const mi = monthIndex[key];
-        if(mi === undefined) return;
-
-        const amount = num(e.amount);
-        const id = e.item_id;
-
-        if(e.entry_type === "jama"){
-            monthly[mi].jama[id] += amount;
-            running[id] += amount;
-        }else if(e.entry_type === "kharchu"){
-            monthly[mi].kharchu[id] += amount;
-            running[id] -= amount;
+    entries.forEach(e => {
+        if(
+            e.entry_type === type &&
+            String(e.entry_date) >= month.from &&
+            String(e.entry_date) <= month.to &&
+            totals[e.item_id] !== undefined
+        ){
+            totals[e.item_id] += num(e.amount);
         }
-
-        // Rebuild the affected month's closing values from the ordered flow.
-        monthly[mi].jamaClosing[id] = running[id];
-        monthly[mi].kharchuClosing[id] = running[id];
     });
-
-    // Recalculate month-by-month openings/closings correctly from all entries.
-    items.forEach(item => {
-        let balance = num(openingBalance[item.id]);
-
-        monthly.forEach(m => {
-            m.opening[item.id] = balance;
-
-            const monthEntries = ordered.filter(e =>
-                String(e.entry_date).slice(0,7) === m.key &&
-                e.item_id === item.id
-            );
-
-            let jamaSeen = false;
-            let kharchuSeen = false;
-            let afterJama = balance;
-            let afterKharchu = balance;
-
-            monthEntries.forEach(e => {
-                const amount = num(e.amount);
-
-                if(e.entry_type === "jama"){
-                    m.jama[item.id] += 0; // already aggregated above
-                    balance += amount;
-                    afterJama = balance;
-                    jamaSeen = true;
-                }else{
-                    balance -= amount;
-                    afterKharchu = balance;
-                    kharchuSeen = true;
-                }
-            });
-
-            // If there was no JAMA in the month, JAMA closing remains the
-            // balance entering the month; if there was JAMA, it is the
-            // balance immediately after the last JAMA transaction.
-            if(jamaSeen){
-                m.jamaClosing[item.id] = afterJama;
-            }else{
-                m.jamaClosing[item.id] = m.opening[item.id];
-            }
-
-            // KHARCHU opening is the balance immediately before the first
-            // KHARCHU transaction. If there is no KHARCHU, it is the balance
-            // after the month's JAMA flow.
-            let temp = m.opening[item.id];
-            let firstKharchuOpening = null;
-            monthEntries.forEach(e => {
-                const amount = num(e.amount);
-                if(e.entry_type === "kharchu"){
-                    if(firstKharchuOpening === null) firstKharchuOpening = temp;
-                    temp -= amount;
-                }else{
-                    temp += amount;
-                }
-            });
-
-            m.kharchuOpening[item.id] =
-                firstKharchuOpening === null
-                    ? temp
-                    : firstKharchuOpening;
-
-            m.kharchuClosing[item.id] = balance;
-        });
-    });
-
-    return monthly;
+    return totals;
 }
 
-function tableHeader(){
+function buildMonthlyReport(){
+    const months = academicMonths();
+
+    months.forEach(m => {
+        m.jama = monthItemTotals(m,"jama");
+        m.kharchu = monthItemTotals(m,"kharchu");
+    });
+
+    // Opening Balance saved in School Cash Book, item by item.
+    const jamaOpening = {};
+    items.forEach(i => jamaOpening[i.id] = num(openingBalance[i.id]));
+
+    // JAMA GRAND TOTAL becomes KHARCHU Opening Balance.
+    const jamaTotal = {};
+    items.forEach(i => jamaTotal[i.id] = 0);
+
+    months.forEach(m => {
+        items.forEach(i => {
+            jamaTotal[i.id] += num(m.jama[i.id]);
+        });
+    });
+
+    const jamaGrandTotal = {};
+    items.forEach(i => {
+        jamaGrandTotal[i.id] =
+            num(jamaOpening[i.id]) + num(jamaTotal[i.id]);
+    });
+
+    return {months,jamaOpening,jamaTotal,jamaGrandTotal};
+}
+
+function sumMap(map){
+    return items.reduce((s,i) => s + num(map[i.id]),0);
+}
+
+function reportHeader(){
     return `
         <tr>
-            <th>ತಿಂಗಳು</th>
-            <th>O.B</th>
+            <th>Month</th>
             ${items.map(i => `<th>${esc(i.item_name)}</th>`).join("")}
             <th>ಒಟ್ಟು</th>
         </tr>
     `;
 }
 
-function sumMap(map){
-    return items.reduce((s,i) => s + num(map[i.id]), 0);
-}
+function renderJama(months,jamaOpening,jamaTotal,jamaGrandTotal){
+    const head = document.getElementById("jamaHead");
+    const body = document.getElementById("jamaBody");
 
-function renderSeparateTable(bodyId, headId, months, kind){
-    document.getElementById(headId).innerHTML = tableHeader();
-    const body = document.getElementById(bodyId);
+    head.innerHTML = reportHeader();
 
     if(!months.length){
-        body.innerHTML = `<tr><td colspan="${items.length+3}" class="empty">Data ಇಲ್ಲ.</td></tr>`;
+        body.innerHTML =
+            `<tr><td colspan="${items.length+2}" class="empty">Data ಇಲ್ಲ.</td></tr>`;
         return;
     }
 
     const rows = [];
-    let totalByItem = {};
-    items.forEach(i => totalByItem[i.id] = 0);
 
-    months.forEach((m,idx) => {
-        const isJama = kind === "jama";
-        const amountMap = isJama ? m.jama : m.kharchu;
-        const openingMap = isJama ? m.opening : m.kharchuOpening;
-        const closingMap = isJama ? m.jamaClosing : m.kharchuClosing;
+    // Only April's first row contains Opening Balance, item by item.
+    rows.push(`
+        <tr class="total-row">
+            <td><b>Opening Balance</b></td>
+            ${items.map(i => `<td class="money">${money(jamaOpening[i.id])}</td>`).join("")}
+            <td class="money"><b>${money(sumMap(jamaOpening))}</b></td>
+        </tr>
+    `);
 
-        items.forEach(i => {
-            totalByItem[i.id] += num(amountMap[i.id]);
-        });
-
+    // Each month = all JAMA entries from the 1st through last day of that month.
+    months.forEach(m => {
         rows.push(`
             <tr>
                 <td><b>${esc(m.label)}</b></td>
-                <td class="money">${money(sumMap(openingMap))}</td>
-                ${items.map(i => `<td class="money">${money(amountMap[i.id])}</td>`).join("")}
-                <td class="money"><b>${money(sumMap(amountMap))}</b></td>
-            </tr>
-        `);
-
-        rows.push(`
-            <tr class="total-row">
-                <td></td>
-                <td class="left"><b>${isJama ? "JAMA Closing" : "KHARCHU Closing"}</b></td>
-                ${items.map(i => `<td class="money">${money(closingMap[i.id])}</td>`).join("")}
-                <td class="money"><b>${money(sumMap(closingMap))}</b></td>
+                ${items.map(i => `<td class="money">${money(m.jama[i.id])}</td>`).join("")}
+                <td class="money"><b>${money(sumMap(m.jama))}</b></td>
             </tr>
         `);
     });
 
-    const first = months[0];
-    const last = months[months.length-1];
+    rows.push(`
+        <tr class="total-row">
+            <td><b>TOTAL</b></td>
+            ${items.map(i => `<td class="money"><b>${money(jamaTotal[i.id])}</b></td>`).join("")}
+            <td class="money"><b>${money(sumMap(jamaTotal))}</b></td>
+        </tr>
+    `);
+
+    // GRAND TOTAL = April Opening Balance + all 12 months JAMA TOTAL.
+    rows.push(`
+        <tr class="grand-row">
+            <td><b>GRAND TOTAL</b></td>
+            ${items.map(i => `<td class="money"><b>${money(jamaGrandTotal[i.id])}</b></td>`).join("")}
+            <td class="money"><b>${money(sumMap(jamaGrandTotal))}</b></td>
+        </tr>
+    `);
+
+    body.innerHTML = rows.join("");
+}
+
+function renderKharchu(months,jamaGrandTotal){
+    const head = document.getElementById("kharchuHead");
+    const body = document.getElementById("kharchuBody");
+
+    head.innerHTML = reportHeader();
+
+    if(!months.length){
+        body.innerHTML =
+            `<tr><td colspan="${items.length+2}" class="empty">Data ಇಲ್ಲ.</td></tr>`;
+        return;
+    }
+
+    // KHARCHU O.B = JAMA GRAND TOTAL, item by item.
+    const kharchuTotal = {};
+    items.forEach(i => kharchuTotal[i.id] = 0);
+
+    months.forEach(m => {
+        items.forEach(i => {
+            kharchuTotal[i.id] += num(m.kharchu[i.id]);
+        });
+    });
+
+    // GRAND TOTAL = O.B - all 12 months KHARCHU TOTAL.
+    const kharchuGrandTotal = {};
+    items.forEach(i => {
+        kharchuGrandTotal[i.id] =
+            num(jamaGrandTotal[i.id]) - num(kharchuTotal[i.id]);
+    });
+
+    const rows = [];
+
+    // No separate O.B column. O.B values are item-wise in the first row.
+    rows.push(`
+        <tr class="total-row">
+            <td><b>Opening Balance</b></td>
+            ${items.map(i => `<td class="money">${money(jamaGrandTotal[i.id])}</td>`).join("")}
+            <td class="money"><b>${money(sumMap(jamaGrandTotal))}</b></td>
+        </tr>
+    `);
+
+    months.forEach(m => {
+        rows.push(`
+            <tr>
+                <td><b>${esc(m.label)}</b></td>
+                ${items.map(i => `<td class="money">${money(m.kharchu[i.id])}</td>`).join("")}
+                <td class="money"><b>${money(sumMap(m.kharchu))}</b></td>
+            </tr>
+        `);
+    });
 
     rows.push(`
         <tr class="total-row">
             <td><b>TOTAL</b></td>
-            <td class="money"><b>${money(sumMap(first.opening))}</b></td>
-            ${items.map(i => `<td class="money"><b>${money(totalByItem[i.id])}</b></td>`).join("")}
-            <td class="money"><b>${money(Object.values(totalByItem).reduce((a,b)=>a+b,0))}</b></td>
+            ${items.map(i => `<td class="money"><b>${money(kharchuTotal[i.id])}</b></td>`).join("")}
+            <td class="money"><b>${money(sumMap(kharchuTotal))}</b></td>
         </tr>
     `);
-
-    const grandAmount = Object.values(totalByItem).reduce((a,b)=>a+b,0);
-    const grandOpening = sumMap(first.opening);
-    const grandClosingMap = kind === "jama" ? last.jamaClosing : last.kharchuClosing;
 
     rows.push(`
         <tr class="grand-row">
             <td><b>GRAND TOTAL</b></td>
-            <td class="money"><b>${money(grandOpening)}</b></td>
-            ${items.map(i => `<td class="money"><b>${money(grandClosingMap[i.id])}</b></td>`).join("")}
-            <td class="money"><b>${money(sumMap(grandClosingMap))}</b></td>
+            ${items.map(i => `<td class="money"><b>${money(kharchuGrandTotal[i.id])}</b></td>`).join("")}
+            <td class="money"><b>${money(sumMap(kharchuGrandTotal))}</b></td>
         </tr>
     `);
 
@@ -774,14 +743,20 @@ function renderSeparateTable(bodyId, headId, months, kind){
 }
 
 function renderReport(){
-    const months = buildMonthlyReport();
-    lastReport = months;
+    const {months,jamaOpening,jamaTotal,jamaGrandTotal} = buildMonthlyReport();
+
+    lastReport = {
+        months,
+        jamaOpening,
+        jamaTotal,
+        jamaGrandTotal
+    };
 
     document.getElementById("typeTitle").textContent = cashbookType;
     document.getElementById("reportYear").textContent = selectedYear || "-";
 
-    renderSeparateTable("jamaBody","jamaHead",months,"jama");
-    renderSeparateTable("kharchuBody","kharchuHead",months,"kharchu");
+    renderJama(months,jamaOpening,jamaTotal,jamaGrandTotal);
+    renderKharchu(months,jamaGrandTotal);
 }
 
 async function generateReport(){
@@ -796,7 +771,7 @@ async function generateReport(){
         renderReport();
 
         document.getElementById("status").textContent =
-            "ಎಲ್ಲಾ ತಿಂಗಳ Report ಸಿದ್ಧವಾಗಿದೆ.";
+            "ಎಲ್ಲಾ 12 ತಿಂಗಳ Report ಸಿದ್ಧವಾಗಿದೆ.";
     }catch(error){
         console.error(error);
         document.getElementById("status").textContent =
@@ -807,70 +782,110 @@ async function generateReport(){
 
 function exportExcel(){
     try{
-        if(!lastReport) {
+        if(!lastReport){
             alert("ಮೊದಲು Report load ಆಗಬೇಕು.");
             return;
         }
 
+        const {
+            months,
+            jamaOpening,
+            jamaTotal,
+            jamaGrandTotal
+        } = lastReport;
+
         const wb = XLSX.utils.book_new();
 
-        function makeSheet(kind){
-            const data = [];
-            const isJama = kind === "jama";
+        const jamaData = [[
+            "Month",
+            ...items.map(i => i.item_name),
+            "ಒಟ್ಟು"
+        ]];
 
-            data.push([
-                isJama ? "ಜಮಾ" : "ಖರ್ಚು",
-                "O.B",
-                ...items.map(i => i.item_name),
-                "ಒಟ್ಟು"
+        jamaData.push([
+            "Opening Balance",
+            ...items.map(i => num(jamaOpening[i.id])),
+            sumMap(jamaOpening)
+        ]);
+
+        months.forEach(m => {
+            jamaData.push([
+                m.label,
+                ...items.map(i => num(m.jama[i.id])),
+                sumMap(m.jama)
             ]);
+        });
 
-            lastReport.forEach(m => {
-                const amount = isJama ? m.jama : m.kharchu;
-                const opening = isJama ? m.opening : m.kharchuOpening;
-                const closing = isJama ? m.jamaClosing : m.kharchuClosing;
+        jamaData.push([
+            "TOTAL",
+            ...items.map(i => num(jamaTotal[i.id])),
+            sumMap(jamaTotal)
+        ]);
 
-                data.push([
-                    m.label,
-                    sumMap(opening),
-                    ...items.map(i => num(amount[i.id])),
-                    sumMap(amount)
-                ]);
+        jamaData.push([
+            "GRAND TOTAL",
+            ...items.map(i => num(jamaGrandTotal[i.id])),
+            sumMap(jamaGrandTotal)
+        ]);
 
-                data.push([
-                    "",
-                    "Closing",
-                    ...items.map(i => num(closing[i.id])),
-                    sumMap(closing)
-                ]);
+        const kharchuTotal = {};
+        items.forEach(i => kharchuTotal[i.id] = 0);
+
+        months.forEach(m => {
+            items.forEach(i => {
+                kharchuTotal[i.id] += num(m.kharchu[i.id]);
             });
+        });
 
-            const first = lastReport[0];
-            const last = lastReport[lastReport.length-1];
+        const kharchuGrandTotal = {};
+        items.forEach(i => {
+            kharchuGrandTotal[i.id] =
+                num(jamaGrandTotal[i.id]) - num(kharchuTotal[i.id]);
+        });
 
-            data.push([
-                "TOTAL",
-                sumMap(first.opening),
-                ...items.map(i =>
-                    lastReport.reduce((s,m)=>s+num((isJama?m.jama:m.kharchu)[i.id]),0)
-                ),
-                lastReport.reduce((s,m)=>
-                    s + sumMap(isJama?m.jama:m.kharchu),0)
+        const kharchuData = [[
+            "Month",
+            ...items.map(i => i.item_name),
+            "ಒಟ್ಟು"
+        ]];
+
+        kharchuData.push([
+            "Opening Balance",
+            ...items.map(i => num(jamaGrandTotal[i.id])),
+            sumMap(jamaGrandTotal)
+        ]);
+
+        months.forEach(m => {
+            kharchuData.push([
+                m.label,
+                ...items.map(i => num(m.kharchu[i.id])),
+                sumMap(m.kharchu)
             ]);
+        });
 
-            const grandClosing = isJama ? last.jamaClosing : last.kharchuClosing;
-            data.push([
-                "GRAND TOTAL",
-                sumMap(first.opening),
-                ...items.map(i => num(grandClosing[i.id])),
-                sumMap(grandClosing)
-            ]);
+        kharchuData.push([
+            "TOTAL",
+            ...items.map(i => num(kharchuTotal[i.id])),
+            sumMap(kharchuTotal)
+        ]);
 
-            return XLSX.utils.aoa_to_sheet(data);
-        }
+        kharchuData.push([
+            "GRAND TOTAL",
+            ...items.map(i => num(kharchuGrandTotal[i.id])),
+            sumMap(kharchuGrandTotal)
+        ]);
 
-        XLSX.utils.book_append_sheet(wb,makeSheet("jama"),"JAMA");
-        XLSX.utils.book_append_sheet(wb,makeSheet("kharchu"),"KHARCHU");
+        XLSX.utils.book_append_sheet(
+            wb,
+            XLSX.utils.aoa_to_sheet(jamaData),
+            "JAMA"
+        );
+
+        XLSX.utils.book_append_sheet(
+            wb,
+            XLSX.utils.aoa_to_sheet(kharchuData),
+            "KHARCHU"
+        );
 
         XLSX.writeFile(
             wb,
@@ -909,8 +924,7 @@ async function init(){
                 "school_cashbook_year_" + currentSchoolId,
                 selectedYearId
             );
-            fillMonths();
-            updateHeader();
+                    updateHeader();
             await generateReport();
         });
 
