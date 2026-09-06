@@ -535,25 +535,30 @@ function academicMonths(){
     const y = academicYears.find(x => x.id === selectedYearId);
     if(!y) return [];
 
-    const start = new Date(y.start_date + "T00:00:00");
-    const end = new Date(y.end_date + "T00:00:00");
+    // Always build the academic year strictly from YEAR_NAME:
+    // 2026-27 = April-2026 through March-2027.
+    const parts = String(y.year_name || '').split('-');
+    const startYear = Number(parts[0]);
+    if(!startYear) return [];
+
     const out = [];
 
-    let d = new Date(start.getFullYear(), start.getMonth(), 1);
-    while(d <= end){
+    for(let offset = 0; offset < 12; offset++){
+        const d = new Date(startYear, 3 + offset, 1);
         const yy = d.getFullYear();
         const mm = d.getMonth() + 1;
-        const from = `${yy}-${String(mm).padStart(2,"0")}-01`;
+        const from = `${yy}-${String(mm).padStart(2,'0')}-01`;
         const lastDay = new Date(yy, mm, 0).getDate();
-        const to = `${yy}-${String(mm).padStart(2,"0")}-${String(lastDay).padStart(2,"0")}`;
+        const to = `${yy}-${String(mm).padStart(2,'0')}-${String(lastDay).padStart(2,'0')}`;
 
         out.push({
-            key:`${yy}-${String(mm).padStart(2,"0")}`,
+            key:`${yy}-${String(mm).padStart(2,'0')}`,
             label:`${monthNames[d.getMonth()]}-${yy}`,
-            from,to
+            from,
+            to
         });
-        d = new Date(d.getFullYear(),d.getMonth()+1,1);
     }
+
     return out;
 }
 
