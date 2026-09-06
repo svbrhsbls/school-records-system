@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="kn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>School Cash Book — Report</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+*{box-sizing:border-box}
+body{
+    margin:0;
+    background:#f3f7f4;
+    color:#17221b;
+    font-family:"Noto Sans Kannada","Nirmala UI",Arial,sans-serif
+}
+.school-header{
+    text-align:center;
+    background:#fff;
+    padding:16px 12px 12px;
+    border-bottom:1px solid #d8e2dc
+}
+.school-header .dept{font-size:24px;font-weight:800;line-height:1.35}
+.school-header .school{font-size:23px;font-weight:800;line-height:1.35}
+.school-header .year{font-size:20px;font-weight:800;line-height:1.35}
+.wrap{max-width:1550px;margin:18px auto;padding:0 14px}
+.card{
+    background:#fff;
+    border:1px solid #d7e2da;
+    border-radius:12px;
+    padding:16px;
+    margin-bottom:14px;
+    box-shadow:0 2px 8px #0000000b
+}
+.control-grid{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(180px,1fr));
+    gap:12px;
+    align-items:end
+}
+label{display:block;font-weight:700;font-size:13px;margin-bottom:5px}
+select,input{
+    width:100%;
+    padding:10px 11px;
+    border:1px solid #cbd7cf;
+    border-radius:8px;
+    background:#fff;
+    font-size:14px
+}
+button{
+    border:0;
+    border-radius:8px;
+    padding:10px 14px;
+    cursor:pointer;
+    font-weight:700;
+    background:#1f6f43;
+    color:#fff
+}
+button.secondary{background:#53635a}
+button.light{background:#e8f0eb;color:#17221b}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.notice{
+    padding:10px 12px;
+    background:#eef6f0;
+    border:1px solid #d2e3d7;
+    border-radius:8px;
+    font-size:13px
+}
+.report-title{
+    text-align:center;
+    margin:5px 0 3px;
+    font-size:20px;
+    font-weight:800
+}
+.report-subtitle{
+    text-align:center;
+    margin:0 0 12px;
+    font-size:14px;
+    font-weight:700
+}
+.table-wrap{overflow:auto}
+table{
+    width:100%;
+    border-collapse:collapse;
+    background:#fff;
+    min-width:900px
+}
+th,td{
+    border:1px solid #bfcac3;
+    padding:7px 6px;
+    font-size:12px;
+    text-align:center;
+    vertical-align:middle
+}
+th{
+    background:#eaf2ed;
+    font-weight:800
+}
+td.left{text-align:left}
+td.money{text-align:right;white-space:nowrap}
+.total-row td{
+    font-weight:800;
+    background:#f0f5f1
+}
+.grand-row td{
+    font-weight:900;
+    background:#e4eee7
+}
+.empty{
+    text-align:center;
+    padding:28px;
+    color:#65746b
+}
+.status{
+    margin-top:8px;
+    font-size:13px;
+    color:#53635a
+}
+.footer-sign{
+    margin-top:28px;
+    display:flex;
+    justify-content:flex-end
+}
+.sign{
+    width:220px;
+    text-align:center;
+    border-top:1px solid #777;
+    padding-top:6px;
+    font-weight:700
+}
+@media(max-width:900px){
+    .control-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:600px){
+    .control-grid{grid-template-columns:1fr}
+    .school-header .dept{font-size:19px}
+    .school-header .school{font-size:18px}
+    .school-header .year{font-size:17px}
+}
+@media print{
+    body{background:#fff}
+    .no-print{display:none!important}
+    .wrap{max-width:none;margin:0;padding:0}
+    .card{border:0;box-shadow:none;padding:4px;margin:0 0 8px}
+    .school-header{padding:4px 0 8px}
+    .school-header .dept{font-size:20px}
+    .school-header .school{font-size:19px}
+    .school-header .year{font-size:17px}
+    table{min-width:0}
+    th,td{font-size:10px;padding:5px 4px}
+    @page{size:A4 landscape;margin:8mm}
+}
+</style>
+</head>
+
+<body>
+
+<header class="school-header">
+    <div class="dept" id="departmentName">ಇಲಾಖೆಯ ಹೆಸರು</div>
+    <div class="school" id="schoolName">ಶಾಲೆಯ ಹೆಸರು</div>
+    <div class="year">ವರ್ಷ: <span id="academicYear">-</span></div>
+</header>
+
+<div class="wrap">
+
+    <div class="card no-print">
+        <div class="control-grid">
+
+            <div>
+                <label>Cash Book Type / ಖಾತೆ ಪ್ರಕಾರ</label>
+                <select id="cashbookType">
+                    <option value="ಸರ್ಕಾರಿ">ಸರ್ಕಾರಿ</option>
+                    <option value="ಸರ್ಕಾರೇತ್ತರ">ಸರ್ಕಾರೇತ್ತರ</option>
+                </select>
+            </div>
+
+            <div>
+                <label>ಶೈಕ್ಷಣಿಕ ವರ್ಷ / Academic Year</label>
+                <select id="academicYearSelect"></select>
+            </div>
+
+            <div>
+                <label>ತಿಂಗಳು / Month</label>
+                <select id="monthSelect"></select>
+            </div>
+
+            <div class="actions">
+                <button onclick="generateReport()">Report</button>
+                <button class="secondary" onclick="window.print()">Print / PDF</button>
+                <button class="light" onclick="exportExcel()">Excel</button>
+            </div>
+
+        </div>
+        <div id="status" class="status"></div>
+    </div>
+
+    <div class="card" id="reportCard">
+        <div class="report-title">
+            <span id="typeTitle">ಸರ್ಕಾರಿ</span> — Cash Book — <span id="reportYear">2026-27</span>
+        </div>
+        <div class="report-subtitle" id="monthTitle">ತಿಂಗಳು</div>
+
+        <div class="table-wrap">
+            <table id="reportTable">
+                <thead id="reportHead"></thead>
+                <tbody id="reportBody"></tbody>
+            </table>
+        </div>
+
+        <div class="footer-sign">
+            <div class="sign">ಮುಖ್ಯ ಶಿಕ್ಷಕರು / Head Teacher</div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const SUPABASE_URL =
+    "https://xhskrohrrsxlfbdbhyji.supabase.co";
+
+const SUPABASE_KEY =
+    "sb_publishable_0amt5yG7ZIm6JD7oub6JTw_Hv5Nx2cl";
+
+const db = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+
+let currentSchoolId = null;
+let academicYears = [];
+let selectedYearId = null;
+let selectedYear = "";
+let cashbookType = "ಸರ್ಕಾರಿ";
+let items = [];
+let openingBalance = {};
+let entries = [];
+let lastReport = null;
+
+const monthNames = [
+    "ಏಪ್ರಿಲ್","ಮೇ","ಜೂನ್","ಜುಲೈ","ಆಗಸ್ಟ್","ಸೆಪ್ಟೆಂಬರ್",
+    "ಅಕ್ಟೋಬರ್","ನವೆಂಬರ್","ಡಿಸೆಂಬರ್","ಜನವರಿ","ಫೆಬ್ರವರಿ","ಮಾರ್ಚ್"
+];
+
+function esc(v){
+    return String(v ?? "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+}
+
+function money(n){
+    return "₹" + Number(n || 0).toLocaleString("en-IN",{
+        minimumFractionDigits:2,
+        maximumFractionDigits:2
+    });
+}
+
+function num(n){
+    return Number(n || 0);
+}
+
+function dateText(s){
+    if(!s) return "";
+    const p = String(s).split("-");
+    if(p.length !== 3) return s;
+    return `${p[2]}-${p[1]}-${p[0]}`;
+}
+
+async function loadSchool(){
+    const {data,error} = await db
+        .from("school_users")
+        .select("school_id,user_id")
+        .eq("user_id",(await db.auth.getUser()).data.user.id)
+        .eq("is_active",true)
+        .maybeSingle();
+
+    if(error) throw error;
+    if(!data) throw new Error("ಈ Login userಗೆ School mapping ಇಲ್ಲ.");
+
+    currentSchoolId = data.school_id;
+}
+
+async function loadSettings(){
+    const {data,error} = await db
+        .from("school_cashbook_settings")
+        .select("department_name,school_name")
+        .eq("school_id",currentSchoolId)
+        .maybeSingle();
+
+    if(error) throw error;
+
+    document.getElementById("departmentName").textContent =
+        data?.department_name || "ಇಲಾಖೆಯ ಹೆಸರು";
+
+    document.getElementById("schoolName").textContent =
+        data?.school_name || "ಶಾಲೆಯ ಹೆಸರು";
+}
+
+async function loadAcademicYears(){
+    const {data,error} = await db
+        .from("school_cashbook_academic_years")
+        .select("id,year_name,start_date,end_date,is_active")
+        .eq("school_id",currentSchoolId)
+        .order("start_date",{ascending:true});
+
+    if(error) throw error;
+
+    academicYears = data || [];
+
+    if(!academicYears.length)
+        throw new Error("Settingsನಲ್ಲಿ Academic Year ಸೇರಿಸಿ.");
+
+    const saved = localStorage.getItem(
+        "school_cashbook_year_" + currentSchoolId
+    );
+
+    const active =
+        academicYears.find(y => y.id === saved) ||
+        academicYears.find(y => y.is_active) ||
+        academicYears[0];
+
+    selectedYearId = active.id;
+    selectedYear = active.year_name;
+
+    const select = document.getElementById("academicYearSelect");
+    select.innerHTML = academicYears.map(y => `
+        <option value="${esc(y.id)}">${esc(y.year_name)}${y.is_active ? " — Active" : ""}</option>
+    `).join("");
+
+    select.value = selectedYearId;
+    fillMonths();
+    updateHeader();
+}
+
+function fillMonths(){
+    const y = academicYears.find(x => x.id === selectedYearId);
+    if(!y) return;
+
+    const start = new Date(y.start_date + "T00:00:00");
+    const end = new Date(y.end_date + "T00:00:00");
+
+    const select = document.getElementById("monthSelect");
+    select.innerHTML = "";
+
+    let d = new Date(start.getFullYear(),start.getMonth(),1);
+
+    while(d <= end){
+        const value =
+            d.getFullYear() + "-" +
+            String(d.getMonth()+1).padStart(2,"0");
+
+        const opt = document.createElement("option");
+        opt.value = value;
+        opt.textContent =
+            monthNames[d.getMonth()] + " " + d.getFullYear();
+        select.appendChild(opt);
+
+        d = new Date(d.getFullYear(),d.getMonth()+1,1);
+    }
+
+    const now = new Date();
+    const nowValue =
+        now.getFullYear() + "-" +
+        String(now.getMonth()+1).padStart(2,"0");
+
+    if([...select.options].some(o => o.value === nowValue))
+        select.value = nowValue;
+}
+
+function updateHeader(){
+    document.getElementById("academicYear").textContent =
+        selectedYear || "-";
+    document.getElementById("reportYear").textContent =
+        selectedYear || "-";
+    document.getElementById("typeTitle").textContent =
+        cashbookType;
+}
+
+async function loadItems(){
+    const {data,error} = await db
+        .from("school_cashbook_items")
+        .select("id,item_name,sort_order,is_active")
+        .eq("school_id",currentSchoolId)
+        .eq("cashbook_type",cashbookType)
+        .eq("is_active",true)
+        .order("sort_order",{ascending:true})
+        .order("created_at",{ascending:true});
+
+    if(error) throw error;
+
+    items = data || [];
+}
+
+async function loadOpening(){
+    openingBalance = {};
+
+    const {data,error} = await db
+        .from("school_cashbook_opening_balances")
+        .select("item_id,opening_balance")
+        .eq("school_id",currentSchoolId)
+        .eq("academic_year_id",selectedYearId)
+        .eq("cashbook_type",cashbookType);
+
+    if(error) throw error;
+
+    (data || []).forEach(r => {
+        openingBalance[r.item_id] = num(r.opening_balance);
+    });
+}
+
+async function loadEntries(){
+    const {data,error} = await db
+        .from("school_cashbook_entries")
+        .select("id,entry_type,entry_date,item_id,amount,details,created_at")
+        .eq("school_id",currentSchoolId)
+        .eq("academic_year_id",selectedYearId)
+        .eq("cashbook_type",cashbookType)
+        .order("entry_date",{ascending:true})
+        .order("created_at",{ascending:true});
+
+    if(error) throw error;
+
+    entries = data || [];
+}
+
+function buildDailyFlow(){
+    const byDate = {};
+
+    entries.forEach(e => {
+        if(!byDate[e.entry_date]) byDate[e.entry_date] = [];
+        byDate[e.entry_date].push(e);
+    });
+
+    const dates = Object.keys(byDate).sort();
+
+    const running = {};
+    items.forEach(i => {
+        running[i.id] = num(openingBalance[i.id]);
+    });
+
+    const rows = [];
+
+    dates.forEach(date => {
+        const dayEntries = byDate[date].slice().sort((a,b) => {
+            const aa = a.created_at || "";
+            const bb = b.created_at || "";
+            return aa.localeCompare(bb);
+        });
+
+        const firstType =
+            dayEntries[0]?.entry_type || "jama";
+
+        const jamaTotals = {};
+        const kharchuTotals = {};
+
+        items.forEach(i => {
+            jamaTotals[i.id] = 0;
+            kharchuTotals[i.id] = 0;
+        });
+
+        dayEntries.forEach(e => {
+            if(e.entry_type === "jama")
+                jamaTotals[e.item_id] += num(e.amount);
+            if(e.entry_type === "kharchu")
+                kharchuTotals[e.item_id] += num(e.amount);
+        });
+
+        const hasJama = dayEntries.some(e => e.entry_type === "jama");
+        const hasKharchu = dayEntries.some(e => e.entry_type === "kharchu");
+
+        let firstMap = {...running};
+        let afterFirst = {...running};
+
+        if(firstType === "jama"){
+            items.forEach(i => {
+                afterFirst[i.id] =
+                    firstMap[i.id] + jamaTotals[i.id];
+            });
+
+            rows.push({
+                date,
+                firstType:"jama",
+                opening:{...firstMap},
+                amount:{...jamaTotals},
+                closing:{...afterFirst},
+                label:"ಜಮಾ",
+                details:dayEntries.filter(e => e.entry_type==="jama")
+            });
+
+            if(hasKharchu){
+                const khOpening = {...afterFirst};
+                const khClosing = {};
+
+                items.forEach(i => {
+                    khClosing[i.id] =
+                        khOpening[i.id] - kharchuTotals[i.id];
+                });
+
+                rows.push({
+                    date,
+                    firstType:"jama",
+                    opening:khOpening,
+                    amount:{...kharchuTotals},
+                    closing:{...khClosing},
+                    label:"ಖರ್ಚು",
+                    details:dayEntries.filter(e => e.entry_type==="kharchu")
+                });
+
+                running = khClosing;
+            }else{
+                running = afterFirst;
+            }
+        }else{
+            items.forEach(i => {
+                afterFirst[i.id] =
+                    firstMap[i.id] - kharchuTotals[i.id];
+            });
+
+            rows.push({
+                date,
+                firstType:"kharchu",
+                opening:{...firstMap},
+                amount:{...kharchuTotals},
+                closing:{...afterFirst},
+                label:"ಖರ್ಚು",
+                details:dayEntries.filter(e => e.entry_type==="kharchu")
+            });
+
+            if(hasJama){
+                const jamaOpening = {...afterFirst};
+                const jamaClosing = {};
+
+                items.forEach(i => {
+                    jamaClosing[i.id] =
+                        jamaOpening[i.id] + jamaTotals[i.id];
+                });
+
+                rows.push({
+                    date,
+                    firstType:"kharchu",
+                    opening:jamaOpening,
+                    amount:{...jamaTotals},
+                    closing:{...jamaClosing},
+                    label:"ಜಮಾ",
+                    details:dayEntries.filter(e => e.entry_type==="jama")
+                });
+
+                running = jamaClosing;
+            }else{
+                running = afterFirst;
+            }
+        }
+    });
+
+    return rows;
+}
+
+function monthRange(){
+    const value = document.getElementById("monthSelect").value;
+    const [y,m] = value.split("-").map(Number);
+
+    const from =
+        `${y}-${String(m).padStart(2,"0")}-01`;
+
+    const last =
+        new Date(y,m,0).getDate();
+
+    const to =
+        `${y}-${String(m).padStart(2,"0")}-${String(last).padStart(2,"0")}`;
+
+    return {from,to};
+}
+
+function buildReportRows(){
+    const all = buildDailyFlow();
+    const {from,to} = monthRange();
+
+    return all.filter(r => r.date >= from && r.date <= to);
+}
+
+function renderReport(){
+    const rows = buildReportRows();
+    lastReport = rows;
+
+    const head = document.getElementById("reportHead");
+    const body = document.getElementById("reportBody");
+
+    const {from,to} = monthRange();
+    const monthOption =
+        document.getElementById("monthSelect").selectedOptions[0];
+
+    document.getElementById("monthTitle").textContent =
+        `${monthOption?.textContent || ""} (${dateText(from)} ರಿಂದ ${dateText(to)}ರವರೆಗೆ)`;
+
+    head.innerHTML = `
+        <tr>
+            <th>ದಿನಾಂಕ</th>
+            <th>ವಿವರ</th>
+            ${items.map(i => `<th>${esc(i.item_name)}</th>`).join("")}
+            <th>ಒಟ್ಟು</th>
+        </tr>
+    `;
+
+    if(!rows.length){
+        body.innerHTML = `
+            <tr>
+                <td colspan="${items.length + 3}" class="empty">
+                    ಈ ತಿಂಗಳಿಗೆ ಯಾವುದೇ Entry ಇಲ್ಲ.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let openingTotal = 0;
+    let jamaTotal = 0;
+    let kharchuTotal = 0;
+    let finalTotal = 0;
+
+    const html = [];
+
+    rows.forEach((r,idx) => {
+        const isJama = r.label === "ಜಮಾ";
+        const total = items.reduce(
+            (s,i) => s + num(r.amount[i.id]),0
+        );
+
+        const closingTotal = items.reduce(
+            (s,i) => s + num(r.closing[i.id]),0
+        );
+
+        if(idx === 0){
+            openingTotal = items.reduce(
+                (s,i) => s + num(r.opening[i.id]),0
+            );
+        }
+
+        if(isJama) jamaTotal += total;
+        else kharchuTotal += total;
+
+        finalTotal = closingTotal;
+
+        html.push(`
+            <tr>
+                <td>${esc(dateText(r.date))}</td>
+                <td class="left"><b>${esc(r.label)}</b></td>
+                ${items.map(i => `<td class="money">${money(r.amount[i.id])}</td>`).join("")}
+                <td class="money"><b>${money(total)}</b></td>
+            </tr>
+        `);
+
+        html.push(`
+            <tr>
+                <td></td>
+                <td class="left">ಶಿಲ್ಕು / Closing</td>
+                ${items.map(i => `<td class="money">${money(r.closing[i.id])}</td>`).join("")}
+                <td class="money">${money(closingTotal)}</td>
+            </tr>
+        `);
+    });
+
+    const grandClosing = finalTotal;
+
+    body.innerHTML = html.join("") + `
+        <tr class="total-row">
+            <td colspan="2">Opening Balance</td>
+            ${items.map(i => {
+                const first = rows[0];
+                return `<td class="money">${money(first.opening[i.id])}</td>`;
+            }).join("")}
+            <td class="money">${money(openingTotal)}</td>
+        </tr>
+
+        <tr class="total-row">
+            <td colspan="2">ಒಟ್ಟು ಜಮಾ</td>
+            ${items.map(i => {
+                const v = rows.filter(r => r.label==="ಜಮಾ")
+                    .reduce((s,r) => s + num(r.amount[i.id]),0);
+                return `<td class="money">${money(v)}</td>`;
+            }).join("")}
+            <td class="money">${money(jamaTotal)}</td>
+        </tr>
+
+        <tr class="total-row">
+            <td colspan="2">ಒಟ್ಟು ಖರ್ಚು</td>
+            ${items.map(i => {
+                const v = rows.filter(r => r.label==="ಖರ್ಚು")
+                    .reduce((s,r) => s + num(r.amount[i.id]),0);
+                return `<td class="money">${money(v)}</td>`;
+            }).join("")}
+            <td class="money">${money(kharchuTotal)}</td>
+        </tr>
+
+        <tr class="grand-row">
+            <td colspan="2">ಅಂತಿಮ ಶಿಲ್ಕು / Final Closing</td>
+            ${items.map(i => {
+                const last = rows[rows.length-1];
+                return `<td class="money">${money(last.closing[i.id])}</td>`;
+            }).join("")}
+            <td class="money">${money(grandClosing)}</td>
+        </tr>
+    `;
+}
+
+async function generateReport(){
+    try{
+        document.getElementById("status").textContent =
+            "Report loading...";
+
+        await loadItems();
+        await loadOpening();
+        await loadEntries();
+
+        updateHeader();
+        renderReport();
+
+        document.getElementById("status").textContent =
+            "Report ಸಿದ್ಧವಾಗಿದೆ.";
+    }catch(error){
+        console.error(error);
+        document.getElementById("status").textContent =
+            "Report failed: " + error.message;
+        alert("Report failed: " + error.message);
+    }
+}
+
+async function exportExcel(){
+    try{
+        if(!lastReport)
+            await generateReport();
+
+        if(!lastReport || !lastReport.length){
+            alert("Export ಮಾಡಲು Report data ಇಲ್ಲ.");
+            return;
+        }
+
+        const rows = buildReportRows();
+
+        const data = [];
+        const header = [
+            "ದಿನಾಂಕ",
+            "ವಿವರ",
+            ...items.map(i => i.item_name),
+            "ಒಟ್ಟು"
+        ];
+        data.push(header);
+
+        rows.forEach(r => {
+            const total = items.reduce(
+                (s,i) => s + num(r.amount[i.id]),0
+            );
+
+            data.push([
+                dateText(r.date),
+                r.label,
+                ...items.map(i => num(r.amount[i.id])),
+                total
+            ]);
+
+            const closeTotal = items.reduce(
+                (s,i) => s + num(r.closing[i.id]),0
+            );
+
+            data.push([
+                "",
+                "ಶಿಲ್ಕು / Closing",
+                ...items.map(i => num(r.closing[i.id])),
+                closeTotal
+            ]);
+        });
+
+        const first = rows[0];
+        data.push([
+            "",
+            "Opening Balance",
+            ...items.map(i => num(first.opening[i.id])),
+            items.reduce((s,i) => s + num(first.opening[i.id]),0)
+        ]);
+
+        data.push([
+            "",
+            "ಒಟ್ಟು ಜಮಾ",
+            ...items.map(i =>
+                rows.filter(r => r.label==="ಜಮಾ")
+                    .reduce((s,r) => s + num(r.amount[i.id]),0)
+            ),
+            rows.filter(r => r.label==="ಜಮಾ")
+                .reduce((s,r) =>
+                    s + items.reduce((x,i) => x + num(r.amount[i.id]),0),0)
+        ]);
+
+        data.push([
+            "",
+            "ಒಟ್ಟು ಖರ್ಚು",
+            ...items.map(i =>
+                rows.filter(r => r.label==="ಖರ್ಚು")
+                    .reduce((s,r) => s + num(r.amount[i.id]),0)
+            ),
+            rows.filter(r => r.label==="ಖರ್ಚು")
+                .reduce((s,r) =>
+                    s + items.reduce((x,i) => x + num(r.amount[i.id]),0),0)
+        ]);
+
+        const last = rows[rows.length-1];
+        data.push([
+            "",
+            "ಅಂತಿಮ ಶಿಲ್ಕು / Final Closing",
+            ...items.map(i => num(last.closing[i.id])),
+            items.reduce((s,i) => s + num(last.closing[i.id]),0)
+        ]);
+
+        const ws = XLSX.utils.aoa_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb,ws,"Cash Book Report");
+
+        const month = document.getElementById("monthSelect").value;
+        XLSX.writeFile(
+            wb,
+            `cash-book-report-${cashbookType}-${selectedYear}-${month}.xlsx`
+        );
+    }catch(error){
+        console.error(error);
+        alert("Excel export failed: " + error.message);
+    }
+}
+
+async function init(){
+    try{
+        const {data:{session}} = await db.auth.getSession();
+
+        if(!session){
+            location.href = "login.html";
+            return;
+        }
+
+        await loadSchool();
+        await loadSettings();
+        await loadAcademicYears();
+
+        document.getElementById("cashbookType").addEventListener("change",async e => {
+            cashbookType = e.target.value;
+            updateHeader();
+            await generateReport();
+        });
+
+        document.getElementById("academicYearSelect").addEventListener("change",async e => {
+            selectedYearId = e.target.value;
+            const row = academicYears.find(y => y.id === selectedYearId);
+            selectedYear = row?.year_name || "";
+            localStorage.setItem(
+                "school_cashbook_year_" + currentSchoolId,
+                selectedYearId
+            );
+            fillMonths();
+            updateHeader();
+            await generateReport();
+        });
+
+        document.getElementById("monthSelect").addEventListener("change",generateReport);
+
+        await generateReport();
+    }catch(error){
+        console.error(error);
+        alert(error.message);
+    }
+}
+
+init();
+</script>
+
+</body>
+</html>
