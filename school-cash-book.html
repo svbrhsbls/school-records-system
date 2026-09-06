@@ -1,0 +1,5064 @@
+<!DOCTYPE html>
+<html lang="kn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>School Cash Book</title>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+    margin:0;
+    background:#f3f7f4;
+    color:#17221b;
+    font-family:"Noto Sans Kannada","Nirmala UI",Arial,sans-serif
+}
+
+.school-header{
+    text-align:center;
+    background:#fff;
+    padding:16px 12px 12px;
+    border-bottom:1px solid #d8e2dc
+}
+
+.school-header .dept{
+    font-size:24px;
+    font-weight:800;
+    line-height:1.35
+}
+
+.school-header .school{
+    font-size:23px;
+    font-weight:800;
+    line-height:1.35
+}
+
+.school-header .year{
+    font-size:20px;
+    font-weight:800;
+    line-height:1.35
+}
+
+.wrap{
+    max-width:1500px;
+    margin:18px auto;
+    padding:0 14px
+}
+
+.card{
+    background:#fff;
+    border:1px solid #d7e2da;
+    border-radius:12px;
+    padding:16px;
+    margin-bottom:14px;
+    box-shadow:0 2px 8px #0000000b
+}
+
+h2{
+    margin:0 0 14px
+}
+
+h3{
+    margin-top:0
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(180px,1fr));
+    gap:10px
+}
+
+label{
+    display:block;
+    font-weight:700;
+    font-size:13px;
+    margin-bottom:5px
+}
+
+input,select{
+    width:100%;
+    height:42px;
+    padding:8px 10px;
+    border:1px solid #cbd5ce;
+    border-radius:7px;
+    font:inherit;
+    background:#fff
+}
+
+input:disabled{
+    background:#f1f5f2;
+    color:#4b5a51
+}
+
+button{
+    border:0;
+    border-radius:7px;
+    padding:10px 14px;
+    font:inherit;
+    font-weight:800;
+    cursor:pointer
+}
+
+.primary{
+    background:#146c3a;
+    color:#fff
+}
+
+.secondary{
+    background:#e8efeb
+}
+
+.danger{
+    background:#fee2e2;
+    color:#991b1b
+}
+
+.blue{
+    background:#2563eb;
+    color:#fff
+}
+
+.red{
+    background:#dc2626;
+    color:#fff
+}
+
+.actions{
+    display:flex;
+    gap:8px;
+    align-items:end;
+    flex-wrap:wrap
+}
+
+.small{
+    font-size:12px;
+    color:#65736a
+}
+
+.notice{
+    background:#fff7ed;
+    border:1px solid #fed7aa;
+    border-radius:8px;
+    padding:10px;
+    margin-top:10px
+}
+
+.type-box{
+    background:#eef8f1;
+    border:1px solid #b8d8c3;
+    border-radius:10px;
+    padding:12px
+}
+
+.type-box select{
+    font-weight:800;
+    font-size:16px
+}
+
+.tabs{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:14px
+}
+
+.tab{
+    padding:11px 18px;
+    border:1px solid #ccd8d0;
+    border-radius:8px;
+    background:#fff;
+    font-weight:800;
+    cursor:pointer
+}
+
+.tab.active{
+    background:#146c3a;
+    color:#fff;
+    border-color:#146c3a
+}
+
+.item-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:8px
+}
+
+.item-row{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    border:1px solid #dbe5df;
+    padding:7px;
+    border-radius:8px;
+    background:#fff
+}
+
+.item-row input{
+    height:38px
+}
+
+.empty{
+    text-align:center;
+    padding:25px;
+    color:#68766d
+}
+
+.table-wrap{
+    overflow:auto;
+    border:1px solid #d7e2da;
+    border-radius:8px
+}
+
+table{
+    border-collapse:collapse;
+    width:100%;
+    min-width:1100px
+}
+
+th,td{
+    border:1px solid #cfd8d2;
+    padding:7px;
+    text-align:center;
+    white-space:nowrap;
+    font-size:12px
+}
+
+thead tr.group th{
+    background:#edf5ef;
+    font-weight:800
+}
+
+thead tr.sub th{
+    background:#f8faf9;
+    font-weight:800
+}
+
+.summary{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-bottom:10px
+}
+
+.stat{
+    border:1px solid #d7e2da;
+    background:#f8fbf9;
+    border-radius:8px;
+    padding:9px 13px
+}
+
+.stat b{
+    display:block;
+    font-size:17px
+}
+
+.balance-box{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    border:1px solid #222;
+    margin:10px 0
+}
+
+.balance-box div{
+    padding:8px;
+    border-right:1px solid #222;
+    text-align:center
+}
+
+.balance-box div:last-child{
+    border-right:0
+}
+
+.spacer-row td{
+    padding:0!important
+}
+
+.report-title{
+    text-align:center;
+    font-weight:800;
+    font-size:18px;
+    margin-bottom:8px
+}
+
+.report-header{
+    text-align:center;
+    margin-bottom:6px;
+    border-bottom:1px solid #ddd;
+    padding-bottom:6px
+}
+
+.report-header .dept{
+    font-size:19px;
+    font-weight:800
+}
+
+.report-header .school{
+    font-size:18px;
+    font-weight:800
+}
+
+.report-header .year{
+    font-size:17px;
+    font-weight:800
+}
+
+.status{
+    margin-top:10px;
+    padding:10px;
+    border-radius:8px;
+    display:none
+}
+
+.status.success{
+    display:block;
+    background:#dcfce7;
+    color:#166534
+}
+
+.status.error{
+    display:block;
+    background:#fee2e2;
+    color:#991b1b
+}
+
+@media(max-width:900px){
+    .grid{
+        grid-template-columns:1fr 1fr
+    }
+
+    .item-grid{
+        grid-template-columns:1fr
+    }
+
+    .balance-box{
+        grid-template-columns:1fr
+    }
+}
+
+@media(max-width:600px){
+    .grid{
+        grid-template-columns:1fr
+    }
+
+    .school-header .dept{
+        font-size:19px
+    }
+
+    .school-header .school{
+        font-size:18px
+    }
+}
+
+@media print{
+
+    @page{
+        size:A4 landscape;
+        margin:7mm
+    }
+
+    body{
+        background:#fff
+    }
+
+    .no-print,
+    .tabs,
+    .type-box,
+    .control-card{
+        display:none!important
+    }
+
+    .wrap{
+        max-width:none;
+        margin:0;
+        padding:0
+    }
+
+    .card{
+        border:0;
+        box-shadow:none;
+        padding:0
+    }
+
+    .school-header{
+        display:none!important
+    }
+
+    .print-report{
+        page-break-after:always;
+        break-after:page
+    }
+
+    .print-report:last-child{
+        page-break-after:auto;
+        break-after:auto
+    }
+
+    table{
+        min-width:0;
+        width:100%;
+        table-layout:auto
+    }
+
+    th,td{
+        font-size:10px;
+        padding:5px 4px
+    }
+
+    .report-title{
+        font-size:20px
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header class="school-header">
+
+    <div class="dept" id="departmentName">
+        ಇಲಾಖೆಯ ಹೆಸರು
+    </div>
+
+    <div class="school" id="schoolName">
+        ಶಾಲೆಯ ಹೆಸರು
+    </div>
+
+    <div class="year">
+        ವರ್ಷ: <span id="academicYear">-</span>
+    </div>
+
+</header>
+
+
+<div class="wrap">
+
+    <!-- =====================================================
+         CASH BOOK CONTROL
+    ====================================================== -->
+
+    <div class="card control-card">
+
+        <div class="grid">
+
+            <div class="type-box">
+
+                <label>
+                    Cash Book Type / ಖಾತೆ ಪ್ರಕಾರ
+                </label>
+
+                <select id="cashbookType">
+
+                    <option value="ಸರ್ಕಾರಿ">
+                        ಸರ್ಕಾರಿ
+                    </option>
+
+                    <option value="ಸರ್ಕಾರೇತ್ತರ">
+                        ಸರ್ಕಾರೇತ್ತರ
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div>
+
+                <label>
+                    ಶೈಕ್ಷಣಿಕ ವರ್ಷ / Academic Year
+                </label>
+
+                <select id="academicYearSelect">
+
+                    <option value="">
+                        Loading...
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="notice" style="margin:0">
+
+                <b>Cash Book</b><br>
+
+                Opening → JAMA → JAMA Closing
+                → KHARCHU Opening → KHARCHU
+                → Final Closing
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         TABS
+    ====================================================== -->
+
+    <div class="tabs no-print">
+
+        <button
+            class="tab active"
+            data-page="opening"
+        >
+            Opening Balance
+        </button>
+
+        <button
+            class="tab"
+            data-page="jama"
+        >
+            ಜಮಾ Entry
+        </button>
+
+        <button
+            class="tab"
+            data-page="kharchu"
+        >
+            ಖರ್ಚು Entry
+        </button>
+
+        <button
+            class="tab"
+            data-page="items"
+        >
+            Item Master
+        </button>
+
+        <button
+            class="tab"
+            data-page="reports"
+        >
+            Reports / Print
+        </button>
+
+    </div>
+
+
+    <!-- =====================================================
+         OPENING BALANCE
+    ====================================================== -->
+
+    <section
+        id="opening"
+        class="page"
+    >
+
+        <div class="card">
+
+            <h2>
+                ಪ್ರಾರಂಭಿಕ ಶಿಲ್ಕು (Opening Balance)
+            </h2>
+
+            <p class="small">
+                Item Masterನಲ್ಲಿ ಇರುವ Items ಮಾತ್ರ ಇಲ್ಲಿ ಕಾಣುತ್ತವೆ.
+                ಮೊದಲ ವರ್ಷದ Opening Balance ನಮೂದಿಸಿ Save ಮಾಡಿ.
+                ಮುಂದಿನ Academic Yearಗೆ ಹಿಂದಿನ ವರ್ಷದ Final Closing
+                automatic Opening ಆಗುತ್ತದೆ.
+            </p>
+
+
+            <div
+                id="openingItems"
+                class="item-grid"
+            ></div>
+
+
+            <div class="balance-box">
+
+                <div>
+                    ಪ್ರಾರಂಭಿಕ ಶಿಲ್ಕು — ಒಟ್ಟು
+                    <br>
+                    <b id="openingTotal">₹0.00</b>
+                </div>
+
+                <div>
+                    ಸ್ಥಿತಿ
+                    <br>
+                    <b id="openingStatusText">
+                        ಹೊಸದು
+                    </b>
+                </div>
+
+                <div>
+                    Cash Book Type
+                    <br>
+                    <b id="openingTypeText">
+                        ಸರ್ಕಾರಿ
+                    </b>
+                </div>
+
+            </div>
+
+
+            <div class="actions no-print">
+
+                <button
+                    id="openingSaveBtn"
+                    class="primary"
+                    onclick="saveOpeningBalance()"
+                >
+                    💾 Save Opening Balance
+                </button>
+
+                <button
+                    id="openingEditBtn"
+                    class="secondary"
+                    onclick="editOpeningBalance()"
+                    style="display:none"
+                >
+                    ✏️ Edit
+                </button>
+
+            </div>
+
+
+            <div
+                id="openingMessage"
+                class="status"
+            ></div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         JAMA
+    ====================================================== -->
+
+    <section
+        id="jama"
+        class="page"
+        style="display:none"
+    >
+
+        <div class="card no-print">
+
+            <h2>
+                ಜಮಾ Entry
+            </h2>
+
+            <div class="grid">
+
+                <div>
+
+                    <label>
+                        ದಿನಾಂಕ
+                    </label>
+
+                    <input
+                        id="jamaDate"
+                        type="date"
+                    >
+
+                </div>
+
+
+                <div>
+
+                    <label>
+                        ವಿವರ
+                    </label>
+
+                    <input
+                        id="jamaDetails"
+                        type="text"
+                        placeholder="ಜಮಾ ವಿವರ"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <h3 style="margin-top:18px">
+                Item-wise JAMA
+            </h3>
+
+            <div
+                id="jamaItems"
+                class="item-grid"
+            ></div>
+
+
+            <div class="actions" style="margin-top:12px">
+
+                <button
+                    id="jamaSaveBtn"
+                    class="primary"
+                    onclick="saveEntry('jama')"
+                >
+                    💾 ಈ ದಿನದ JAMA Save
+                </button>
+
+                <button
+                    class="secondary"
+                    onclick="clearEntry('jama')"
+                >
+                    Clear
+                </button>
+
+                <button
+                    id="jamaCancelBtn"
+                    class="secondary"
+                    onclick="cancelEdit('jama')"
+                    style="display:none"
+                >
+                    ✖ Edit Cancel
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div
+                class="summary"
+                id="jamaSummary"
+            ></div>
+
+            <div class="table-wrap">
+
+                <table>
+
+                    <thead id="jamaHead"></thead>
+
+                    <tbody id="jamaBody"></tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         KHARCHU
+    ====================================================== -->
+
+    <section
+        id="kharchu"
+        class="page"
+        style="display:none"
+    >
+
+        <div class="card no-print">
+
+            <h2>
+                ಖರ್ಚು Entry
+            </h2>
+
+            <div class="grid">
+
+                <div>
+
+                    <label>
+                        ದಿನಾಂಕ
+                    </label>
+
+                    <input
+                        id="kharchuDate"
+                        type="date"
+                    >
+
+                </div>
+
+
+                <div>
+
+                    <label>
+                        ವಿವರ
+                    </label>
+
+                    <input
+                        id="kharchuDetails"
+                        type="text"
+                        placeholder="ಖರ್ಚಿನ ವಿವರ"
+                    >
+
+                </div>
+
+            </div>
+
+
+            <h3 style="margin-top:18px">
+                Item-wise KHARCHU
+            </h3>
+
+            <div
+                id="kharchuItems"
+                class="item-grid"
+            ></div>
+
+
+            <div class="actions" style="margin-top:12px">
+
+                <button
+                    id="kharchuSaveBtn"
+                    class="primary"
+                    onclick="saveEntry('kharchu')"
+                >
+                    💾 ಈ ದಿನದ ಖರ್ಚು Save
+                </button>
+
+                <button
+                    class="secondary"
+                    onclick="clearEntry('kharchu')"
+                >
+                    Clear
+                </button>
+
+                <button
+                    id="kharchuCancelBtn"
+                    class="secondary"
+                    onclick="cancelEdit('kharchu')"
+                    style="display:none"
+                >
+                    ✖ Edit Cancel
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <div class="card">
+
+            <div
+                class="summary"
+                id="kharchuSummary"
+            ></div>
+
+            <div class="table-wrap">
+
+                <table>
+
+                    <thead id="kharchuHead"></thead>
+
+                    <tbody id="kharchuBody"></tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         ITEM MASTER
+    ====================================================== -->
+
+    <section
+        id="items"
+        class="page"
+        style="display:none"
+    >
+
+        <div class="card no-print">
+
+            <h2>
+                Item Master
+            </h2>
+
+            <div class="notice">
+
+                <b>Cash Book Type:</b>
+                <span id="itemMasterType">
+                    ಸರ್ಕಾರಿ
+                </span>
+
+                <br><br>
+
+                ಇಲ್ಲಿ ನೀವು ಹಾಕುವ Items ಮಾತ್ರ
+                Opening Balance, JAMA Entry,
+                KHARCHU Entry ಮತ್ತು Reportsನಲ್ಲಿ
+                ಕಾಣುತ್ತವೆ.
+
+            </div>
+
+
+            <div
+                id="itemList"
+                class="item-grid"
+                style="margin-top:14px"
+            ></div>
+
+
+            <div
+                style="
+                margin-top:14px;
+                display:flex;
+                gap:8px;
+                "
+            >
+
+                <input
+                    id="newItem"
+                    placeholder="ಹೊಸ Item ಹೆಸರು"
+                >
+
+                <button
+                    class="primary"
+                    onclick="addItem()"
+                >
+                    + ಹೊಸ Item
+                </button>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         REPORTS
+    ====================================================== -->
+
+    <section
+        id="reports"
+        class="page"
+        style="display:none"
+    >
+
+        <div class="card no-print">
+
+            <h2>
+                Reports / Print / PDF / Excel
+            </h2>
+
+            <div class="grid">
+
+                <div>
+
+                    <label>
+                        From Date
+                    </label>
+
+                    <input
+                        id="fromDate"
+                        type="date"
+                    >
+
+                </div>
+
+
+                <div>
+
+                    <label>
+                        To Date
+                    </label>
+
+                    <input
+                        id="toDate"
+                        type="date"
+                    >
+
+                </div>
+
+
+                <div>
+
+                    <label>
+                        Report Type
+                    </label>
+
+                    <select id="reportType">
+
+                        <option value="both">
+                            JAMA + KHARCHU
+                        </option>
+
+                        <option value="jama">
+                            JAMA
+                        </option>
+
+                        <option value="kharchu">
+                            KHARCHU
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="actions">
+
+                    <button
+                        class="primary"
+                        onclick="printReport()"
+                    >
+                        🖨️ Print / PDF
+                    </button>
+
+                    <button
+                        class="blue"
+                        onclick="exportExcel()"
+                    >
+                        📊 Excel
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            <div class="notice">
+
+                <b>PDF:</b>
+                Print / PDF ಒತ್ತಿದ ನಂತರ Browser Print windowನಲ್ಲಿ
+                <b>Save as PDF</b> ಆಯ್ಕೆ ಮಾಡಬಹುದು.
+
+            </div>
+
+        </div>
+
+
+        <div id="reportPreview"></div>
+
+    </section>
+
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+
+<script>
+
+/* =========================================================
+   SUPABASE
+========================================================= */
+
+const SUPABASE_URL =
+    "https://xhskrohrrsxlfbdbhyji.supabase.co";
+
+const SUPABASE_KEY =
+    "sb_publishable_0amt5yG7ZIm6JD7oub6JTw_Hv5Nx2cl";
+
+
+const db =
+    window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let currentSchoolId = null;
+
+let currentSchoolUserId = null;
+
+let academicYears = [];
+
+let selectedYearId = null;
+
+let selectedYear = "";
+
+let firstAcademicYearId = null;
+
+let firstAcademicYearName = "";
+
+let cashbookType = "ಸರ್ಕಾರಿ";
+
+let items = [];
+
+let itemRows = [];
+
+let openingBalance = {};
+
+let jama = [];
+
+let kharchu = [];
+
+let editState = {
+    type:null,
+    date:null
+};
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function money(value){
+
+    return "₹" +
+        Number(value || 0).toLocaleString(
+            "en-IN",
+            {
+                minimumFractionDigits:2,
+                maximumFractionDigits:2
+            }
+        );
+
+}
+
+
+function esc(value){
+
+    return String(value ?? "")
+        .replace(/[&<>"']/g,function(m){
+
+            return {
+                "&":"&amp;",
+                "<":"&lt;",
+                ">":"&gt;",
+                '"':"&quot;",
+                "'":"&#039;"
+            }[m];
+
+        });
+
+}
+
+
+function safeDate(value){
+
+    return /^\d{4}-\d{2}-\d{2}$/.test(
+        value || ""
+    );
+
+}
+
+
+function displayDate(value){
+
+    if(!safeDate(value))
+        return value || "";
+
+    const parts =
+        value.split("-");
+
+    return (
+        parts[2] +
+        "-" +
+        parts[1] +
+        "-" +
+        parts[0]
+    );
+
+}
+
+
+function showStatus(
+    elementId,
+    message,
+    type
+){
+
+    const el =
+        document.getElementById(
+            elementId
+        );
+
+    if(!el)return;
+
+    el.textContent = message;
+
+    el.className =
+        "status " + type;
+
+}
+
+
+/* =========================================================
+   LOGIN
+========================================================= */
+
+async function checkLogin(){
+
+    const {
+        data,
+        error
+    } =
+        await db.auth.getSession();
+
+
+    if(error)
+        throw error;
+
+
+    if(!data.session){
+
+        window.location.href =
+            "login.html";
+
+        return false;
+
+    }
+
+
+    return true;
+
+}
+
+
+/* =========================================================
+   SCHOOL
+========================================================= */
+
+async function loadSchool(){
+
+    const {
+        data:{user},
+        error:userError
+    } =
+        await db.auth.getUser();
+
+
+    if(userError)
+        throw userError;
+
+
+    if(!user)
+        throw new Error(
+            "Login session ಇಲ್ಲ."
+        );
+
+
+    const {
+        data,
+        error
+    } =
+        await db
+        .from("school_users")
+        .select(
+            "id,user_id,school_id,is_active"
+        )
+        .eq(
+            "user_id",
+            user.id
+        )
+        .eq(
+            "is_active",
+            true
+        )
+        .maybeSingle();
+
+
+    if(error)
+        throw error;
+
+
+    if(!data)
+        throw new Error(
+            "ಈ Login userಗೆ School mapping ಇಲ್ಲ."
+        );
+
+
+    currentSchoolId =
+        data.school_id;
+
+    currentSchoolUserId =
+        data.user_id;
+
+}
+
+
+/* =========================================================
+   SCHOOL SETTINGS
+========================================================= */
+
+async function loadSettings(){
+
+    const {
+        data,
+        error
+    } =
+        await db
+        .from(
+            "school_cashbook_settings"
+        )
+        .select(
+            "department_name,school_name"
+        )
+        .eq(
+            "school_id",
+            currentSchoolId
+        )
+        .maybeSingle();
+
+
+    if(error)
+        throw error;
+
+
+    document.getElementById(
+        "departmentName"
+    ).textContent =
+        data?.department_name ||
+        "ಇಲಾಖೆಯ ಹೆಸರು";
+
+
+    document.getElementById(
+        "schoolName"
+    ).textContent =
+        data?.school_name ||
+        "ಶಾಲೆಯ ಹೆಸರು";
+
+}
+
+
+/* =========================================================
+   ACADEMIC YEARS
+========================================================= */
+
+async function loadAcademicYears(){
+
+    const {
+        data,
+        error
+    } =
+        await db
+        .from(
+            "school_cashbook_academic_years"
+        )
+        .select(
+            "id,year_name,start_date,end_date,is_active"
+        )
+        .eq(
+            "school_id",
+            currentSchoolId
+        )
+        .order(
+            "start_date",
+            {
+                ascending:true
+            }
+        );
+
+
+    if(error)
+        throw error;
+
+
+    academicYears =
+        data || [];
+
+
+    if(!academicYears.length){
+
+        throw new Error(
+            "Settingsನಲ್ಲಿ Academic Year ಸೇರಿಸಿ."
+        );
+
+    }
+
+
+    const first =
+        academicYears[0];
+
+
+    firstAcademicYearId =
+        first.id;
+
+
+    firstAcademicYearName =
+        first.year_name;
+
+
+    const active =
+        academicYears.find(
+            y => y.is_active
+        ) || first;
+
+
+    selectedYearId =
+        active.id;
+
+
+    selectedYear =
+        active.year_name;
+
+
+    const saved =
+        localStorage.getItem(
+            "school_cashbook_year_" +
+            currentSchoolId
+        );
+
+
+    if(saved){
+
+        const savedRow =
+            academicYears.find(
+                y => y.id === saved
+            );
+
+        if(savedRow){
+
+            selectedYearId =
+                savedRow.id;
+
+            selectedYear =
+                savedRow.year_name;
+
+        }
+
+    }
+
+
+    renderAcademicYears();
+
+    updateHeader();
+
+}
+
+
+/* =========================================================
+   YEAR SELECT
+========================================================= */
+
+function renderAcademicYears(){
+
+    const select =
+        document.getElementById(
+            "academicYearSelect"
+        );
+
+
+    select.innerHTML =
+        academicYears
+        .map(function(y){
+
+            return `
+                <option value="${esc(y.id)}">
+                    ${esc(y.year_name)}
+                    ${y.is_active ? " — Active" : ""}
+                </option>
+            `;
+
+        })
+        .join("");
+
+
+    select.value =
+        selectedYearId;
+
+}
+
+
+function updateHeader(){
+
+    document.getElementById(
+        "academicYear"
+    ).textContent =
+        selectedYear || "-";
+
+}
+
+
+/* =========================================================
+   CHANGE YEAR
+========================================================= */
+
+async function changeYear(){
+
+    const id =
+        document.getElementById(
+            "academicYearSelect"
+        ).value;
+
+
+    const row =
+        academicYears.find(
+            y => y.id === id
+        );
+
+
+    if(!row)return;
+
+
+    selectedYearId =
+        row.id;
+
+    selectedYear =
+        row.year_name;
+
+
+    localStorage.setItem(
+        "school_cashbook_year_" +
+        currentSchoolId,
+        selectedYearId
+    );
+
+
+    updateHeader();
+
+
+    await loadYearData();
+
+    renderAll();
+
+}
+
+
+/* =========================================================
+   CHANGE CASH BOOK TYPE
+========================================================= */
+
+async function changeCashBookType(){
+
+    cashbookType =
+        document.getElementById(
+            "cashbookType"
+        ).value;
+
+
+    document.getElementById(
+        "itemMasterType"
+    ).textContent =
+        cashbookType;
+
+
+    document.getElementById(
+        "openingTypeText"
+    ).textContent =
+        cashbookType;
+
+
+    editState = {
+        type:null,
+        date:null
+    };
+
+
+    await loadItems();
+
+    await loadYearData();
+
+    renderAll();
+
+}
+
+
+/* =========================================================
+   ITEMS
+========================================================= */
+
+async function loadItems(){
+
+    const {
+        data,
+        error
+    } =
+        await db
+        .from(
+            "school_cashbook_items"
+        )
+        .select(
+            "id,item_name,sort_order,is_active"
+        )
+        .eq(
+            "school_id",
+            currentSchoolId
+        )
+        .eq(
+            "cashbook_type",
+            cashbookType
+        )
+        .eq(
+            "is_active",
+            true
+        )
+        .order(
+            "sort_order",
+            {
+                ascending:true
+            }
+        )
+        .order(
+            "created_at",
+            {
+                ascending:true
+            }
+        );
+
+
+    if(error)
+        throw error;
+
+
+    items =
+        data || [];
+
+
+    renderItemMaster();
+
+    renderEntryItems();
+
+    renderOpeningItems();
+
+}
+
+
+/* =========================================================
+   ITEM MASTER UI
+========================================================= */
+
+function renderItemMaster(){
+
+    const box =
+        document.getElementById(
+            "itemList"
+        );
+
+
+    if(!items.length){
+
+        box.innerHTML =
+            `<div class="empty">
+                ಈ Cash Book Typeಗೆ ಇನ್ನೂ Items ಇಲ್ಲ.
+             </div>`;
+
+        return;
+
+    }
+
+
+    box.innerHTML =
+        items.map(function(item){
+
+            return `
+                <div
+                    class="item-row"
+                    id="master_${item.id}"
+                >
+
+                    <input
+                        id="input_${item.id}"
+                        value="${esc(item.item_name)}"
+                        disabled
+                        style="flex:1;font-weight:600"
+                    >
+
+                    <button
+                        class="secondary"
+                        onclick="editItem('${item.id}')"
+                    >
+                        ✏️ Edit
+                    </button>
+
+                    <button
+                        class="danger"
+                        onclick="deleteItem('${item.id}')"
+                    >
+                        🗑️ Delete
+                    </button>
+
+                </div>
+            `;
+
+        })
+        .join("");
+
+}
+
+
+/* =========================================================
+   ADD ITEM
+========================================================= */
+
+async function addItem(){
+
+    const input =
+        document.getElementById(
+            "newItem"
+        );
+
+
+    const name =
+        input.value.trim();
+
+
+    if(!name){
+
+        alert(
+            "Item ಹೆಸರು ನಮೂದಿಸಿ."
+        );
+
+        return;
+
+    }
+
+
+    if(
+        items.some(
+            x =>
+                x.item_name
+                .trim()
+                .toLowerCase()
+                ===
+                name.toLowerCase()
+        )
+    ){
+
+        alert(
+            "ಈ Item ಈಗಾಗಲೇ ಇದೆ."
+        );
+
+        return;
+
+    }
+
+
+    try{
+
+        const maxOrder =
+            items.length
+            ? Math.max(
+                ...items.map(
+                    x =>
+                        Number(
+                            x.sort_order || 0
+                        )
+                )
+            )
+            : -1;
+
+
+        const {
+            error
+        } =
+            await db
+            .from(
+                "school_cashbook_items"
+            )
+            .insert({
+
+                school_id:
+                    currentSchoolId,
+
+                cashbook_type:
+                    cashbookType,
+
+                item_name:
+                    name,
+
+                sort_order:
+                    maxOrder + 1,
+
+                is_active:
+                    true
+
+            });
+
+
+        if(error)
+            throw error;
+
+
+        input.value = "";
+
+
+        await loadItems();
+
+        renderAll();
+
+
+    }catch(error){
+
+        console.error(error);
+
+        alert(
+            "Item save failed: " +
+            error.message
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   EDIT ITEM
+========================================================= */
+
+function editItem(id){
+
+    const input =
+        document.getElementById(
+            "input_" + id
+        );
+
+
+    if(!input)return;
+
+
+    input.disabled = false;
+
+    input.focus();
+
+    input.select();
+
+
+    const row =
+        document.getElementById(
+            "master_" + id
+        );
+
+
+    const buttons =
+        row.querySelectorAll(
+            "button"
+        );
+
+
+    buttons[0].textContent =
+        "💾 Save";
+
+
+    buttons[0].onclick =
+        function(){
+
+            saveItem(id);
+
+        };
+
+}
+
+
+/* =========================================================
+   SAVE ITEM
+========================================================= */
+
+async function saveItem(id){
+
+    const input =
+        document.getElementById(
+            "input_" + id
+        );
+
+
+    const newName =
+        input.value.trim();
+
+
+    if(!newName){
+
+        alert(
+            "Item ಹೆಸರು ಖಾಲಿ ಇರಬಾರದು."
+        );
+
+        return;
+
+    }
+
+
+    const oldItem =
+        items.find(
+            x => x.id === id
+        );
+
+
+    if(!oldItem)return;
+
+
+    if(
+        items.some(
+            x =>
+                x.id !== id &&
+                x.item_name
+                .trim()
+                .toLowerCase()
+                ===
+                newName.toLowerCase()
+        )
+    ){
+
+        alert(
+            "ಈ Item ಈಗಾಗಲೇ ಇದೆ."
+        );
+
+        return;
+
+    }
+
+
+    try{
+
+        /*
+         * Item Master name ಮಾತ್ರ update.
+         * Entries item_id ಮೂಲಕ connect ಆಗಿರುವುದರಿಂದ
+         * ಹಳೆಯ data connection ಉಳಿಯುತ್ತದೆ.
+         */
+
+        const {
+            error
+        } =
+            await db
+            .from(
+                "school_cashbook_items"
+            )
+            .update({
+
+                item_name:
+                    newName
+
+            })
+            .eq(
+                "id",
+                id
+            )
+            .eq(
+                "school_id",
+                currentSchoolId
+            )
+            .eq(
+                "cashbook_type",
+                cashbookType
+            );
+
+
+        if(error)
+            throw error;
+
+
+        await loadItems();
+
+        await loadYearData();
+
+        renderAll();
+
+
+    }catch(error){
+
+        console.error(error);
+
+        alert(
+            "Item update failed: " +
+            error.message
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   DELETE ITEM
+========================================================= */
+
+async function deleteItem(id){
+
+    const item =
+        items.find(
+            x => x.id === id
+        );
+
+
+    if(!item)return;
+
+
+    if(
+        !confirm(
+            `"${item.item_name}" Item ಅನ್ನು Delete ಮಾಡಬೇಕೇ?`
+        )
+    )
+        return;
+
+
+    try{
+
+        /*
+         * Item ಅನ್ನು databaseನಿಂದ delete ಮಾಡುವ ಮೊದಲು
+         * ಅದರ opening/entries ಇದ್ದರೆ foreign key
+         * cascade ಮೂಲಕ ಹೋಗಬಹುದು.
+         *
+         * ಆದ್ದರಿಂದ ಇಲ್ಲಿ soft delete ಮಾಡದೆ
+         * ನೇರವಾಗಿ delete ಮಾಡುತ್ತಿದ್ದೇವೆ.
+         */
+
+        const {
+            error
+        } =
+            await db
+            .from(
+                "school_cashbook_items"
+            )
+            .delete()
+            .eq(
+                "id",
+                id
+            )
+            .eq(
+                "school_id",
+                currentSchoolId
+            )
+            .eq(
+                "cashbook_type",
+                cashbookType
+            );
+
+
+        if(error)
+            throw error;
+
+
+        await loadItems();
+
+        await loadYearData();
+
+        renderAll();
+
+
+    }catch(error){
+
+        console.error(error);
+
+        alert(
+            "Item delete failed: " +
+            error.message
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   LOAD YEAR DATA
+========================================================= */
+
+async function loadYearData(){
+
+    openingBalance = {};
+
+    jama = [];
+
+    kharchu = [];
+
+
+    /*
+     * OPENING
+     */
+
+    const {
+        data:openingData,
+        error:openingError
+    } =
+        await db
+        .from(
+            "school_cashbook_opening_balances"
+        )
+        .select(
+            "id,item_id,opening_balance"
+        )
+        .eq(
+            "school_id",
+            currentSchoolId
+        )
+        .eq(
+            "academic_year_id",
+            selectedYearId
+        )
+        .eq(
+            "cashbook_type",
+            cashbookType
+        );
+
+
+    if(openingError)
+        throw openingError;
+
+
+    (openingData || [])
+    .forEach(function(row){
+
+        openingBalance[
+            row.item_id
+        ] =
+            Number(
+                row.opening_balance || 0
+            );
+
+    });
+
+
+    /*
+     * ENTRIES
+     */
+
+    const {
+        data:entryData,
+        error:entryError
+    } =
+        await db
+        .from(
+            "school_cashbook_entries"
+        )
+        .select(
+            "id,entry_type,entry_date,item_id,amount,details,created_at"
+        )
+        .eq(
+            "school_id",
+            currentSchoolId
+        )
+        .eq(
+            "academic_year_id",
+            selectedYearId
+        )
+        .eq(
+            "cashbook_type",
+            cashbookType
+        )
+        .order(
+            "entry_date",
+            {
+                ascending:true
+            }
+        )
+        .order(
+            "created_at",
+            {
+                ascending:true
+            }
+        );
+
+
+    if(entryError)
+        throw entryError;
+
+
+    (entryData || [])
+    .forEach(function(row){
+
+        const item =
+            items.find(
+                x => x.id === row.item_id
+            );
+
+
+        if(!item)return;
+
+
+        const obj = {
+
+            id:
+                row.id,
+
+            date:
+                row.entry_date,
+
+            itemId:
+                row.item_id,
+
+            item:
+                item.item_name,
+
+            amount:
+                Number(
+                    row.amount || 0
+                ),
+
+            details:
+                row.details || "",
+
+            createdAt:
+                row.created_at
+
+        };
+
+
+        if(
+            row.entry_type === "jama"
+        )
+            jama.push(obj);
+
+        else if(
+            row.entry_type === "kharchu"
+        )
+            kharchu.push(obj);
+
+    });
+
+
+    /*
+     * NEXT YEAR AUTOMATIC OPENING
+     */
+
+    if(
+        selectedYearId !==
+        firstAcademicYearId
+    ){
+
+        const index =
+            academicYears.findIndex(
+                x =>
+                    x.id ===
+                    selectedYearId
+            );
+
+
+        if(index > 0){
+
+            const previousYear =
+                academicYears[index - 1];
+
+
+            const previousClosing =
+                await calculateYearClosing(
+                    previousYear.id
+                );
+
+
+            if(previousClosing){
+
+                openingBalance =
+                    previousClosing;
+
+            }
+
+        }
+
+    }
+
+}
+
+
+/* =========================================================
+   PREVIOUS YEAR CLOSING
+========================================================= */
+
+async function calculateYearClosing(
+    yearId
+){
+
+    const {
+        data:openingData,
+        error:openingError
+    } =
+        await db
+        .from(
+            "school_cashbook_opening_balances"
+        )
+        .select(
+            "item_id,opening_balance"
+        )
+        .eq(
+            "school_id",
+            currentSchoolId
+        )
+        .eq(
+            "academic_year_id",
+            yearId
+        )
+        .eq(
+            "cashbook_type",
+            cashbookType
+        );
+
+
+    if(openingError)
+        throw openingError;
+
+
+    const result = {};
+
+
+    items.forEach(function(item){
+
+        result[item.id] = 0;
+
+    });
+
+
+    (openingData || [])
+    .forEach(function(row){
+
+        if(
+            result.hasOwnProperty(
+                row.item_id
+            )
+        ){
+
+            result[row.item_id] =
+                Number(
+                    row.opening_balance || 0
+                );
+
+        }
+
+    });
+
+
+    const {
+        data:entries,
+        error:entryError
+    } =
+        await db
+        .from(
+            "school_cashbook_entries"
+        )
+        .select(
+            "entry_type,item_id,amount"
+        )
+        .eq(
+            "school_id",
+            currentSchoolId
+        )
+        .eq(
+            "academic_year_id",
+            yearId
+        )
+        .eq(
+            "cashbook_type",
+            cashbookType
+        );
+
+
+    if(entryError)
+        throw entryError;
+
+
+    (entries || [])
+    .forEach(function(row){
+
+        if(
+            !result.hasOwnProperty(
+                row.item_id
+            )
+        )
+            return;
+
+
+        const amount =
+            Number(
+                row.amount || 0
+            );
+
+
+        if(
+            row.entry_type === "jama"
+        )
+            result[row.item_id] += amount;
+
+
+        if(
+            row.entry_type === "kharchu"
+        )
+            result[row.item_id] -= amount;
+
+    });
+
+
+    return result;
+
+}
+
+
+/* =========================================================
+   OPENING UI
+========================================================= */
+
+function renderOpeningItems(){
+
+    const box =
+        document.getElementById(
+            "openingItems"
+        );
+
+
+    if(!items.length){
+
+        box.innerHTML =
+            `<div class="empty">
+                ಮೊದಲು Item Masterನಲ್ಲಿ Item ಸೇರಿಸಿ.
+             </div>`;
+
+        return;
+
+    }
+
+
+    const isFirstYear =
+        selectedYearId ===
+        firstAcademicYearId;
+
+
+    const hasOpening =
+        Object.keys(
+            openingBalance
+        ).length > 0;
+
+
+    box.innerHTML =
+        items.map(function(item){
+
+            const value =
+                openingBalance[item.id];
+
+
+            return `
+                <div class="item-row">
+
+                    <label
+                        style="flex:1;margin:0"
+                    >
+                        ${esc(item.item_name)}
+                    </label>
+
+                    <input
+                        id="opening_${item.id}"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value="${
+                            value !== undefined
+                            ? value
+                            : 0
+                        }"
+                        ${
+                            isFirstYear && !hasOpening
+                            ? ""
+                            : "disabled"
+                        }
+                    >
+
+                </div>
+            `;
+
+        })
+        .join("");
+
+
+    const total =
+        items.reduce(
+            function(sum,item){
+
+                return sum +
+                    Number(
+                        openingBalance[item.id] || 0
+                    );
+
+            },
+            0
+        );
+
+
+    document.getElementById(
+        "openingTotal"
+    ).textContent =
+        money(total);
+
+
+    document.getElementById(
+        "openingTypeText"
+    ).textContent =
+        cashbookType;
+
+
+    const status =
+        document.getElementById(
+            "openingStatusText"
+        );
+
+
+    if(!isFirstYear){
+
+        status.textContent =
+            "Previous Year Closing → Automatic";
+
+    }else{
+
+        status.textContent =
+            hasOpening
+            ? "Saved"
+            : "ಹೊಸದಾಗಿದೆ";
+
+    }
+
+
+    const saveBtn =
+        document.getElementById(
+            "openingSaveBtn"
+        );
+
+
+    const editBtn =
+        document.getElementById(
+            "openingEditBtn"
+        );
+
+
+    if(!isFirstYear){
+
+        saveBtn.style.display =
+            "none";
+
+        editBtn.style.display =
+            "none";
+
+    }else{
+
+        saveBtn.style.display =
+            hasOpening
+            ? "none"
+            : "inline-block";
+
+        editBtn.style.display =
+            hasOpening
+            ? "inline-block"
+            : "none";
+
+    }
+
+}
+
+
+/* =========================================================
+   SAVE OPENING
+========================================================= */
+
+async function saveOpeningBalance(){
+
+    if(
+        selectedYearId !==
+        firstAcademicYearId
+    ){
+
+        alert(
+            "ಈ ವರ್ಷದ Opening Balance ಹಿಂದಿನ ವರ್ಷದ Closingನಿಂದ automatic ಆಗಿದೆ."
+        );
+
+        return;
+
+    }
+
+
+    const payload =
+        items.map(function(item){
+
+            const input =
+                document.getElementById(
+                    "opening_" +
+                    item.id
+                );
+
+
+            return {
+
+                school_id:
+                    currentSchoolId,
+
+                academic_year_id:
+                    selectedYearId,
+
+                cashbook_type:
+                    cashbookType,
+
+                item_id:
+                    item.id,
+
+                opening_balance:
+                    Number(
+                        input?.value || 0
+                    )
+
+            };
+
+        });
+
+
+    try{
+
+        const {
+            error
+        } =
+            await db
+            .from(
+                "school_cashbook_opening_balances"
+            )
+            .upsert(
+                payload,
+                {
+                    onConflict:
+                    "school_id,academic_year_id,cashbook_type,item_id"
+                }
+            );
+
+
+        if(error)
+            throw error;
+
+
+        await loadYearData();
+
+        renderAll();
+
+
+        showStatus(
+            "openingMessage",
+            "Opening Balance ಯಶಸ್ವಿಯಾಗಿ Save ಆಗಿದೆ.",
+            "success"
+        );
+
+
+    }catch(error){
+
+        console.error(error);
+
+        showStatus(
+            "openingMessage",
+            "Opening Balance save failed: " +
+            error.message,
+            "error"
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   EDIT OPENING
+========================================================= */
+
+function editOpeningBalance(){
+
+    if(
+        selectedYearId !==
+        firstAcademicYearId
+    )
+        return;
+
+
+    items.forEach(function(item){
+
+        const input =
+            document.getElementById(
+                "opening_" +
+                item.id
+            );
+
+
+        if(input)
+            input.disabled = false;
+
+    });
+
+
+    document.getElementById(
+        "openingSaveBtn"
+    ).style.display =
+        "inline-block";
+
+
+    document.getElementById(
+        "openingEditBtn"
+    ).style.display =
+        "none";
+
+}
+
+
+/* =========================================================
+   ENTRY INPUTS
+========================================================= */
+
+function renderEntryItems(){
+
+    const jamaBox =
+        document.getElementById(
+            "jamaItems"
+        );
+
+    const khBox =
+        document.getElementById(
+            "kharchuItems"
+        );
+
+
+    if(!items.length){
+
+        jamaBox.innerHTML =
+            `<div class="empty">
+                Item Masterನಲ್ಲಿ Item ಇಲ್ಲ.
+             </div>`;
+
+        khBox.innerHTML =
+            `<div class="empty">
+                Item Masterನಲ್ಲಿ Item ಇಲ್ಲ.
+             </div>`;
+
+        return;
+
+    }
+
+
+    jamaBox.innerHTML =
+        items.map(function(item){
+
+            return `
+                <div class="item-row">
+
+                    <label
+                        style="flex:1;margin:0"
+                    >
+                        ${esc(item.item_name)}
+                    </label>
+
+                    <input
+                        id="jama_${item.id}"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="₹ 0.00"
+                    >
+
+                </div>
+            `;
+
+        })
+        .join("");
+
+
+    khBox.innerHTML =
+        items.map(function(item){
+
+            return `
+                <div class="item-row">
+
+                    <label
+                        style="flex:1;margin:0"
+                    >
+                        ${esc(item.item_name)}
+                    </label>
+
+                    <input
+                        id="kharchu_${item.id}"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="₹ 0.00"
+                    >
+
+                </div>
+            `;
+
+        })
+        .join("");
+
+}
+
+
+/* =========================================================
+   CHECK OPENING
+========================================================= */
+
+function ensureOpening(){
+
+    if(
+        Object.keys(
+            openingBalance
+        ).length === 0
+    ){
+
+        alert(
+            "ಮೊದಲು Opening Balance Save ಮಾಡಿ."
+        );
+
+
+        document.querySelector(
+            '.tab[data-page="opening"]'
+        ).click();
+
+
+        return false;
+
+    }
+
+
+    return true;
+
+}
+
+
+/* =========================================================
+   SAVE JAMA / KHARCHU
+========================================================= */
+
+async function saveEntry(type){
+
+    if(!ensureOpening())
+        return;
+
+
+    const date =
+        document.getElementById(
+            type === "jama"
+            ? "jamaDate"
+            : "kharchuDate"
+        ).value;
+
+
+    const details =
+        document.getElementById(
+            type === "jama"
+            ? "jamaDetails"
+            : "kharchuDetails"
+        ).value.trim();
+
+
+    if(!safeDate(date)){
+
+        alert(
+            "ದಿನಾಂಕ ಆಯ್ಕೆ ಮಾಡಿ."
+        );
+
+        return;
+
+    }
+
+
+    const rows = [];
+
+
+    items.forEach(function(item){
+
+        const input =
+            document.getElementById(
+                type +
+                "_" +
+                item.id
+            );
+
+
+        const amount =
+            Number(
+                input?.value || 0
+            );
+
+
+        if(amount > 0){
+
+            rows.push({
+
+                item_id:
+                    item.id,
+
+                amount:
+                    amount
+
+            });
+
+        }
+
+    });
+
+
+    if(!rows.length){
+
+        alert(
+            "ಕನಿಷ್ಠ ಒಂದು Itemಗೆ Amount ನಮೂದಿಸಿ."
+        );
+
+        return;
+
+    }
+
+
+    try{
+
+        /*
+         * Edit mode:
+         * ಆ ದಿನದ type entries delete ಮಾಡಿ
+         * ಹೊಸ values ಮತ್ತೆ insert ಮಾಡಲಾಗುತ್ತದೆ.
+         */
+
+        if(
+            editState.type === type &&
+            editState.date === date
+        ){
+
+            const {
+                error
+            } =
+                await db
+                .from(
+                    "school_cashbook_entries"
+                )
+                .delete()
+                .eq(
+                    "school_id",
+                    currentSchoolId
+                )
+                .eq(
+                    "academic_year_id",
+                    selectedYearId
+                )
+                .eq(
+                    "cashbook_type",
+                    cashbookType
+                )
+                .eq(
+                    "entry_type",
+                    type
+                )
+                .eq(
+                    "entry_date",
+                    date
+                );
+
+
+            if(error)
+                throw error;
+
+        }
+
+
+        for(
+            const row of rows
+        ){
+
+            const {
+                error
+            } =
+                await db
+                .from(
+                    "school_cashbook_entries"
+                )
+                .insert({
+
+                    school_id:
+                        currentSchoolId,
+
+                    academic_year_id:
+                        selectedYearId,
+
+                    cashbook_type:
+                        cashbookType,
+
+                    entry_type:
+                        type,
+
+                    entry_date:
+                        date,
+
+                    item_id:
+                        row.item_id,
+
+                    amount:
+                        row.amount,
+
+                    details:
+                        details
+
+                });
+
+
+            if(error)
+                throw error;
+
+        }
+
+
+        editState = {
+            type:null,
+            date:null
+        };
+
+
+        await loadYearData();
+
+        clearEntry(type);
+
+        updateEntryButtons(type);
+
+        renderAll();
+
+
+    }catch(error){
+
+        console.error(error);
+
+        alert(
+            "Save failed: " +
+            error.message
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   CLEAR ENTRY
+========================================================= */
+
+function clearEntry(type){
+
+    const prefix =
+        type === "jama"
+        ? "jama_"
+        : "kharchu_";
+
+
+    document
+    .querySelectorAll(
+        `[id^="${prefix}"]`
+    )
+    .forEach(function(input){
+
+        input.value = "";
+
+    });
+
+
+    document.getElementById(
+        type === "jama"
+        ? "jamaDetails"
+        : "kharchuDetails"
+    ).value = "";
+
+}
+
+
+/* =========================================================
+   EDIT ENTRY
+========================================================= */
+
+function editDate(type,date){
+
+    const source =
+        type === "jama"
+        ? jama
+        : kharchu;
+
+
+    const entries =
+        source.filter(
+            x => x.date === date
+        );
+
+
+    if(!entries.length){
+
+        alert(
+            "ಈ ದಿನದ Entry ಇಲ್ಲ."
+        );
+
+        return;
+
+    }
+
+
+    document.getElementById(
+        type === "jama"
+        ? "jamaDate"
+        : "kharchuDate"
+    ).value = date;
+
+
+    document.getElementById(
+        type === "jama"
+        ? "jamaDetails"
+        : "kharchuDetails"
+    ).value =
+        entries
+        .map(x => x.details)
+        .find(x => x) || "";
+
+
+    clearEntry(type);
+
+
+    entries.forEach(function(entry){
+
+        const input =
+            document.getElementById(
+                type +
+                "_" +
+                entry.itemId
+            );
+
+
+        if(input){
+
+            input.value =
+                Number(
+                    entry.amount || 0
+                );
+
+        }
+
+    });
+
+
+    editState = {
+
+        type:
+            type,
+
+        date:
+            date
+
+    };
+
+
+    updateEntryButtons(type);
+
+
+    document.querySelector(
+        `.tab[data-page="${type}"]`
+    ).click();
+
+
+    window.scrollTo({
+        top:0,
+        behavior:"smooth"
+    });
+
+}
+
+
+/* =========================================================
+   UPDATE ENTRY BUTTONS
+========================================================= */
+
+function updateEntryButtons(type){
+
+    const saveBtn =
+        document.getElementById(
+            type === "jama"
+            ? "jamaSaveBtn"
+            : "kharchuSaveBtn"
+        );
+
+
+    const cancelBtn =
+        document.getElementById(
+            type === "jama"
+            ? "jamaCancelBtn"
+            : "kharchuCancelBtn"
+        );
+
+
+    if(
+        editState.type === type
+    ){
+
+        saveBtn.textContent =
+            "💾 Update Save";
+
+        cancelBtn.style.display =
+            "inline-block";
+
+    }else{
+
+        saveBtn.textContent =
+            type === "jama"
+            ? "💾 ಈ ದಿನದ JAMA Save"
+            : "💾 ಈ ದಿನದ ಖರ್ಚು Save";
+
+        cancelBtn.style.display =
+            "none";
+
+    }
+
+}
+
+
+/* =========================================================
+   CANCEL EDIT
+========================================================= */
+
+function cancelEdit(type){
+
+    editState = {
+
+        type:null,
+        date:null
+
+    };
+
+
+    clearEntry(type);
+
+    updateEntryButtons(type);
+
+}
+
+
+/* =========================================================
+   DELETE DATE
+========================================================= */
+
+async function deleteDate(
+    type,
+    date
+){
+
+    if(
+        !confirm(
+            `${displayDate(date)} ದಿನದ ${
+                type === "jama"
+                ? "ಜಮಾ"
+                : "ಖರ್ಚು"
+            } entries ಅಳಿಸಬೇಕೇ?`
+        )
+    )
+        return;
+
+
+    try{
+
+        const {
+            error
+        } =
+            await db
+            .from(
+                "school_cashbook_entries"
+            )
+            .delete()
+            .eq(
+                "school_id",
+                currentSchoolId
+            )
+            .eq(
+                "academic_year_id",
+                selectedYearId
+            )
+            .eq(
+                "cashbook_type",
+                cashbookType
+            )
+            .eq(
+                "entry_type",
+                type
+            )
+            .eq(
+                "entry_date",
+                date
+            );
+
+
+        if(error)
+            throw error;
+
+
+        editState = {
+            type:null,
+            date:null
+        };
+
+
+        await loadYearData();
+
+        renderAll();
+
+
+    }catch(error){
+
+        alert(
+            "Delete failed: " +
+            error.message
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   DATES
+========================================================= */
+
+function allEntryDates(){
+
+    return [
+        ...new Set(
+            [
+                ...jama,
+                ...kharchu
+            ]
+            .map(x => x.date)
+            .filter(Boolean)
+        )
+    ]
+    .sort();
+
+}
+
+
+/* =========================================================
+   DAILY CALCULATION
+========================================================= */
+
+function balanceRows(
+    fromDate = "",
+    toDate = ""
+){
+
+    const allDates =
+        allEntryDates();
+
+
+    const selectedDates =
+        allDates.filter(function(date){
+
+            return (
+                (!fromDate || date >= fromDate) &&
+                (!toDate || date <= toDate)
+            );
+
+        });
+
+
+    if(!selectedDates.length)
+        return [];
+
+
+    const runningOpening = {};
+
+
+    items.forEach(function(item){
+
+        runningOpening[item.id] =
+            Number(
+                openingBalance[item.id] || 0
+            );
+
+    });
+
+
+    const rows = [];
+
+
+    /*
+     * ಅತ್ಯಂತ ಮುಖ್ಯ:
+     *
+     * Opening
+     * ↓
+     * JAMA
+     * ↓
+     * JAMA Closing
+     * ↓
+     * KHARCHU Opening
+     * ↓
+     * KHARCHU
+     * ↓
+     * Final Closing
+     *
+     * Entry ಇಲ್ಲದ typeಗೆ
+     * "ಯಾವುದೇ ... ಇರುವುದಿಲ್ಲ"
+     */
+
+
+    allDates.forEach(function(date){
+
+        const jamaMap = {};
+
+        const kharchuMap = {};
+
+        const jamaClosing = {};
+
+        const kharchuOpening = {};
+
+        const kharchuClosing = {};
+
+
+        items.forEach(function(item){
+
+            const j =
+                jama
+                .filter(
+                    x =>
+                        x.date === date &&
+                        x.itemId === item.id
+                )
+                .reduce(
+                    (sum,x) =>
+                        sum +
+                        Number(
+                            x.amount || 0
+                        ),
+                    0
+                );
+
+
+            const k =
+                kharchu
+                .filter(
+                    x =>
+                        x.date === date &&
+                        x.itemId === item.id
+                )
+                .reduce(
+                    (sum,x) =>
+                        sum +
+                        Number(
+                            x.amount || 0
+                        ),
+                    0
+                );
+
+
+            jamaMap[item.id] =
+                j;
+
+
+            kharchuMap[item.id] =
+                k;
+
+
+            jamaClosing[item.id] =
+                runningOpening[item.id] + j;
+
+
+            kharchuOpening[item.id] =
+                jamaClosing[item.id];
+
+
+            kharchuClosing[item.id] =
+                kharchuOpening[item.id] - k;
+
+        });
+
+
+        if(
+            selectedDates.includes(date)
+        ){
+
+            rows.push({
+
+                date:
+                    date,
+
+                opening:
+                    {...runningOpening},
+
+                jama:
+                    {...jamaMap},
+
+                jamaClosing:
+                    {...jamaClosing},
+
+                kharchuOpening:
+                    {...kharchuOpening},
+
+                kharchu:
+                    {...kharchuMap},
+
+                kharchuClosing:
+                    {...kharchuClosing},
+
+                jamaTotal:
+                    Object.values(
+                        jamaMap
+                    ).reduce(
+                        (s,n) =>
+                            s +
+                            Number(n || 0),
+                        0
+                    ),
+
+                kharchuTotal:
+                    Object.values(
+                        kharchuMap
+                    ).reduce(
+                        (s,n) =>
+                            s +
+                            Number(n || 0),
+                        0
+                    )
+
+            });
+
+        }
+
+
+        /*
+         * ಮುಂದಿನ ದಿನದ Opening
+         * ಹಿಂದಿನ ದಿನದ Final Closing
+         */
+
+        items.forEach(function(item){
+
+            runningOpening[item.id] =
+                kharchuClosing[item.id];
+
+        });
+
+    });
+
+
+    return rows;
+
+}
+
+
+/* =========================================================
+   TABLE HEADER
+========================================================= */
+
+function tableHead(){
+
+    let html =
+        `
+        <tr class="group">
+
+            <th rowspan="2">
+                ದಿನಾಂಕ
+            </th>
+
+            <th rowspan="2">
+                ವಿವರ
+            </th>
+        `;
+
+
+    items.forEach(function(item){
+
+        html +=
+            `
+            <th rowspan="2">
+                ${esc(item.item_name)}
+            </th>
+            `;
+
+    });
+
+
+    html +=
+        `
+            <th rowspan="2">
+                ಒಟ್ಟು
+            </th>
+
+            <th
+                rowspan="2"
+                class="no-print"
+            >
+                Action
+            </th>
+
+        </tr>
+        `;
+
+
+    return html;
+
+}
+
+
+/* =========================================================
+   RENDER TABLE
+========================================================= */
+
+function renderTable(type){
+
+    const head =
+        document.getElementById(
+            type === "jama"
+            ? "jamaHead"
+            : "kharchuHead"
+        );
+
+
+    const body =
+        document.getElementById(
+            type === "jama"
+            ? "jamaBody"
+            : "kharchuBody"
+        );
+
+
+    head.innerHTML =
+        tableHead();
+
+
+    const rows =
+        balanceRows();
+
+
+    if(!rows.length){
+
+        body.innerHTML =
+            `
+            <tr>
+                <td
+                    colspan="${items.length + 4}"
+                    class="empty"
+                >
+                    ಯಾವುದೇ Entry ಇಲ್ಲ
+                </td>
+            </tr>
+            `;
+
+        return;
+
+    }
+
+
+    let html = "";
+
+
+    rows.forEach(function(row,index){
+
+        const isJama =
+            type === "jama";
+
+
+        const movement =
+            isJama
+            ? row.jama
+            : row.kharchu;
+
+
+        const movementTotal =
+            isJama
+            ? row.jamaTotal
+            : row.kharchuTotal;
+
+
+        const opening =
+            isJama
+            ? row.opening
+            : row.kharchuOpening;
+
+
+        const closing =
+            isJama
+            ? row.jamaClosing
+            : row.kharchuClosing;
+
+
+        const source =
+            isJama
+            ? jama
+            : kharchu;
+
+
+        const entries =
+            source.filter(
+                x => x.date === row.date
+            );
+
+
+        const details =
+            entries
+            .map(x => x.details)
+            .find(x => x) || "";
+
+
+        /*
+         * ROW 1 — OPENING
+         */
+
+        html +=
+            `
+            <tr>
+
+                <td>
+                    ${esc(
+                        displayDate(
+                            row.date
+                        )
+                    )}
+                </td>
+
+                <td>
+                    <b>
+                        ಪ್ರಾರಂಭಿಕ ಶಿಲ್ಕು
+                    </b>
+                </td>
+
+                ${
+                    items.map(
+                        item =>
+                        `
+                        <td>
+                            ${money(
+                                opening[
+                                    item.id
+                                ]
+                            )}
+                        </td>
+                        `
+                    ).join("")
+                }
+
+                <td>
+                    <b>
+                        ${money(
+                            items.reduce(
+                                (sum,item) =>
+                                    sum +
+                                    Number(
+                                        opening[
+                                            item.id
+                                        ] || 0
+                                    ),
+                                0
+                            )
+                        )}
+                    </b>
+                </td>
+
+                <td></td>
+
+            </tr>
+            `;
+
+
+        /*
+         * ROW 2 — JAMA / KHARCHU
+         */
+
+        html +=
+            `
+            <tr>
+
+                <td></td>
+
+                <td>
+                    ${
+                        movementTotal !== 0
+                        ? esc(
+                            details ||
+                            (
+                                isJama
+                                ? "ಜಮಾ"
+                                : "ಖರ್ಚು"
+                            )
+                        )
+                        :
+                        (
+                            isJama
+                            ? "ಯಾವುದೇ ಜಮಾ ಇರುವುದಿಲ್ಲ"
+                            : "ಯಾವುದೇ ಖರ್ಚು ಇರುವುದಿಲ್ಲ"
+                        )
+                    }
+                </td>
+
+                ${
+                    items.map(
+                        item =>
+                        `
+                        <td>
+                            ${
+                                movement[
+                                    item.id
+                                ] !== 0
+                                ?
+                                money(
+                                    movement[
+                                        item.id
+                                    ]
+                                )
+                                :
+                                "—"
+                            }
+                        </td>
+                        `
+                    ).join("")
+                }
+
+                <td>
+                    <b>
+                        ${money(
+                            movementTotal
+                        )}
+                    </b>
+                </td>
+
+                <td></td>
+
+            </tr>
+            `;
+
+
+        /*
+         * ROW 3 — CLOSING
+         */
+
+        html +=
+            `
+            <tr>
+
+                <td></td>
+
+                <td>
+                    <b>
+                        ${
+                            isJama
+                            ? "JAMA Closing"
+                            : "ಅಂತಿಮ ಶಿಲ್ಕು"
+                        }
+                    </b>
+                </td>
+
+                ${
+                    items.map(
+                        item =>
+                        `
+                        <td>
+                            <b>
+                                ${money(
+                                    closing[
+                                        item.id
+                                    ]
+                                )}
+                            </b>
+                        </td>
+                        `
+                    ).join("")
+                }
+
+                <td>
+                    <b>
+                        ${money(
+                            items.reduce(
+                                (sum,item) =>
+                                    sum +
+                                    Number(
+                                        closing[
+                                            item.id
+                                        ] || 0
+                                    ),
+                                0
+                            )
+                        )}
+                    </b>
+                </td>
+
+                <td class="no-print">
+
+                    <button
+                        class="secondary"
+                        onclick="editDate(
+                            '${type}',
+                            '${row.date}'
+                        )"
+                    >
+                        ✏️ Edit
+                    </button>
+
+                    <button
+                        class="danger"
+                        onclick="deleteDate(
+                            '${type}',
+                            '${row.date}'
+                        )"
+                    >
+                        Delete
+                    </button>
+
+                </td>
+
+            </tr>
+            `;
+
+
+        if(
+            index <
+            rows.length - 1
+        ){
+
+            html +=
+                `
+                <tr class="spacer-row">
+                    <td
+                        colspan="${items.length + 4}"
+                        style="height:16px"
+                    ></td>
+                </tr>
+                `;
+
+        }
+
+    });
+
+
+    body.innerHTML =
+        html;
+
+}
+
+
+/* =========================================================
+   SUMMARY
+========================================================= */
+
+function renderSummary(){
+
+    const openingTotal =
+        items.reduce(
+            (sum,item) =>
+                sum +
+                Number(
+                    openingBalance[
+                        item.id
+                    ] || 0
+                ),
+            0
+        );
+
+
+    const jamaTotal =
+        jama.reduce(
+            (sum,x) =>
+                sum +
+                Number(
+                    x.amount || 0
+                ),
+            0
+        );
+
+
+    const kharchuTotal =
+        kharchu.reduce(
+            (sum,x) =>
+                sum +
+                Number(
+                    x.amount || 0
+                ),
+            0
+        );
+
+
+    const finalClosing =
+        openingTotal +
+        jamaTotal -
+        kharchuTotal;
+
+
+    document.getElementById(
+        "jamaSummary"
+    ).innerHTML =
+        `
+        <div class="stat">
+            Opening Balance
+            <b>${money(openingTotal)}</b>
+        </div>
+
+        <div class="stat">
+            JAMA Total
+            <b>${money(jamaTotal)}</b>
+        </div>
+
+        <div class="stat">
+            JAMA Closing
+            <b>${money(
+                openingTotal +
+                jamaTotal
+            )}</b>
+        </div>
+        `;
+
+
+    document.getElementById(
+        "kharchuSummary"
+    ).innerHTML =
+        `
+        <div class="stat">
+            KHARCHU Opening
+            <b>${money(
+                openingTotal +
+                jamaTotal
+            )}</b>
+        </div>
+
+        <div class="stat">
+            KHARCHU Total
+            <b>${money(kharchuTotal)}</b>
+        </div>
+
+        <div class="stat">
+            Final Closing
+            <b>${money(finalClosing)}</b>
+        </div>
+        `;
+
+}
+
+
+/* =========================================================
+   RENDER ALL
+========================================================= */
+
+function renderAll(){
+
+    renderOpeningItems();
+
+    renderItemMaster();
+
+    renderEntryItems();
+
+    renderTable("jama");
+
+    renderTable("kharchu");
+
+    renderSummary();
+
+
+    const activePage =
+        document.querySelector(
+            ".tab.active"
+        )?.dataset.page;
+
+
+    if(
+        activePage === "reports"
+    ){
+
+        renderReportPreview();
+
+    }
+
+}
+
+
+/* =========================================================
+   REPORT
+========================================================= */
+
+function reportPage(
+    type,
+    from,
+    to
+){
+
+    const rows =
+        balanceRows(
+            from,
+            to
+        );
+
+
+    const title =
+        type === "jama"
+        ? "ಜಮಾ"
+        : "ಖರ್ಚು";
+
+
+    let html =
+        `
+        <div class="card print-report">
+
+            <div class="report-header">
+
+                <div class="dept">
+                    ${esc(
+                        document.getElementById(
+                            "departmentName"
+                        ).textContent
+                    )}
+                </div>
+
+                <div class="school">
+                    ${esc(
+                        document.getElementById(
+                            "schoolName"
+                        ).textContent
+                    )}
+                </div>
+
+                <div class="year">
+                    ವರ್ಷ: ${esc(selectedYear)}
+                </div>
+
+            </div>
+
+
+            <div class="report-title">
+                ${title}
+                — Cash Book
+                — ${esc(cashbookType)}
+                — ${esc(selectedYear)}
+            </div>
+        `;
+
+
+    if(!rows.length){
+
+        html +=
+            `
+            <div class="empty">
+                Entry ಮಾಡಿದ ದಿನಾಂಕಗಳಿಲ್ಲ
+            </div>
+            </div>
+            `;
+
+        return html;
+
+    }
+
+
+    html +=
+        `
+        <table>
+
+            <thead>
+                ${tableHead()}
+            </thead>
+
+            <tbody>
+        `;
+
+
+    rows.forEach(function(row,index){
+
+        const isJama =
+            type === "jama";
+
+
+        const movement =
+            isJama
+            ? row.jama
+            : row.kharchu;
+
+
+        const movementTotal =
+            isJama
+            ? row.jamaTotal
+            : row.kharchuTotal;
+
+
+        const opening =
+            isJama
+            ? row.opening
+            : row.kharchuOpening;
+
+
+        const closing =
+            isJama
+            ? row.jamaClosing
+            : row.kharchuClosing;
+
+
+        const source =
+            isJama
+            ? jama
+            : kharchu;
+
+
+        const entries =
+            source.filter(
+                x =>
+                    x.date ===
+                    row.date
+            );
+
+
+        const details =
+            entries
+            .map(x => x.details)
+            .find(x => x) || "";
+
+
+        html +=
+            `
+            <tr>
+
+                <td>
+                    ${esc(
+                        displayDate(
+                            row.date
+                        )
+                    )}
+                </td>
+
+                <td>
+                    <b>
+                        ಪ್ರಾರಂಭಿಕ ಶಿಲ್ಕು
+                    </b>
+                </td>
+
+                ${
+                    items.map(
+                        item =>
+                        `
+                        <td>
+                            ${money(
+                                opening[
+                                    item.id
+                                ]
+                            )}
+                        </td>
+                        `
+                    ).join("")
+                }
+
+                <td>
+                    <b>
+                        ${money(
+                            items.reduce(
+                                (s,item) =>
+                                    s +
+                                    Number(
+                                        opening[
+                                            item.id
+                                        ] || 0
+                                    ),
+                                0
+                            )
+                        )}
+                    </b>
+                </td>
+
+                <td></td>
+
+            </tr>
+
+
+            <tr>
+
+                <td></td>
+
+                <td>
+                    ${
+                        movementTotal !== 0
+                        ? esc(
+                            details ||
+                            (
+                                isJama
+                                ? "ಜಮಾ"
+                                : "ಖರ್ಚು"
+                            )
+                        )
+                        :
+                        (
+                            isJama
+                            ? "ಯಾವುದೇ ಜಮಾ ಇರುವುದಿಲ್ಲ"
+                            : "ಯಾವುದೇ ಖರ್ಚು ಇರುವುದಿಲ್ಲ"
+                        )
+                    }
+                </td>
+
+                ${
+                    items.map(
+                        item =>
+                        `
+                        <td>
+                            ${
+                                movement[
+                                    item.id
+                                ] !== 0
+                                ?
+                                money(
+                                    movement[
+                                        item.id
+                                    ]
+                                )
+                                :
+                                "—"
+                            }
+                        </td>
+                        `
+                    ).join("")
+                }
+
+                <td>
+                    <b>
+                        ${money(
+                            movementTotal
+                        )}
+                    </b>
+                </td>
+
+                <td></td>
+
+            </tr>
+
+
+            <tr>
+
+                <td></td>
+
+                <td>
+                    <b>
+                        ${
+                            isJama
+                            ? "JAMA Closing"
+                            : "ಅಂತಿಮ ಶಿಲ್ಕು"
+                        }
+                    </b>
+                </td>
+
+                ${
+                    items.map(
+                        item =>
+                        `
+                        <td>
+                            <b>
+                                ${money(
+                                    closing[
+                                        item.id
+                                    ]
+                                )}
+                            </b>
+                        </td>
+                        `
+                    ).join("")
+                }
+
+                <td>
+                    <b>
+                        ${money(
+                            items.reduce(
+                                (s,item) =>
+                                    s +
+                                    Number(
+                                        closing[
+                                            item.id
+                                        ] || 0
+                                    ),
+                                0
+                            )
+                        )}
+                    </b>
+                </td>
+
+                <td></td>
+
+            </tr>
+            `;
+
+
+        if(
+            index <
+            rows.length - 1
+        ){
+
+            html +=
+                `
+                <tr class="spacer-row">
+                    <td
+                        colspan="${items.length + 4}"
+                        style="height:14px"
+                    ></td>
+                </tr>
+                `;
+
+        }
+
+    });
+
+
+    html +=
+        `
+            </tbody>
+        </table>
+
+        </div>
+        `;
+
+
+    return html;
+
+}
+
+
+/* =========================================================
+   REPORT PREVIEW
+========================================================= */
+
+function renderReportPreview(){
+
+    const from =
+        document.getElementById(
+            "fromDate"
+        ).value;
+
+
+    const to =
+        document.getElementById(
+            "toDate"
+        ).value;
+
+
+    const type =
+        document.getElementById(
+            "reportType"
+        ).value;
+
+
+    let html = "";
+
+
+    if(
+        type === "both" ||
+        type === "jama"
+    ){
+
+        html +=
+            reportPage(
+                "jama",
+                from,
+                to
+            );
+
+    }
+
+
+    if(
+        type === "both" ||
+        type === "kharchu"
+    ){
+
+        html +=
+            reportPage(
+                "kharchu",
+                from,
+                to
+            );
+
+    }
+
+
+    document.getElementById(
+        "reportPreview"
+    ).innerHTML =
+        html ||
+        `
+        <div class="card empty">
+            Entry ಮಾಡಿದ ದಿನಾಂಕಗಳಿಲ್ಲ
+        </div>
+        `;
+
+}
+
+
+/* =========================================================
+   PRINT / PDF
+========================================================= */
+
+function printReport(){
+
+    renderReportPreview();
+
+
+    setTimeout(
+        function(){
+
+            window.print();
+
+        },
+        200
+    );
+
+}
+
+
+/* =========================================================
+   EXCEL
+========================================================= */
+
+function exportExcel(){
+
+    if(
+        typeof XLSX ===
+        "undefined"
+    ){
+
+        alert(
+            "Excel library load ಆಗಿಲ್ಲ."
+        );
+
+        return;
+
+    }
+
+
+    const from =
+        document.getElementById(
+            "fromDate"
+        ).value;
+
+
+    const to =
+        document.getElementById(
+            "toDate"
+        ).value;
+
+
+    const type =
+        document.getElementById(
+            "reportType"
+        ).value;
+
+
+    function makeSheet(
+        reportType
+    ){
+
+        const rows =
+            balanceRows(
+                from,
+                to
+            );
+
+
+        const isJama =
+            reportType === "jama";
+
+
+        const title =
+            isJama
+            ? "ಜಮಾ — Cash Book"
+            : "ಖರ್ಚು — Cash Book";
+
+
+        const aoa = [];
+
+
+        aoa.push([
+            document.getElementById(
+                "departmentName"
+            ).textContent
+        ]);
+
+
+        aoa.push([
+            document.getElementById(
+                "schoolName"
+            ).textContent
+        ]);
+
+
+        aoa.push([
+            "ವರ್ಷ: " +
+            selectedYear
+        ]);
+
+
+        aoa.push([
+            "Cash Book Type: " +
+            cashbookType
+        ]);
+
+
+        aoa.push([
+            title
+        ]);
+
+
+        aoa.push([]);
+
+
+        aoa.push([
+            "ದಿನಾಂಕ",
+            "ವಿವರ",
+            ...items.map(
+                x => x.item_name
+            ),
+            "ಒಟ್ಟು"
+        ]);
+
+
+        rows.forEach(function(row){
+
+            const movement =
+                isJama
+                ? row.jama
+                : row.kharchu;
+
+
+            const opening =
+                isJama
+                ? row.opening
+                : row.kharchuOpening;
+
+
+            const closing =
+                isJama
+                ? row.jamaClosing
+                : row.kharchuClosing;
+
+
+            const movementTotal =
+                isJama
+                ? row.jamaTotal
+                : row.kharchuTotal;
+
+
+            const source =
+                isJama
+                ? jama
+                : kharchu;
+
+
+            const entries =
+                source.filter(
+                    x =>
+                        x.date ===
+                        row.date
+                );
+
+
+            const details =
+                entries
+                .map(x => x.details)
+                .find(x => x) ||
+                (
+                    isJama
+                    ? "ಜಮಾ"
+                    : "ಖರ್ಚು"
+                );
+
+
+            /*
+             * Opening
+             */
+
+            aoa.push([
+
+                displayDate(
+                    row.date
+                ),
+
+                "ಪ್ರಾರಂಭಿಕ ಶಿಲ್ಕು",
+
+                ...items.map(
+                    item =>
+                    Number(
+                        opening[
+                            item.id
+                        ] || 0
+                    )
+                ),
+
+                items.reduce(
+                    (s,item) =>
+                        s +
+                        Number(
+                            opening[
+                                item.id
+                            ] || 0
+                        ),
+                    0
+                )
+
+            ]);
+
+
+            /*
+             * Movement
+             */
+
+            aoa.push([
+
+                "",
+
+                movementTotal !== 0
+                ? details
+                :
+                (
+                    isJama
+                    ? "ಯಾವುದೇ ಜಮಾ ಇರುವುದಿಲ್ಲ"
+                    : "ಯಾವುದೇ ಖರ್ಚು ಇರುವುದಿಲ್ಲ"
+                ),
+
+                ...items.map(
+                    item =>
+                    movement[
+                        item.id
+                    ] !== 0
+                    ?
+                    Number(
+                        movement[
+                            item.id
+                        ]
+                    )
+                    :
+                    ""
+                ),
+
+                Number(
+                    movementTotal || 0
+                )
+
+            ]);
+
+
+            /*
+             * Closing
+             */
+
+            aoa.push([
+
+                "",
+
+                isJama
+                ? "JAMA Closing"
+                : "ಅಂತಿಮ ಶಿಲ್ಕು",
+
+                ...items.map(
+                    item =>
+                    Number(
+                        closing[
+                            item.id
+                        ] || 0
+                    )
+                ),
+
+                items.reduce(
+                    (s,item) =>
+                        s +
+                        Number(
+                            closing[
+                                item.id
+                            ] || 0
+                        ),
+                    0
+                )
+
+            ]);
+
+
+            aoa.push([]);
+
+        });
+
+
+        const ws =
+            XLSX.utils.aoa_to_sheet(
+                aoa
+            );
+
+
+        /*
+         * Merge headings
+         */
+
+        const lastCol =
+            items.length + 2;
+
+
+        ws["!merges"] = [];
+
+
+        for(
+            let r = 0;
+            r < 5;
+            r++
+        ){
+
+            ws["!merges"].push({
+
+                s:{
+                    r:r,
+                    c:0
+                },
+
+                e:{
+                    r:r,
+                    c:lastCol
+                }
+
+            });
+
+        }
+
+
+        /*
+         * Column widths
+         */
+
+        ws["!cols"] = [
+
+            {wch:14},
+
+            {wch:30},
+
+            ...items.map(
+                () => ({
+                    wch:18
+                })
+            ),
+
+            {wch:18}
+
+        ];
+
+
+        /*
+         * Borders
+         */
+
+        const border = {
+
+            top:{
+                style:"thin"
+            },
+
+            bottom:{
+                style:"thin"
+            },
+
+            left:{
+                style:"thin"
+            },
+
+            right:{
+                style:"thin"
+            }
+
+        };
+
+
+        for(
+            let r = 6;
+            r < aoa.length;
+            r++
+        ){
+
+            for(
+                let c = 0;
+                c <= lastCol;
+                c++
+            ){
+
+                const address =
+                    XLSX.utils.encode_cell({
+                        r:r,
+                        c:c
+                    });
+
+
+                if(!ws[address]){
+
+                    ws[address] = {
+                        v:""
+                    };
+
+                }
+
+
+                ws[address].s = {
+
+                    border:
+                        border,
+
+                    alignment:{
+                        vertical:"center",
+                        horizontal:"center",
+                        wrapText:true
+                    }
+
+                };
+
+            }
+
+        }
+
+
+        return ws;
+
+    }
+
+
+    const wb =
+        XLSX.utils.book_new();
+
+
+    if(
+        type === "both" ||
+        type === "jama"
+    ){
+
+        XLSX.utils.book_append_sheet(
+            wb,
+            makeSheet("jama"),
+            "JAMA"
+        );
+
+    }
+
+
+    if(
+        type === "both" ||
+        type === "kharchu"
+    ){
+
+        XLSX.utils.book_append_sheet(
+            wb,
+            makeSheet("kharchu"),
+            "KHARCHU"
+        );
+
+    }
+
+
+    const safeYear =
+        selectedYear
+        .replace(
+            /[^\w-]+/g,
+            "_"
+        );
+
+
+    XLSX.writeFile(
+        wb,
+        "Cash-Book-" +
+        cashbookType +
+        "-" +
+        safeYear +
+        ".xlsx"
+    );
+
+}
+
+
+/* =========================================================
+   TAB NAVIGATION
+========================================================= */
+
+document
+.querySelectorAll(".tab")
+.forEach(function(button){
+
+    button.addEventListener(
+        "click",
+        function(){
+
+            document
+            .querySelectorAll(".tab")
+            .forEach(
+                x =>
+                x.classList.remove(
+                    "active"
+                )
+            );
+
+
+            button.classList.add(
+                "active"
+            );
+
+
+            document
+            .querySelectorAll(".page")
+            .forEach(
+                page =>
+                page.style.display =
+                    "none"
+            );
+
+
+            document.getElementById(
+                button.dataset.page
+            ).style.display =
+                "block";
+
+
+            if(
+                button.dataset.page ===
+                "reports"
+            ){
+
+                renderReportPreview();
+
+            }
+
+        }
+    );
+
+});
+
+
+/* =========================================================
+   EVENTS
+========================================================= */
+
+document.getElementById(
+    "cashbookType"
+).addEventListener(
+    "change",
+    changeCashBookType
+);
+
+
+document.getElementById(
+    "academicYearSelect"
+).addEventListener(
+    "change",
+    changeYear
+);
+
+
+[
+    "fromDate",
+    "toDate",
+    "reportType"
+]
+.forEach(function(id){
+
+    document.getElementById(
+        id
+    ).addEventListener(
+        "change",
+        renderReportPreview
+    );
+
+});
+
+
+/* =========================================================
+   START
+========================================================= */
+
+async function init(){
+
+    try{
+
+        const loggedIn =
+            await checkLogin();
+
+
+        if(!loggedIn)
+            return;
+
+
+        await loadSchool();
+
+        await loadSettings();
+
+        await loadAcademicYears();
+
+        await loadItems();
+
+        await loadYearData();
+
+        renderAll();
+
+
+    }catch(error){
+
+        console.error(error);
+
+        alert(
+            "Cash Book load failed:\n\n" +
+            error.message
+        );
+
+    }
+
+}
+
+
+init();
+
+</script>
+
+</body>
+</html>
