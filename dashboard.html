@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="kn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SCHOOL RECORD SYSTEM — Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{
+    margin:0;
+    font-family:"Noto Sans Kannada","Nirmala UI",Arial,sans-serif;
+    background:#f3f7f4;
+    color:#17221b;
+}
+.layout{display:flex;min-height:100vh}
+.sidebar{
+    width:250px;
+    background:#173d2b;
+    color:#fff;
+    padding:18px 14px;
+    display:flex;
+    flex-direction:column;
+    position:fixed;
+    inset:0 auto 0 0;
+    z-index:10;
+}
+.brand{
+    font-size:20px;
+    font-weight:900;
+    text-align:center;
+    padding:8px 4px 18px;
+    border-bottom:1px solid #ffffff30;
+}
+.menu{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.menu a,.logout{
+    display:block;
+    color:#fff;
+    text-decoration:none;
+    padding:11px 12px;
+    border-radius:8px;
+    font-size:14px;
+    font-weight:700;
+}
+.menu a:hover,.menu a.active,.logout:hover{background:#ffffff18}
+.bottom{
+    margin-top:auto;
+    border-top:1px solid #ffffff30;
+    padding-top:14px;
+}
+.logout{
+    width:100%;
+    border:0;
+    background:transparent;
+    text-align:left;
+    cursor:pointer;
+    font-family:inherit;
+}
+.creator{
+    margin-top:10px;
+    font-size:12px;
+    line-height:1.7;
+    color:#dce9e1;
+    text-align:center;
+}
+.main{
+    margin-left:250px;
+    width:calc(100% - 250px);
+    padding:24px;
+}
+.school{
+    background:#fff;
+    border:1px solid #d7e2da;
+    border-radius:14px;
+    padding:22px;
+    text-align:center;
+    box-shadow:0 2px 8px #0000000b;
+}
+.school-name{
+    font-size:28px;
+    font-weight:900;
+}
+.year{
+    margin-top:7px;
+    font-size:19px;
+    font-weight:800;
+}
+.today{
+    margin-top:5px;
+    font-size:17px;
+    font-weight:700;
+}
+.cards{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(260px,1fr));
+    gap:18px;
+    margin-top:20px;
+}
+.card{
+    background:#fff;
+    border:1px solid #d7e2da;
+    border-radius:14px;
+    padding:20px;
+    box-shadow:0 2px 8px #0000000b;
+}
+.card-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+}
+.card-title{
+    font-size:19px;
+    font-weight:900;
+}
+.refresh{
+    border:0;
+    border-radius:8px;
+    padding:8px 11px;
+    background:#e8f0eb;
+    color:#173d2b;
+    font-weight:800;
+    cursor:pointer;
+}
+.refresh:hover{background:#dce9e1}
+.balance-label{
+    margin-top:24px;
+    font-size:14px;
+    font-weight:700;
+    color:#65746b;
+}
+.balance{
+    margin-top:5px;
+    font-size:31px;
+    font-weight:900;
+}
+.updated{
+    margin-top:12px;
+    font-size:12px;
+    color:#65746b;
+}
+.loading{font-size:14px;color:#65746b}
+.error{color:#a33b32;font-size:13px}
+@media(max-width:800px){
+    .sidebar{width:210px}
+    .main{margin-left:210px;width:calc(100% - 210px);padding:15px}
+    .cards{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+    .sidebar{
+        position:static;
+        width:100%;
+        min-height:auto;
+    }
+    .layout{display:block}
+    .main{margin-left:0;width:100%}
+    .brand{font-size:18px}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<aside class="sidebar">
+    <div class="brand">SCHOOL RECORD SYSTEM</div>
+
+    <nav class="menu">
+        <a class="active" href="dashboard.html">Dashboard</a>
+        <a href="school-cash-book.html">School Cash Book</a>
+        <a href="report.html">Report</a>
+        <a href="settings.html">Settings</a>
+    </nav>
+
+    <div class="bottom">
+        <button class="logout" onclick="logout()">Logout</button>
+        <div class="creator">
+            ರಚನೆ:- ಈರಪ್ಪ ಸಿ<br>
+            Mobile No: 7259515753
+        </div>
+    </div>
+</aside>
+
+<main class="main">
+
+    <section class="school">
+        <div class="school-name" id="schoolName">ಶಾಲೆಯ ಹೆಸರು</div>
+        <div class="year">
+            Academic Year: <span id="academicYear">-</span>
+        </div>
+        <div class="today" id="todayDate">-</div>
+    </section>
+
+    <section class="cards">
+
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title">ಸರ್ಕಾರಿ Cash Book</div>
+                <button class="refresh" onclick="refreshGovernment()">
+                    ↻ Refresh
+                </button>
+            </div>
+
+            <div class="balance-label">Closing Balance</div>
+            <div class="balance" id="governmentBalance">
+                <span class="loading">Loading...</span>
+            </div>
+            <div class="updated" id="governmentUpdated">
+                Last Updated: -
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-head">
+                <div class="card-title">ಸರ್ಕಾರೇತ್ತರ Cash Book</div>
+                <button class="refresh" onclick="refreshNonGovernment()">
+                    ↻ Refresh
+                </button>
+            </div>
+
+            <div class="balance-label">Closing Balance</div>
+            <div class="balance" id="nonGovernmentBalance">
+                <span class="loading">Loading...</span>
+            </div>
+            <div class="updated" id="nonGovernmentUpdated">
+                Last Updated: -
+            </div>
+        </div>
+
+    </section>
+</main>
+</div>
+
+<script>
+const SUPABASE_URL =
+    "https://xhskrohrrsxlfbdbhyji.supabase.co";
+
+const SUPABASE_KEY =
+    "sb_publishable_0amt5yG7ZIm6JD7oub6JTw_Hv5Nx2cl";
+
+const db = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+
+let currentSchoolId = null;
+let activeYear = null;
+
+function money(n){
+    return "₹" + Number(n || 0).toLocaleString("en-IN",{
+        minimumFractionDigits:2,
+        maximumFractionDigits:2
+    });
+}
+
+function setToday(){
+    const days = [
+        "ಭಾನುವಾರ",
+        "ಸೋಮವಾರ",
+        "ಮಂಗಳವಾರ",
+        "ಬುಧವಾರ",
+        "ಗುರುವಾರ",
+        "ಶುಕ್ರವಾರ",
+        "ಶನಿವಾರ"
+    ];
+
+    const d = new Date();
+    const dd = String(d.getDate()).padStart(2,"0");
+    const mm = String(d.getMonth()+1).padStart(2,"0");
+    const yyyy = d.getFullYear();
+
+    document.getElementById("todayDate").textContent =
+        `${dd}-${mm}-${yyyy} ${days[d.getDay()]}`;
+}
+
+async function getSchool(){
+    const {data:{user},error:userError} =
+        await db.auth.getUser();
+
+    if(userError) throw userError;
+    if(!user){
+        location.href = "login.html";
+        return false;
+    }
+
+    const {data,error} = await db
+        .from("school_users")
+        .select("school_id")
+        .eq("user_id",user.id)
+        .eq("is_active",true)
+        .maybeSingle();
+
+    if(error) throw error;
+    if(!data) throw new Error("Login userಗೆ School mapping ಇಲ್ಲ.");
+
+    currentSchoolId = data.school_id;
+    return true;
+}
+
+async function loadSchoolDetails(){
+    const {data,error} = await db
+        .from("school_cashbook_settings")
+        .select("school_name")
+        .eq("school_id",currentSchoolId)
+        .maybeSingle();
+
+    if(error) throw error;
+
+    document.getElementById("schoolName").textContent =
+        data?.school_name || "ಶಾಲೆಯ ಹೆಸರು";
+}
+
+async function loadActiveYear(){
+    const {data,error} = await db
+        .from("school_cashbook_academic_years")
+        .select("id,year_name,start_date,end_date,is_active")
+        .eq("school_id",currentSchoolId)
+        .eq("is_active",true)
+        .maybeSingle();
+
+    if(error) throw error;
+
+    activeYear = data || null;
+
+    document.getElementById("academicYear").textContent =
+        activeYear?.year_name || "-";
+}
+
+async function loadClosing(type,balanceId,updatedId){
+    const balanceEl = document.getElementById(balanceId);
+    const updatedEl = document.getElementById(updatedId);
+
+    balanceEl.innerHTML = '<span class="loading">Loading...</span>';
+
+    if(!activeYear){
+        balanceEl.textContent = "₹0.00";
+        updatedEl.textContent = "Last Updated: -";
+        return;
+    }
+
+    const {data:openingRows,error:openingError} = await db
+        .from("school_cashbook_opening_balances")
+        .select("item_id,opening_balance,updated_at")
+        .eq("school_id",currentSchoolId)
+        .eq("academic_year_id",activeYear.id)
+        .eq("cashbook_type",type);
+
+    if(openingError) throw openingError;
+
+    const opening = {};
+    let latest = null;
+
+    (openingRows || []).forEach(r => {
+        opening[r.item_id] = Number(r.opening_balance || 0);
+        if(r.updated_at && (!latest || r.updated_at > latest))
+            latest = r.updated_at;
+    });
+
+    const {data:entryRows,error:entryError} = await db
+        .from("school_cashbook_entries")
+        .select("entry_type,item_id,amount,created_at")
+        .eq("school_id",currentSchoolId)
+        .eq("academic_year_id",activeYear.id)
+        .eq("cashbook_type",type);
+
+    if(entryError) throw entryError;
+
+    let closing = 0;
+
+    Object.values(opening).forEach(v => closing += Number(v || 0));
+
+    (entryRows || []).forEach(e => {
+        const amount = Number(e.amount || 0);
+
+        if(e.entry_type === "jama")
+            closing += amount;
+        else if(e.entry_type === "kharchu")
+            closing -= amount;
+
+        if(e.created_at && (!latest || e.created_at > latest))
+            latest = e.created_at;
+    });
+
+    balanceEl.textContent = money(closing);
+
+    updatedEl.textContent =
+        "Last Updated: " +
+        (latest ? formatDateTime(latest) : "ಇನ್ನೂ Entry ಇಲ್ಲ");
+}
+
+function formatDateTime(value){
+    const d = new Date(value);
+
+    if(Number.isNaN(d.getTime()))
+        return value;
+
+    const dd = String(d.getDate()).padStart(2,"0");
+    const mm = String(d.getMonth()+1).padStart(2,"0");
+    const yyyy = d.getFullYear();
+
+    const hh = String(d.getHours()).padStart(2,"0");
+    const min = String(d.getMinutes()).padStart(2,"0");
+
+    return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
+}
+
+async function refreshGovernment(){
+    try{
+        await loadActiveYear();
+        await loadClosing(
+            "ಸರ್ಕಾರಿ",
+            "governmentBalance",
+            "governmentUpdated"
+        );
+    }catch(error){
+        console.error(error);
+        document.getElementById("governmentBalance").innerHTML =
+            '<span class="error">Load failed</span>';
+        document.getElementById("governmentUpdated").textContent =
+            "Last Updated: -";
+    }
+}
+
+async function refreshNonGovernment(){
+    try{
+        await loadActiveYear();
+        await loadClosing(
+            "ಸರ್ಕಾರೇತ್ತರ",
+            "nonGovernmentBalance",
+            "nonGovernmentUpdated"
+        );
+    }catch(error){
+        console.error(error);
+        document.getElementById("nonGovernmentBalance").innerHTML =
+            '<span class="error">Load failed</span>';
+        document.getElementById("nonGovernmentUpdated").textContent =
+            "Last Updated: -";
+    }
+}
+
+async function logout(){
+    await db.auth.signOut();
+    location.href = "login.html";
+}
+
+async function init(){
+    try{
+        setToday();
+
+        const ok = await getSchool();
+        if(!ok) return;
+
+        await loadSchoolDetails();
+        await loadActiveYear();
+
+        await Promise.all([
+            loadClosing(
+                "ಸರ್ಕಾರಿ",
+                "governmentBalance",
+                "governmentUpdated"
+            ),
+            loadClosing(
+                "ಸರ್ಕಾರೇತ್ತರ",
+                "nonGovernmentBalance",
+                "nonGovernmentUpdated"
+            )
+        ]);
+    }catch(error){
+        console.error(error);
+        alert("Dashboard load failed: " + error.message);
+    }
+}
+
+init();
+</script>
+</body>
+</html>
