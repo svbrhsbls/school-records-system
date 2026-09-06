@@ -132,6 +132,37 @@
             color: #64748b;
             font-size: 13px;
         }
+    
+        .password-wrap{
+            position:relative;
+            margin-bottom:18px;
+        }
+        .password-wrap input{
+            margin-bottom:0;
+            padding-right:48px;
+        }
+        .password-toggle{
+            position:absolute;
+            right:10px;
+            top:50%;
+            transform:translateY(-50%);
+            width:34px;
+            height:34px;
+            padding:0;
+            border:0;
+            background:transparent;
+            color:#64748b;
+            font-size:19px;
+            cursor:pointer;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+        }
+        .password-toggle:hover{
+            background:transparent;
+            color:#2563eb;
+        }
+
     </style>
 </head>
 
@@ -151,7 +182,7 @@
 
         <form id="loginForm">
 
-            <label for="email">Email / Username</label>
+            <label for="email">ಶಾಲೆಯ DISE Code Number</label>
 
             <input
                 type="text"
@@ -245,7 +276,7 @@
             if (!email || !password) {
 
                 showMessage(
-                    "Email ಮತ್ತು Password ನಮೂದಿಸಿ.",
+                    "DISE Code Number ಮತ್ತು Password ನಮೂದಿಸಿ.",
                     "error"
                 );
 
@@ -260,13 +291,28 @@
 
             try {
 
+                const { data: loginData, error: lookupError } =
+                    await supabaseClient.rpc("get_login_email_by_dise", {
+                        p_dise_code: email
+                    });
+
+                if (lookupError) {
+                    throw lookupError;
+                }
+
+                const loginEmail =
+                    typeof loginData === "string"
+                        ? loginData
+                        : loginData?.email;
+
+                if (!loginEmail) {
+                    throw new Error("ಈ DISE Code Numberಗೆ ಶಾಲೆಯ login ಕಂಡುಬಂದಿಲ್ಲ.");
+                }
+
                 const { data, error } =
                     await supabaseClient.auth.signInWithPassword({
-
-                        email: email,
-
+                        email: loginEmail,
                         password: password
-
                     });
 
 
@@ -318,6 +364,24 @@
 
         });
 
+
+
+    const passwordToggle = document.getElementById("passwordToggle");
+    const passwordInput = document.getElementById("password");
+
+    passwordToggle.addEventListener("click", function () {
+        const showing = passwordInput.type === "text";
+        passwordInput.type = showing ? "password" : "text";
+        this.textContent = showing ? "👁️" : "🙈";
+        this.setAttribute(
+            "aria-label",
+            showing ? "Password ತೋರಿಸಿ" : "Password ಮರೆಮಾಡಿ"
+        );
+        this.setAttribute(
+            "title",
+            showing ? "Password ತೋರಿಸಿ" : "Password ಮರೆಮಾಡಿ"
+        );
+    });
 
     /* =====================================================
        ALREADY LOGGED IN
