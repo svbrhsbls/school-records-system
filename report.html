@@ -338,43 +338,7 @@ async function loadAcademicYears(){
     `).join("");
 
     select.value = selectedYearId;
-    fillMonths();
     updateHeader();
-}
-
-function fillMonths(){
-    const y = academicYears.find(x => x.id === selectedYearId);
-    if(!y) return;
-
-    const start = new Date(y.start_date + "T00:00:00");
-    const end = new Date(y.end_date + "T00:00:00");
-
-    const select = document.getElementById("monthSelect");
-    select.innerHTML = "";
-
-    let d = new Date(start.getFullYear(),start.getMonth(),1);
-
-    while(d <= end){
-        const value =
-            d.getFullYear() + "-" +
-            String(d.getMonth()+1).padStart(2,"0");
-
-        const opt = document.createElement("option");
-        opt.value = value;
-        opt.textContent =
-            monthNames[d.getMonth()] + " " + d.getFullYear();
-        select.appendChild(opt);
-
-        d = new Date(d.getFullYear(),d.getMonth()+1,1);
-    }
-
-    const now = new Date();
-    const nowValue =
-        now.getFullYear() + "-" +
-        String(now.getMonth()+1).padStart(2,"0");
-
-    if([...select.options].some(o => o.value === nowValue))
-        select.value = nowValue;
 }
 
 function updateHeader(){
