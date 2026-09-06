@@ -80,7 +80,7 @@ button.light{background:#e8f0eb;color:#17221b}
     font-size:14px;
     font-weight:700
 }
-.table-wrap{overflow:auto}
+.section-title{text-align:center;font-size:18px;font-weight:900;margin:16px 0 8px;border-top:2px solid #222;padding-top:8px}.table-wrap{overflow:auto}
 table{
     width:100%;
     border-collapse:collapse;
@@ -181,10 +181,7 @@ td.money{text-align:right;white-space:nowrap}
                 <select id="academicYearSelect"></select>
             </div>
 
-            <div>
-                <label>ತಿಂಗಳು / Month</label>
-                <select id="monthSelect"></select>
-            </div>
+            
 
             <div class="actions">
                 <button onclick="generateReport()">Report</button>
@@ -200,12 +197,21 @@ td.money{text-align:right;white-space:nowrap}
         <div class="report-title">
             <span id="typeTitle">ಸರ್ಕಾರಿ</span> — Cash Book — <span id="reportYear">2026-27</span>
         </div>
-        <div class="report-subtitle" id="monthTitle">ತಿಂಗಳು</div>
+        <div class="report-subtitle">ಏಪ್ರಿಲ್ ರಿಂದ ಮಾರ್ಚ್ — ಎಲ್ಲಾ ತಿಂಗಳ ವಿವರ</div>
 
+        <div class="section-title">ಜಮಾ — JAMA</div>
         <div class="table-wrap">
-            <table id="reportTable">
-                <thead id="reportHead"></thead>
-                <tbody id="reportBody"></tbody>
+            <table id="jamaTable">
+                <thead id="jamaHead"></thead>
+                <tbody id="jamaBody"></tbody>
+            </table>
+        </div>
+
+        <div class="section-title">ಖರ್ಚು — KHARCHU</div>
+        <div class="table-wrap">
+            <table id="kharchuTable">
+                <thead id="kharchuHead"></thead>
+                <tbody id="kharchuBody"></tbody>
             </table>
         </div>
 
@@ -437,7 +443,7 @@ function buildDailyFlow(){
 
     const dates = Object.keys(byDate).sort();
 
-    const running = {};
+    let running = {};
     items.forEach(i => {
         running[i.id] = num(openingBalance[i.id]);
     });
@@ -559,157 +565,264 @@ function buildDailyFlow(){
     return rows;
 }
 
-function monthRange(){
-    const value = document.getElementById("monthSelect").value;
-    const [y,m] = value.split("-").map(Number);
 
-    const from =
-        `${y}-${String(m).padStart(2,"0")}-01`;
+function academicMonths(){
+    const y = academicYears.find(x => x.id === selectedYearId);
+    if(!y) return [];
 
-    const last =
-        new Date(y,m,0).getDate();
+    const start = new Date(y.start_date + "T00:00:00");
+    const end = new Date(y.end_date + "T00:00:00");
+    const out = [];
 
-    const to =
-        `${y}-${String(m).padStart(2,"0")}-${String(last).padStart(2,"0")}`;
+    let d = new Date(start.getFullYear(), start.getMonth(), 1);
 
-    return {from,to};
+    while(d <= end){
+        const yy = d.getFullYear();
+        const mm = d.getMonth() + 1;
+        const from = `${yy}-${String(mm).padStart(2,"0")}-01`;
+        const lastDay = new Date(yy, mm, 0).getDate();
+        const to = `${yy}-${String(mm).padStart(2,"0")}-${String(lastDay).padStart(2,"0")}`;
+
+        out.push({
+            key: `${yy}-${String(mm).padStart(2,"0")}`,
+            label: `${monthNames[d.getMonth()]}-${yy}`,
+            from,
+            to
+        });
+
+        d = new Date(d.getFullYear(), d.getMonth()+1, 1);
+    }
+    return out;
 }
 
-function buildReportRows(){
-    const all = buildDailyFlow();
-    const {from,to} = monthRange();
+function buildMonthlyReport(){
+    const months = academicMonths();
+    const monthly = months.map(m => ({
+        ...m,
+        opening:{},
+        jama:{},
+        jamaClosing:{},
+        kharchu:{},
+        kharchuOpening:{},
+        kharchuClosing:{}
+    }));
 
-    return all.filter(r => r.date >= from && r.date <= to);
+    items.forEach(i => {
+        let balance = num(openingBalance[i.id]);
+
+        monthly.forEach(m => {
+            m.opening[i.id] = balance;
+            m.jama[i.id] = 0;
+            m.kharchu[i.id] = 0;
+            m.jamaClosing[i.id] = balance;
+            m.kharchuOpening[i.id] = balance;
+            m.kharchuClosing[i.id] = balance;
+        });
+    });
+
+    // Process entries in exact date/created order so first-entry flow is preserved.
+    const ordered = entries.slice().sort((a,b) => {
+        const d = String(a.entry_date).localeCompare(String(b.entry_date));
+        if(d !== 0) return d;
+        return String(a.created_at || "").localeCompare(String(b.created_at || ""));
+    });
+
+    const monthIndex = {};
+    monthly.forEach((m,i) => monthIndex[m.key] = i);
+
+    // Current running balance is per item. For each month we retain
+    // the balance after JAMA and after KHARCHU separately.
+    const running = {};
+    items.forEach(i => running[i.id] = num(openingBalance[i.id]));
+
+    ordered.forEach(e => {
+        const key = String(e.entry_date).slice(0,7);
+        const mi = monthIndex[key];
+        if(mi === undefined) return;
+
+        const amount = num(e.amount);
+        const id = e.item_id;
+
+        if(e.entry_type === "jama"){
+            monthly[mi].jama[id] += amount;
+            running[id] += amount;
+        }else if(e.entry_type === "kharchu"){
+            monthly[mi].kharchu[id] += amount;
+            running[id] -= amount;
+        }
+
+        // Rebuild the affected month's closing values from the ordered flow.
+        monthly[mi].jamaClosing[id] = running[id];
+        monthly[mi].kharchuClosing[id] = running[id];
+    });
+
+    // Recalculate month-by-month openings/closings correctly from all entries.
+    items.forEach(item => {
+        let balance = num(openingBalance[item.id]);
+
+        monthly.forEach(m => {
+            m.opening[item.id] = balance;
+
+            const monthEntries = ordered.filter(e =>
+                String(e.entry_date).slice(0,7) === m.key &&
+                e.item_id === item.id
+            );
+
+            let jamaSeen = false;
+            let kharchuSeen = false;
+            let afterJama = balance;
+            let afterKharchu = balance;
+
+            monthEntries.forEach(e => {
+                const amount = num(e.amount);
+
+                if(e.entry_type === "jama"){
+                    m.jama[item.id] += 0; // already aggregated above
+                    balance += amount;
+                    afterJama = balance;
+                    jamaSeen = true;
+                }else{
+                    balance -= amount;
+                    afterKharchu = balance;
+                    kharchuSeen = true;
+                }
+            });
+
+            // If there was no JAMA in the month, JAMA closing remains the
+            // balance entering the month; if there was JAMA, it is the
+            // balance immediately after the last JAMA transaction.
+            if(jamaSeen){
+                m.jamaClosing[item.id] = afterJama;
+            }else{
+                m.jamaClosing[item.id] = m.opening[item.id];
+            }
+
+            // KHARCHU opening is the balance immediately before the first
+            // KHARCHU transaction. If there is no KHARCHU, it is the balance
+            // after the month's JAMA flow.
+            let temp = m.opening[item.id];
+            let firstKharchuOpening = null;
+            monthEntries.forEach(e => {
+                const amount = num(e.amount);
+                if(e.entry_type === "kharchu"){
+                    if(firstKharchuOpening === null) firstKharchuOpening = temp;
+                    temp -= amount;
+                }else{
+                    temp += amount;
+                }
+            });
+
+            m.kharchuOpening[item.id] =
+                firstKharchuOpening === null
+                    ? temp
+                    : firstKharchuOpening;
+
+            m.kharchuClosing[item.id] = balance;
+        });
+    });
+
+    return monthly;
 }
 
-function renderReport(){
-    const rows = buildReportRows();
-    lastReport = rows;
-
-    const head = document.getElementById("reportHead");
-    const body = document.getElementById("reportBody");
-
-    const {from,to} = monthRange();
-    const monthOption =
-        document.getElementById("monthSelect").selectedOptions[0];
-
-    document.getElementById("monthTitle").textContent =
-        `${monthOption?.textContent || ""} (${dateText(from)} ರಿಂದ ${dateText(to)}ರವರೆಗೆ)`;
-
-    head.innerHTML = `
+function tableHeader(){
+    return `
         <tr>
-            <th>ದಿನಾಂಕ</th>
-            <th>ವಿವರ</th>
+            <th>ತಿಂಗಳು</th>
+            <th>O.B</th>
             ${items.map(i => `<th>${esc(i.item_name)}</th>`).join("")}
             <th>ಒಟ್ಟು</th>
         </tr>
     `;
+}
 
-    if(!rows.length){
-        body.innerHTML = `
-            <tr>
-                <td colspan="${items.length + 3}" class="empty">
-                    ಈ ತಿಂಗಳಿಗೆ ಯಾವುದೇ Entry ಇಲ್ಲ.
-                </td>
-            </tr>
-        `;
+function sumMap(map){
+    return items.reduce((s,i) => s + num(map[i.id]), 0);
+}
+
+function renderSeparateTable(bodyId, headId, months, kind){
+    document.getElementById(headId).innerHTML = tableHeader();
+    const body = document.getElementById(bodyId);
+
+    if(!months.length){
+        body.innerHTML = `<tr><td colspan="${items.length+3}" class="empty">Data ಇಲ್ಲ.</td></tr>`;
         return;
     }
 
-    let openingTotal = 0;
-    let jamaTotal = 0;
-    let kharchuTotal = 0;
-    let finalTotal = 0;
+    const rows = [];
+    let totalByItem = {};
+    items.forEach(i => totalByItem[i.id] = 0);
 
-    const html = [];
+    months.forEach((m,idx) => {
+        const isJama = kind === "jama";
+        const amountMap = isJama ? m.jama : m.kharchu;
+        const openingMap = isJama ? m.opening : m.kharchuOpening;
+        const closingMap = isJama ? m.jamaClosing : m.kharchuClosing;
 
-    rows.forEach((r,idx) => {
-        const isJama = r.label === "ಜಮಾ";
-        const total = items.reduce(
-            (s,i) => s + num(r.amount[i.id]),0
-        );
+        items.forEach(i => {
+            totalByItem[i.id] += num(amountMap[i.id]);
+        });
 
-        const closingTotal = items.reduce(
-            (s,i) => s + num(r.closing[i.id]),0
-        );
-
-        if(idx === 0){
-            openingTotal = items.reduce(
-                (s,i) => s + num(r.opening[i.id]),0
-            );
-        }
-
-        if(isJama) jamaTotal += total;
-        else kharchuTotal += total;
-
-        finalTotal = closingTotal;
-
-        html.push(`
+        rows.push(`
             <tr>
-                <td>${esc(dateText(r.date))}</td>
-                <td class="left"><b>${esc(r.label)}</b></td>
-                ${items.map(i => `<td class="money">${money(r.amount[i.id])}</td>`).join("")}
-                <td class="money"><b>${money(total)}</b></td>
+                <td><b>${esc(m.label)}</b></td>
+                <td class="money">${money(sumMap(openingMap))}</td>
+                ${items.map(i => `<td class="money">${money(amountMap[i.id])}</td>`).join("")}
+                <td class="money"><b>${money(sumMap(amountMap))}</b></td>
             </tr>
         `);
 
-        html.push(`
-            <tr>
+        rows.push(`
+            <tr class="total-row">
                 <td></td>
-                <td class="left">ಶಿಲ್ಕು / Closing</td>
-                ${items.map(i => `<td class="money">${money(r.closing[i.id])}</td>`).join("")}
-                <td class="money">${money(closingTotal)}</td>
+                <td class="left"><b>${isJama ? "JAMA Closing" : "KHARCHU Closing"}</b></td>
+                ${items.map(i => `<td class="money">${money(closingMap[i.id])}</td>`).join("")}
+                <td class="money"><b>${money(sumMap(closingMap))}</b></td>
             </tr>
         `);
     });
 
-    const grandClosing = finalTotal;
+    const first = months[0];
+    const last = months[months.length-1];
 
-    body.innerHTML = html.join("") + `
+    rows.push(`
         <tr class="total-row">
-            <td colspan="2">Opening Balance</td>
-            ${items.map(i => {
-                const first = rows[0];
-                return `<td class="money">${money(first.opening[i.id])}</td>`;
-            }).join("")}
-            <td class="money">${money(openingTotal)}</td>
+            <td><b>TOTAL</b></td>
+            <td class="money"><b>${money(sumMap(first.opening))}</b></td>
+            ${items.map(i => `<td class="money"><b>${money(totalByItem[i.id])}</b></td>`).join("")}
+            <td class="money"><b>${money(Object.values(totalByItem).reduce((a,b)=>a+b,0))}</b></td>
         </tr>
+    `);
 
-        <tr class="total-row">
-            <td colspan="2">ಒಟ್ಟು ಜಮಾ</td>
-            ${items.map(i => {
-                const v = rows.filter(r => r.label==="ಜಮಾ")
-                    .reduce((s,r) => s + num(r.amount[i.id]),0);
-                return `<td class="money">${money(v)}</td>`;
-            }).join("")}
-            <td class="money">${money(jamaTotal)}</td>
-        </tr>
+    const grandAmount = Object.values(totalByItem).reduce((a,b)=>a+b,0);
+    const grandOpening = sumMap(first.opening);
+    const grandClosingMap = kind === "jama" ? last.jamaClosing : last.kharchuClosing;
 
-        <tr class="total-row">
-            <td colspan="2">ಒಟ್ಟು ಖರ್ಚು</td>
-            ${items.map(i => {
-                const v = rows.filter(r => r.label==="ಖರ್ಚು")
-                    .reduce((s,r) => s + num(r.amount[i.id]),0);
-                return `<td class="money">${money(v)}</td>`;
-            }).join("")}
-            <td class="money">${money(kharchuTotal)}</td>
-        </tr>
-
+    rows.push(`
         <tr class="grand-row">
-            <td colspan="2">ಅಂತಿಮ ಶಿಲ್ಕು / Final Closing</td>
-            ${items.map(i => {
-                const last = rows[rows.length-1];
-                return `<td class="money">${money(last.closing[i.id])}</td>`;
-            }).join("")}
-            <td class="money">${money(grandClosing)}</td>
+            <td><b>GRAND TOTAL</b></td>
+            <td class="money"><b>${money(grandOpening)}</b></td>
+            ${items.map(i => `<td class="money"><b>${money(grandClosingMap[i.id])}</b></td>`).join("")}
+            <td class="money"><b>${money(sumMap(grandClosingMap))}</b></td>
         </tr>
-    `;
+    `);
+
+    body.innerHTML = rows.join("");
+}
+
+function renderReport(){
+    const months = buildMonthlyReport();
+    lastReport = months;
+
+    document.getElementById("typeTitle").textContent = cashbookType;
+    document.getElementById("reportYear").textContent = selectedYear || "-";
+
+    renderSeparateTable("jamaBody","jamaHead",months,"jama");
+    renderSeparateTable("kharchuBody","kharchuHead",months,"kharchu");
 }
 
 async function generateReport(){
     try{
-        document.getElementById("status").textContent =
-            "Report loading...";
+        document.getElementById("status").textContent = "Report loading...";
 
         await loadItems();
         await loadOpening();
@@ -719,7 +832,7 @@ async function generateReport(){
         renderReport();
 
         document.getElementById("status").textContent =
-            "Report ಸಿದ್ಧವಾಗಿದೆ.";
+            "ಎಲ್ಲಾ ತಿಂಗಳ Report ಸಿದ್ಧವಾಗಿದೆ.";
     }catch(error){
         console.error(error);
         document.getElementById("status").textContent =
@@ -728,99 +841,76 @@ async function generateReport(){
     }
 }
 
-async function exportExcel(){
+function exportExcel(){
     try{
-        if(!lastReport)
-            await generateReport();
-
-        if(!lastReport || !lastReport.length){
-            alert("Export ಮಾಡಲು Report data ಇಲ್ಲ.");
+        if(!lastReport) {
+            alert("ಮೊದಲು Report load ಆಗಬೇಕು.");
             return;
         }
 
-        const rows = buildReportRows();
-
-        const data = [];
-        const header = [
-            "ದಿನಾಂಕ",
-            "ವಿವರ",
-            ...items.map(i => i.item_name),
-            "ಒಟ್ಟು"
-        ];
-        data.push(header);
-
-        rows.forEach(r => {
-            const total = items.reduce(
-                (s,i) => s + num(r.amount[i.id]),0
-            );
-
-            data.push([
-                dateText(r.date),
-                r.label,
-                ...items.map(i => num(r.amount[i.id])),
-                total
-            ]);
-
-            const closeTotal = items.reduce(
-                (s,i) => s + num(r.closing[i.id]),0
-            );
-
-            data.push([
-                "",
-                "ಶಿಲ್ಕು / Closing",
-                ...items.map(i => num(r.closing[i.id])),
-                closeTotal
-            ]);
-        });
-
-        const first = rows[0];
-        data.push([
-            "",
-            "Opening Balance",
-            ...items.map(i => num(first.opening[i.id])),
-            items.reduce((s,i) => s + num(first.opening[i.id]),0)
-        ]);
-
-        data.push([
-            "",
-            "ಒಟ್ಟು ಜಮಾ",
-            ...items.map(i =>
-                rows.filter(r => r.label==="ಜಮಾ")
-                    .reduce((s,r) => s + num(r.amount[i.id]),0)
-            ),
-            rows.filter(r => r.label==="ಜಮಾ")
-                .reduce((s,r) =>
-                    s + items.reduce((x,i) => x + num(r.amount[i.id]),0),0)
-        ]);
-
-        data.push([
-            "",
-            "ಒಟ್ಟು ಖರ್ಚು",
-            ...items.map(i =>
-                rows.filter(r => r.label==="ಖರ್ಚು")
-                    .reduce((s,r) => s + num(r.amount[i.id]),0)
-            ),
-            rows.filter(r => r.label==="ಖರ್ಚು")
-                .reduce((s,r) =>
-                    s + items.reduce((x,i) => x + num(r.amount[i.id]),0),0)
-        ]);
-
-        const last = rows[rows.length-1];
-        data.push([
-            "",
-            "ಅಂತಿಮ ಶಿಲ್ಕು / Final Closing",
-            ...items.map(i => num(last.closing[i.id])),
-            items.reduce((s,i) => s + num(last.closing[i.id]),0)
-        ]);
-
-        const ws = XLSX.utils.aoa_to_sheet(data);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb,ws,"Cash Book Report");
 
-        const month = document.getElementById("monthSelect").value;
+        function makeSheet(kind){
+            const data = [];
+            const isJama = kind === "jama";
+
+            data.push([
+                isJama ? "ಜಮಾ" : "ಖರ್ಚು",
+                "O.B",
+                ...items.map(i => i.item_name),
+                "ಒಟ್ಟು"
+            ]);
+
+            lastReport.forEach(m => {
+                const amount = isJama ? m.jama : m.kharchu;
+                const opening = isJama ? m.opening : m.kharchuOpening;
+                const closing = isJama ? m.jamaClosing : m.kharchuClosing;
+
+                data.push([
+                    m.label,
+                    sumMap(opening),
+                    ...items.map(i => num(amount[i.id])),
+                    sumMap(amount)
+                ]);
+
+                data.push([
+                    "",
+                    "Closing",
+                    ...items.map(i => num(closing[i.id])),
+                    sumMap(closing)
+                ]);
+            });
+
+            const first = lastReport[0];
+            const last = lastReport[lastReport.length-1];
+
+            data.push([
+                "TOTAL",
+                sumMap(first.opening),
+                ...items.map(i =>
+                    lastReport.reduce((s,m)=>s+num((isJama?m.jama:m.kharchu)[i.id]),0)
+                ),
+                lastReport.reduce((s,m)=>
+                    s + sumMap(isJama?m.jama:m.kharchu),0)
+            ]);
+
+            const grandClosing = isJama ? last.jamaClosing : last.kharchuClosing;
+            data.push([
+                "GRAND TOTAL",
+                sumMap(first.opening),
+                ...items.map(i => num(grandClosing[i.id])),
+                sumMap(grandClosing)
+            ]);
+
+            return XLSX.utils.aoa_to_sheet(data);
+        }
+
+        XLSX.utils.book_append_sheet(wb,makeSheet("jama"),"JAMA");
+        XLSX.utils.book_append_sheet(wb,makeSheet("kharchu"),"KHARCHU");
+
         XLSX.writeFile(
             wb,
-            `cash-book-report-${cashbookType}-${selectedYear}-${month}.xlsx`
+            `cash-book-report-${cashbookType}-${selectedYear}.xlsx`
         );
     }catch(error){
         console.error(error);
@@ -859,8 +949,6 @@ async function init(){
             updateHeader();
             await generateReport();
         });
-
-        document.getElementById("monthSelect").addEventListener("change",generateReport);
 
         await generateReport();
     }catch(error){
