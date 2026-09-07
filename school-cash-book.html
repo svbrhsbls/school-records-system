@@ -351,6 +351,8 @@ thead tr.sub th{
     }
 }
 
+.print-repeat-head{display:none}
+
 @media print{
 
     @page{
@@ -408,6 +410,46 @@ thead tr.sub th{
 
     .report-title{
         font-size:20px
+    }
+
+    /* Repeat the report heading on every printed page of the table */
+    .print-repeat-head{
+        display:table-row!important;
+    }
+
+    .print-repeat-head th{
+        border:0!important;
+        background:#fff!important;
+        padding:0 0 7px!important;
+        text-align:center!important;
+        white-space:normal!important;
+        font-weight:800!important;
+    }
+
+    .print-repeat-head .repeat-dept{
+        font-size:19px;
+        line-height:1.3;
+    }
+
+    .print-repeat-head .repeat-school{
+        font-size:18px;
+        line-height:1.3;
+    }
+
+    .print-repeat-head .repeat-year{
+        font-size:17px;
+        line-height:1.3;
+    }
+
+    .print-repeat-head .repeat-title{
+        font-size:20px;
+        line-height:1.3;
+        margin-top:2px;
+    }
+
+    .print-report .report-header,
+    .print-report > .report-title{
+        display:none!important;
     }
 }
 </style>
@@ -4174,6 +4216,22 @@ function reportPage(
         <table>
 
             <thead>
+                <tr class="print-repeat-head">
+                    <th colspan="${items.length + 4}">
+                        <div class="repeat-dept">
+                            ${esc(document.getElementById("departmentName").textContent)}
+                        </div>
+                        <div class="repeat-school">
+                            ${esc(document.getElementById("schoolName").textContent)}
+                        </div>
+                        <div class="repeat-year">
+                            ವರ್ಷ: ${esc(selectedYear)}
+                        </div>
+                        <div class="repeat-title">
+                            ${title} — Cash Book — ${esc(cashbookType)} — ${esc(selectedYear)}
+                        </div>
+                    </th>
+                </tr>
                 ${tableHead()}
             </thead>
 
