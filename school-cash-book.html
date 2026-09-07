@@ -400,42 +400,25 @@ thead tr.sub th{
     table{
         min-width:0;
         width:100%;
-        table-layout:fixed;
-        overflow-wrap:anywhere
+        table-layout:auto
     }
 
     th,td{
         font-size:10px;
-        padding:5px 4px;
-        min-width:0;
-        overflow-wrap:anywhere;
-        word-break:break-word
+        padding:5px 4px
     }
 
-    /* Print/PDF only: keep the Details column inside the page.
-       Long details wrap onto the next line instead of widening the table. */
-    table th:nth-child(1),
-    table td:nth-child(1){
-        width:8%;
-    }
-
-    table th:nth-child(2),
-    table td:nth-child(2){
-        width:16%;
+    /* Keep the Details column wide, but wrap extra text to the next line
+       instead of allowing it to increase the whole table width. */
+    table td:nth-child(2),
+    table th:nth-child(2){
+        width:180px;
+        min-width:180px;
+        max-width:180px;
         white-space:normal!important;
         overflow-wrap:break-word;
         word-break:normal;
-        line-height:1.25;
-    }
-
-    table th:nth-last-child(2),
-    table td:nth-last-child(2){
-        width:8%;
-    }
-
-    table th.no-print,
-    table td.no-print{
-        display:none!important;
+        line-height:1.35;
     }
 
     .report-title{
