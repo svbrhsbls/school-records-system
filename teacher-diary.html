@@ -185,13 +185,85 @@ async function loadTeachers(){
   if(error){showMsg("Teachers table ಸಿಗಲಿಲ್ಲ. SQL setup file run ಮಾಡಿ.",false);return}
   (data||[]).forEach(t=>{const o=document.createElement("option");o.value=t.id;o.textContent=t.name;sel.appendChild(o)});
 }
-async function addTeacher(){
-  const name=prompt("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ");
-  if(!name?.trim()) return;
-  const {error}=await sb.from("teacher_diary_teachers").insert({school_id:schoolId,name:name.trim()});
-  if(error){showMsg(error.message,false);return}
-  await loadTeachers(); document.getElementById("teacherSelect").value="";
-  showMsg("ಶಿಕ್ಷಕರ ಹೆಸರು ಸೇರಿಸಲಾಗಿದೆ.");
+async function addTeacher() {
+  try {
+    if (!schoolId) {
+      alert("School ID ಸಿಗಲಿಲ್ಲ. ಮೊದಲು page ಅನ್ನು refresh ಮಾಡಿ.");
+      return;
+    }
+
+    const name = prompt("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ:");
+
+    if (name === null) return;
+
+    const teacherName = name.trim();
+
+    if (!teacherName) {
+      alert("ಶಿಕ್ಷಕರ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.");
+      return;
+    }
+
+    // Duplicate teacher check
+    const { data: existing, error: checkError } = await sb
+      .from("teacher_diary_teachers")
+      .select("id,name")
+      .eq("school_id", schoolId)
+      .ilike("name", teacherName)
+      .maybeSingle();
+
+    if (checkError) {
+      console.error("Teacher check error:", checkError);
+      alert("ಶಿಕ್ಷಕರ ಪಟ್ಟಿಯನ್ನು ಪರಿಶೀಲಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ:\n" + checkError.message);
+      return;
+    }
+
+    if (existing) {
+      alert("ಈ ಶಿಕ್ಷಕರ ಹೆಸರು ಈಗಾಗಲೇ ಸೇರಿಸಲಾಗಿದೆ.");
+      return;
+    }
+
+    // Insert teacher
+    const { data, error } = await sb
+      .from("teacher_diary_teachers")
+      .insert({
+        school_id: schoolId,
+        name: teacherName
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Teacher insert error:", error);
+
+      alert(
+        "ಶಿಕ್ಷಕರನ್ನು ಸೇರಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.\n\n" +
+        "Supabase Error:\n" +
+        error.message
+      );
+
+      return;
+    }
+
+    // Reload dropdown
+    await loadTeachers();
+
+    // Automatically select newly added teacher
+    document.getElementById("teacherSelect").value = data.id;
+
+    showMsg("ಶಿಕ್ಷಕರ ಹೆಸರು ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ.");
+
+    await loadLeaves();
+    await loadSelectedMonth();
+
+  } catch (err) {
+    console.error("Add Teacher Error:", err);
+
+    alert(
+      "Add Teacher ನಲ್ಲಿ ದೋಷ ಸಂಭವಿಸಿದೆ.\n\n" +
+      (err.message || err)
+    );
+  }
+}
 }
 async function deleteTeacher(){
   const sel=document.getElementById("teacherSelect"), id=sel.value;
