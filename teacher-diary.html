@@ -130,7 +130,7 @@ async function downloadDateRangePDF(){
   if(!window.jspdf){const sc=document.createElement("script");sc.src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";document.head.appendChild(sc);await new Promise((resolve,reject)=>{sc.onload=resolve;sc.onerror=reject})}
   if(!window.html2canvas){const sc=document.createElement("script");sc.src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";document.head.appendChild(sc);await new Promise((resolve,reject)=>{sc.onload=resolve;sc.onerror=reject})}
   const {jsPDF}=window.jspdf;const pdf=new jsPDF({orientation:"portrait",unit:"mm",format:"a4",compress:true});const sections=Array.from(doc.querySelectorAll(".page"));
-  for(let i=0;i<sections.length;i++){if(i>0)pdf.addPage("a4","portrait");const canvas=await window.html2canvas(sections[i],{scale:1.6,useCORS:true,backgroundColor:"#ffffff",logging:false});const img=canvas.toDataURL("image/jpeg",0.92);pdf.addImage(img,"JPEG",0,0,210,297,undefined,"FAST")}
+  for(let i=0;i<sections.length;i++){if(i>0)pdf.addPage("a4","portrait");const canvas=await window.html2canvas(sections[i],{scale:1.6,useCORS:true,backgroundColor:"#ffffff",logging:false});const img=canvas.toDataURL("image/jpeg",0.92);pdf.addImage(img,"JPEG",6,6,198,285,undefined,"FAST")}
   const teacherName=$("teacherSelect").selectedOptions[0]?.text||"Teacher";const safe=teacherName.replace(/[^\u0000-\uFFFF\w-]+/g,"_");pdf.save(`Teacher-Diary-${safe}-${from}-to-${to}.pdf`);wrap.remove();showMsg("PDF Download ಆಗಿದೆ.");
  }catch(e){console.error(e);alert("PDF ತಯಾರಿಸುವಾಗ ದೋಷ: "+(e.message||e))}finally{btn.disabled=false;btn.textContent="⬇️ PDF Download"}
 }
