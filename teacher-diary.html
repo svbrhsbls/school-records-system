@@ -231,57 +231,65 @@ async function ensureSchoolId(){
 async function addTeacher(ev){
   if(ev) ev.preventDefault();
 
-  const sid=await ensureSchoolId();
-  if(!sid) return;
-
-  const name=prompt("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ:");
+  // IMPORTANT: prompt first so button always responds even if school mapping has an issue.
+  const name=window.prompt("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ:");
   if(name===null) return;
   const cleanName=name.trim();
   if(!cleanName){
-    alert("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ.");
+    window.alert("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ.");
     return;
   }
 
-  // ಮೊದಲು ಅದೇ ಶಾಲೆಯಲ್ಲಿ ಈ ಹೆಸರು ಇದೆಯೇ ಎಂದು ಪರಿಶೀಲನೆ
-  const {data:duplicate,error:dupError}=await sb
-    .from("teacher_diary_teachers")
-    .select("id,name")
-    .eq("school_id",sid)
-    .ilike("name",cleanName)
-    .maybeSingle();
+  showMsg("ಶಿಕ್ಷಕರನ್ನು ಸೇರಿಸಲಾಗುತ್ತಿದೆ...",true);
 
-  if(dupError && dupError.code!=="PGRST116"){
-    console.error("duplicate check error:",dupError);
-    showMsg("Teacher ಪರಿಶೀಲನೆ ವಿಫಲ: "+(dupError.message||"Unknown error"),false);
-    return;
-  }
-
-  if(duplicate){
-    showMsg("ಈ ಶಿಕ್ಷಕರ ಹೆಸರು ಈಗಾಗಲೇ ಇದೆ.",false);
-    document.getElementById("teacherSelect").value=duplicate.id;
-    return;
-  }
-
-  const {data:inserted,error}=await sb
-    .from("teacher_diary_teachers")
-    .insert({school_id:sid,name:cleanName})
-    .select("id,name")
-    .single();
-
-  if(error){
-    console.error("addTeacher insert error:",error);
-    let msg=error.message||"Teacher save failed";
-    if(error.code==="42501" || /row-level security|permission denied/i.test(msg)){
-      msg="Teacher add ಮಾಡಲು RLS permission ಇಲ್ಲ. teacher_diary_teachers SQL/RLS policy ಪರಿಶೀಲಿಸಿ.";
+  try{
+    const sid=await ensureSchoolId();
+    if(!sid){
+      showMsg("School ID ಸಿಗಲಿಲ್ಲ. Supabase Login/School mapping ಪರಿಶೀಲಿಸಿ.",false);
+      return;
     }
-    showMsg(msg,false);
-    return;
+
+    // Existing teacher check. Do not use maybeSingle because duplicate rows can
+    // cause a confusing error; fetch a small list instead.
+    const {data:existing,error:checkError}=await sb
+      .from("teacher_diary_teachers")
+      .select("id,name")
+      .eq("school_id",sid)
+      .ilike("name",cleanName)
+      .limit(1);
+
+    if(checkError) throw new Error("Teacher table read error: "+checkError.message);
+
+    if(existing && existing.length){
+      const old=existing[0];
+      document.getElementById("teacherSelect").value=old.id;
+      showMsg("ಈ ಶಿಕ್ಷಕರ ಹೆಸರು ಈಗಾಗಲೇ ಇದೆ.",false);
+      return;
+    }
+
+    const {data:inserted,error:insertError}=await sb
+      .from("teacher_diary_teachers")
+      .insert({school_id:sid,name:cleanName})
+      .select("id,name")
+      .single();
+
+    if(insertError){
+      console.error("ADD TEACHER INSERT ERROR",insertError);
+      let m=insertError.message||"Unknown error";
+      if(insertError.code==="42501" || /row-level security|permission denied/i.test(m)){
+        m="RLS permission error. teacher_diary_teachers table policy ಸರಿಪಡಿಸಬೇಕು.";
+      }
+      throw new Error(m);
+    }
+
+    await loadTeachers(inserted?.id||"");
+    document.getElementById("teacherSelect").value=inserted.id;
+    showMsg("✓ ಶಿಕ್ಷಕರ ಹೆಸರು ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ.",true);
+  }catch(err){
+    console.error("ADD TEACHER ERROR",err);
+    showMsg("Add Teacher Error: "+(err?.message||err),false);
   }
-
-  await loadTeachers(inserted?.id||"");
-  showMsg("ಶಿಕ್ಷಕರ ಹೆಸರು ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ.");
 }
-
 async function deleteTeacher(ev){
   if(ev) ev.preventDefault();
 
