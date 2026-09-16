@@ -365,9 +365,14 @@ function applyHeaderLock(){
     const yearEl=document.getElementById("year");
     const monthEl=document.getElementById("monthFilter");
     const teacherEl=document.getElementById("teacherSelect");
-    if(yearEl && lock.year) yearEl.value=lock.year;
-    if(monthEl && lock.month!==undefined) monthEl.value=String(lock.month);
-    if(teacherEl && lock.teacher) teacherEl.value=lock.teacher;
+    if(yearEl && lock.year) yearEl.value=String(lock.year);
+    if(monthEl && lock.month!==undefined){
+      const mv=String(lock.month);
+      if(Array.from(monthEl.options).some(o=>o.value===mv)) monthEl.value=mv;
+    }
+    if(teacherEl && lock.teacher){
+      if(Array.from(teacherEl.options).some(o=>o.value===String(lock.teacher))) teacherEl.value=String(lock.teacher);
+    }
   }
 
   ["year","monthFilter","teacherSelect"].forEach(id=>{
@@ -378,7 +383,7 @@ function applyHeaderLock(){
   if(lb)lb.style.display=locked?"none":"inline-block";
   if(eb)eb.style.display=locked?"inline-block":"none";
 }
-function lockHeader(){
+async function lockHeader(){
   const year=document.getElementById("year").value.trim();
   const month=document.getElementById("monthFilter").value;
   const teacher=document.getElementById("teacherSelect").value;
@@ -387,11 +392,14 @@ function lockHeader(){
   if(!teacher){alert("ಮೊದಲು ಶಿಕ್ಷಕರನ್ನು ಆಯ್ಕೆಮಾಡಿ.");return}
   setHeaderLock({year,month,teacher});
   applyHeaderLock();
+  // Lock ಮಾಡಿದ ಕೂಡಲೇ ಆಯ್ಕೆ ಮಾಡಿದ ತಿಂಗಳ ದಿನಾಂಕಗಳನ್ನು load ಮಾಡಬೇಕು.
+  await loadSelectedMonth();
   showMsg("ವರ್ಷ, ತಿಂಗಳು ಮತ್ತು ಶಿಕ್ಷಕರ ಮಾಹಿತಿ Lock ಆಗಿದೆ.");
 }
 function editHeader(){
   setHeaderLock(null);
   applyHeaderLock();
+  // Edit ಮಾತ್ರ unlock ಮಾಡುತ್ತದೆ; month/day list ಅನ್ನು ಮರುಮರು render ಮಾಡುವುದಿಲ್ಲ.
   showMsg("ವರ್ಷ, ತಿಂಗಳು ಮತ್ತು ಶಿಕ್ಷಕರ ಮಾಹಿತಿ Edit ಮಾಡಲು Unlock ಆಗಿದೆ.");
 }
 function getPeriodsForDate(date){return dayName(date)==="ಶನಿವಾರ"?saturdayPeriods:periods}
@@ -846,8 +854,7 @@ async function init(){
     await loadSchoolName();
     await loadTeachers();
 
-    // Restore saved header selection first, then load the corresponding month.
-    // Do not trigger change events here; loadSelectedMonth is called exactly once.
+    // Restore saved Year/Month/Teacher only after teacher options are loaded.
     applyHeaderLock();
 
     document.getElementById("teacherSelect").addEventListener("change",async()=>{
@@ -857,8 +864,8 @@ async function init(){
       await loadSelectedMonth();
     });
     document.getElementById("year").addEventListener("change",async()=>{
+      if(getHeaderLock())return;
       setHeaderLock(null);
-      applyHeaderLock();
       activeDate=null;
       await loadLeaves();
       await loadSelectedMonth();
