@@ -2,109 +2,522 @@
 <html lang="kn">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ಶಿಕ್ಷಕರ ದಿನಚರಿ - Teacher Diary</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--blue:#123b66;--green:#16803c;--red:#b42318;--gold:#f4d35e;--bg:#f3f6fa;--border:#b8c1cc}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#111;font-family:"Noto Sans Kannada","Nirmala UI",Arial,sans-serif}
-header.app{background:var(--blue);color:#fff;padding:14px 22px;display:flex;justify-content:space-between;align-items:center;gap:12px}header.app h1{font-size:20px;margin:0}.wrap{max-width:1500px;margin:16px auto;padding:0 14px}.panel{background:#fff;border-radius:10px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px #0001}.panel h2{margin:0 0 12px;color:var(--blue);font-size:19px}.grid{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:10px}.field label{display:block;font-weight:700;font-size:13px;margin-bottom:5px}input,select,button{font:inherit}input[type=text],input[type=date],select{width:100%;padding:9px;border:1px solid var(--border);border-radius:6px;background:#fff}button{border:0;border-radius:6px;padding:9px 13px;cursor:pointer;font-weight:700}.btn{background:var(--blue);color:#fff}.btn.green{background:var(--green)}.btn.red{background:var(--red)}.btn.edit{background:#7a4e00;color:#fff}.btn.gray{background:#68717c;color:#fff}.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:end}.notice{font-size:12px;color:#666;margin-top:7px}.message{display:none;padding:9px 12px;border-radius:6px;margin-top:10px}.message.ok{display:block;background:#e7f7ec;color:#12652e}.message.err{display:block;background:#fdecec;color:#8a1c1c}
-.date-range{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}.date-wrap{display:flex;gap:5px}.date-wrap input[type=text]{flex:1}.date-wrap input[type=date]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}.cal-btn{background:#68717c;color:#fff;min-width:44px}
-.month-table,.leave-table{width:100%;border-collapse:collapse}.month-table th,.month-table td,.leave-table th,.leave-table td{border:1px solid #ddd;padding:7px}.month-table th,.leave-table th{background:#f4f4f4;text-align:center}.month-table td{text-align:center}.month-table .date{text-align:left;font-weight:700}.status-locked{color:#12652e;font-weight:700}.status-empty{color:#777}.month-open{white-space:nowrap}
-.editor-wrap{margin-top:10px;border:1px solid #cfd6de;border-radius:8px;overflow:auto;background:#fff}.day-head{background:#eaf1f8;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;color:var(--blue);font-weight:800}.entry-table{width:100%;min-width:1050px;border-collapse:collapse;table-layout:fixed}.entry-table th,.entry-table td{border:1px solid #b8b8b8;padding:5px;vertical-align:middle}.entry-table th{background:#f4f4f4;text-align:center;font-size:12px}.entry-table td{font-size:12px}.entry-table .pno{width:42px;text-align:center}.entry-table .time{width:105px;text-align:center}.entry-table .used{width:115px}.entry-table .mins{width:78px}.entry-table select{padding:7px}.custom{display:none;margin-top:4px;width:100%;padding:6px;border:1px solid #b8c1cc;border-radius:5px}.total-row{background:#fff8d8;font-weight:800;text-align:center}.cat-total{display:inline-block;min-width:30%;padding:3px}.day-actions{display:flex;justify-content:flex-end;align-items:center;gap:8px;padding:8px 10px;background:#f7f9fb;border-top:1px solid #d5dbe2}.lock-badge{font-weight:800;font-size:12px;margin-right:auto}.leave-banner{background:#fff0f0;border:1px solid #efb4b4;color:#9c1c1c;padding:18px;text-align:center;font-weight:800}.hidden{display:none!important}
-@media(max-width:900px){.grid{grid-template-columns:1fr 1fr}.date-range{grid-template-columns:1fr}.wrap{padding:0 8px}}
+:root{--blue:#123b66;--gold:#f4d35e;--green:#16803c;--red:#b42318;--border:#333;--bg:#f3f6fa}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Noto Sans Kannada","Nirmala UI",Arial,sans-serif;background:var(--bg);color:#111}
+header.app{background:var(--blue);color:#fff;padding:14px 22px;display:flex;justify-content:space-between;align-items:center;gap:15px}
+header.app h1{font-size:20px;margin:0}
+.wrap{max-width:1500px;margin:18px auto;padding:0 14px}
+.panel{background:#fff;border-radius:10px;padding:16px;box-shadow:0 2px 12px #00000012;margin-bottom:15px}
+.panel h2{margin:0 0 12px;font-size:18px;color:var(--blue)}
+.grid{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:10px}
+.field label{display:block;font-weight:700;font-size:13px;margin-bottom:5px}
+input,select,button,textarea{font:inherit}
+input[type=text],input[type=date],select,textarea{width:100%;padding:8px 9px;border:1px solid #b8c1cc;border-radius:6px;background:#fff}
+button{border:0;border-radius:6px;padding:9px 13px;cursor:pointer;font-weight:700}
+.btn{background:var(--blue);color:#fff}.btn.green{background:var(--green)}.btn.red{background:var(--red)}.btn.gray{background:#68717c}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.message{padding:9px 12px;border-radius:6px;margin-top:10px;display:none}
+.message.ok{display:block;background:#e7f7ec;color:#12652e}.message.err{display:block;background:#fdecec;color:#8a1c1c}
+.teacher-row{display:flex;gap:8px;align-items:end}.teacher-row .grow{flex:1}
+.week-tools{display:flex;gap:10px;align-items:end;flex-wrap:wrap}
+.week-tools .field{min-width:190px}
+.day-editor{margin-top:15px;border:1px solid #cfd6de;border-radius:8px;overflow:hidden}
+.day-title{background:#eaf1f8;padding:9px 12px;font-weight:800;color:var(--blue);display:flex;justify-content:space-between;align-items:center;gap:8px}.day-actions{display:flex;gap:6px;flex-wrap:wrap}.day-actions button{padding:6px 10px;font-size:12px}.day-card-body{padding:0}.date-list table{width:100%;border-collapse:collapse}.date-list th,.date-list td{border:1px solid #ddd;padding:7px;text-align:center}.date-list th{background:#f5f5f5}.date-list .opened{font-weight:700;color:#16803c}
+.entry-table{width:100%;border-collapse:collapse;table-layout:fixed}
+.entry-table th,.entry-table td{border:1px solid #b8b8b8;padding:5px;vertical-align:top}
+.entry-table th{background:#f4f4f4;text-align:center;font-size:12px}
+.entry-table td{font-size:12px}
+.entry-table .pno{width:42px;text-align:center}.entry-table .time{width:105px;text-align:center}.entry-table .used{width:115px}.entry-table .task{width:auto}.entry-table .mins{width:75px}
+.custom{display:none;margin-top:4px}
+.leave-banner{background:#fff0f0;border:1px solid #efb4b4;color:#9c1c1c;padding:18px;text-align:center;font-weight:800}
+.total-row{background:#fff8d8;font-weight:800;text-align:right}
+.small{font-size:11px;color:#666}
+.leave-list table{width:100%;border-collapse:collapse}.leave-list th,.leave-list td{border:1px solid #ddd;padding:7px}.leave-list th{background:#f5f5f5}
+.notice{font-size:12px;color:#555;margin-top:6px}
+.hidden{display:none!important}
+
+/* PRINT */
+#printRoot{display:none}
+@media print{
+ @page{size:A4 landscape;margin:7mm}
+ body{background:#fff}
+ body>*:not(#printRoot){display:none!important}
+ #printRoot{display:block}
+ .print-page{width:100%;height:196mm;position:relative;page-break-after:always;overflow:hidden}
+ .print-page:last-child{page-break-after:auto}
+ .phead{text-align:center}
+ .phead .yearline{font-weight:800;font-size:15px}
+ .phead .mainhead{background:#f6df75;border:1px solid #222;font-weight:900;font-size:16px;padding:5px;margin-top:4px}
+ .schoolline{font-weight:700;text-align:left;font-size:12px;margin:5px 0}
+ .meta{font-size:11px;display:flex;gap:20px;margin-bottom:4px}
+ .meta span{white-space:nowrap}
+ .print-day{margin-bottom:3px}
+ .print-day-title{font-weight:800;font-size:11px;margin:2px 0}
+ .print-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8.2px}
+ .print-table th,.print-table td{border:1px solid #222;padding:2px 2px;line-height:1.1;vertical-align:middle}
+ .print-table th{text-align:center;font-weight:800}
+ .print-table .c1{width:3.5%}.print-table .c2{width:8%}.print-table .c3{width:9%}
+ .print-table .c4{width:14%}.print-table .c5{width:5.5%}.print-table .c6{width:14%}.print-table .c7{width:5.5%}.print-table .c8{width:14%}.print-table .c9{width:5.5%}
+ .print-total{text-align:right;font-weight:800;background:#fafafa}
+ .weekly-title{background:#f6df75;border:1px solid #222;text-align:center;font-weight:900;padding:4px;font-size:11px;margin-top:4px}
+ .weekly-table{width:100%;border-collapse:collapse;font-size:8.5px}
+ .weekly-table th,.weekly-table td{border:1px solid #222;padding:3px;text-align:center}
+ .signs{display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:15px;font-size:10px;text-align:center}
+ .signs div{padding-top:18px}
+}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}.entry-table{min-width:1050px}.day-editor{overflow:auto}}
 </style>
 </head>
 <body>
-<header class="app"><h1>📘 ಶಿಕ್ಷಕರ ದಿನಚರಿ - Teacher Diary</h1><div class="actions"><button class="btn gray" onclick="location.href='dashboard.html'">Dashboard</button><button class="btn green" onclick="printDateRange()">🖨️ Print / PDF</button></div></header>
+<header class="app">
+  <h1>📘 ಶಿಕ್ಷಕರ ದಿನಚರಿ - Teacher Diary</h1>
+  <div class="actions">
+    <button class="btn gray" onclick="window.location.href='dashboard.html'">Dashboard</button>
+    <button class="btn green" onclick="printWeek()">🖨️ Print / PDF</button>
+  </div>
+</header>
+
 <div class="wrap">
-<section class="panel">
-<h2>Teacher Diary – ವಾರದ ಮಾಹಿತಿ</h2>
-<div class="grid">
-<div class="field"><label>ವರ್ಷ</label><input id="year" type="text" maxlength="7" placeholder="ಉದಾ: 2026-27"></div>
-<div class="field"><label>ತಿಂಗಳು</label><select id="monthFilter"><option value="">ತಿಂಗಳು ಆಯ್ಕೆಮಾಡಿ</option><option value="0">ಜನವರಿ</option><option value="1">ಫೆಬ್ರವರಿ</option><option value="2">ಮಾರ್ಚ್</option><option value="3">ಏಪ್ರಿಲ್</option><option value="4">ಮೇ</option><option value="5">ಜೂನ್</option><option value="6">ಜುಲೈ</option><option value="7">ಆಗಸ್ಟ್</option><option value="8">ಸೆಪ್ಟೆಂಬರ್</option><option value="9">ಅಕ್ಟೋಬರ್</option><option value="10">ನವೆಂಬರ್</option><option value="11">ಡಿಸೆಂಬರ್</option></select></div>
-<div class="field"><label>ಶಿಕ್ಷಕರ ಹೆಸರು</label><select id="teacherSelect"><option value="">ಶಿಕ್ಷಕರನ್ನು ಆಯ್ಕೆಮಾಡಿ</option></select></div>
-<div class="actions"><button class="btn" id="addTeacherBtn">+ Add Teacher</button><button class="btn red" id="deleteTeacherBtn">Delete Teacher</button><button class="btn green" id="topLockBtn">🔒 Lock</button><button class="btn edit hidden" id="topEditBtn">✏️ Edit</button></div>
-</div><div class="notice">ತಿಂಗಳು ಆಯ್ಕೆ ಮಾಡಿದಾಗ 01ರಿಂದ ಆ ತಿಂಗಳ ಕೊನೆಯ ದಿನದವರೆಗೆ ದಿನಾಂಕಗಳು ಕಾಣಿಸುತ್ತವೆ. ದಿನದ Entry ಬೇಕಾದಾಗ ಮಾತ್ರ Open Entry ಒತ್ತಿ.</div><div id="topMsg" class="message"></div>
-</section>
-<section class="panel"><h2>Print / PDF — ದಿನಾಂಕ ವ್ಯಾಪ್ತಿ</h2>
-<div class="date-range">
-<div class="field"><label>From Date (DD-MM-YYYY)</label><div class="date-wrap"><input id="printFromText" type="text" inputmode="numeric" maxlength="10" placeholder="DD-MM-YYYY"><input id="printFrom" type="date"><button class="cal-btn" type="button" id="fromCal">📅</button></div></div>
-<div class="field"><label>To Date (DD-MM-YYYY)</label><div class="date-wrap"><input id="printToText" type="text" inputmode="numeric" maxlength="10" placeholder="DD-MM-YYYY"><input id="printTo" type="date"><button class="cal-btn" type="button" id="toCal">📅</button></div></div>
-<button class="btn green" id="rangePrintBtn">🖨️ Print / PDF</button>
-</div><div class="notice">ಆಯ್ಕೆ ಮಾಡಿದ From Date ರಿಂದ To Date ವರೆಗೆ 3 ದಿನಗಳು ಒಂದು ಪುಟಕ್ಕೆ ಬರುತ್ತವೆ. Saturday ಬಂದರೆ Saturday ಮುಗಿದ ತಕ್ಷಣ ಅದೇ ಪುಟದಲ್ಲಿ ವಾರದ ಕ್ರೋಢೀಕೃತ ಪಟ್ಟಿ ಮತ್ತು ಸಹಿ ಸ್ಥಳ ಬರುತ್ತದೆ.</div>
-</section>
-<section class="panel"><h2>ದಿನವಾರು Entry</h2><div id="weekEditor"><div class="notice">ವರ್ಷ, ತಿಂಗಳು ಮತ್ತು ಶಿಕ್ಷಕರನ್ನು ಆಯ್ಕೆಮಾಡಿ.</div></div></section>
-<section class="panel"><h2>ರಜೆ ನಿರ್ವಹಣೆ</h2><div class="grid"><div class="field"><label>ರಜೆ ದಿನಾಂಕ</label><input id="leaveDate" type="date"></div><div class="field"><label>ರಜೆಯ ಕಾರಣ</label><input id="leaveReason" type="text" placeholder="ಉದಾ: ಸಾರ್ವಜನಿಕ ರಜೆ"></div><div class="actions"><button class="btn" id="leaveSaveBtn">ರಜೆ Save</button></div></div><div id="leaveList" style="margin-top:10px"></div></section>
-<section class="panel"><h2>ಆಯ್ಕೆ ಮಾಡಿದ ತಿಂಗಳ Diary</h2><div id="monthList"><div class="notice">ತಿಂಗಳು ಆಯ್ಕೆ ಮಾಡಿದ ನಂತರ ದಿನಾಂಕಗಳು ಇಲ್ಲಿ ಕಾಣಿಸುತ್ತವೆ.</div></div></section>
+  <div class="panel">
+    <h2>Teacher Diary – ವಾರದ ಮಾಹಿತಿ</h2>
+    <div class="grid">
+      <div class="field"><label>ವರ್ಷ</label><input id="year" type="text" maxlength="7" placeholder="ಉದಾ: 2026-27"></div>
+      <div class="field"><label>ತಿಂಗಳು</label>
+        <select id="monthFilter" onchange="loadSelectedMonth()">
+          <option value="">ತಿಂಗಳು ಆಯ್ಕೆಮಾಡಿ</option>
+          <option value="0">ಜನವರಿ</option><option value="1">ಫೆಬ್ರವರಿ</option><option value="2">ಮಾರ್ಚ್</option>
+          <option value="3">ಏಪ್ರಿಲ್</option><option value="4">ಮೇ</option><option value="5">ಜೂನ್</option>
+          <option value="6">ಜುಲೈ</option><option value="7">ಆಗಸ್ಟ್</option><option value="8">ಸೆಪ್ಟೆಂಬರ್</option>
+          <option value="9">ಅಕ್ಟೋಬರ್</option><option value="10">ನವೆಂಬರ್</option><option value="11">ಡಿಸೆಂಬರ್</option>
+        </select>
+      </div>
+      <div class="field"><label>ಶಿಕ್ಷಕರ ಹೆಸರು</label>
+        <select id="teacherSelect"><option value="">ಶಿಕ್ಷಕರನ್ನು ಆಯ್ಕೆಮಾಡಿ</option></select>
+      </div>
+      <div class="field" style="display:flex;align-items:end;gap:6px">
+        <button type="button" class="btn" onclick="addTeacher(event)">+ Add Teacher</button>
+        <button type="button" class="btn red" onclick="deleteTeacher(event)">Delete Teacher</button>
+      </div>
+    </div>
+    <div class="notice">ತಿಂಗಳು ಆಯ್ಕೆ ಮಾಡಿದಾಗ ಆ ತಿಂಗಳ ಎಲ್ಲಾ ದಿನಾಂಕಗಳು 01ರಿಂದ ಕೊನೆಯ ದಿನಾಂಕದವರೆಗೆ ಕಾಣಿಸುತ್ತವೆ. ಪ್ರತಿ ದಿನವನ್ನು Open ಮಾಡಿದರೆ ಅದರ Diary table ಕೆಳಗೆ ಸೇರುತ್ತದೆ. ಹಿಂದಿನ table ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಮುಚ್ಚುವುದಿಲ್ಲ; ಬೇಕಾದಾಗ ಆ ದಿನದ Hide button ಒತ್ತಿ ನೀವು ಸ್ವತಃ ಮುಚ್ಚಬಹುದು.</div>
+    <div class="week-tools" style="margin-top:10px"><div class="field"><label>Print From Date</label><input id="printFrom" type="date"></div><div class="field"><label>Print To Date</label><input id="printTo" type="date"></div><button class="btn green" type="button" onclick="printWeek()">🖨️ Print / PDF</button></div>
+    <div id="topMsg" class="message"></div>
+  </div>
+
+  <div class="panel">
+    <h2>ದಿನವಾರು Entry</h2>
+    <div id="openDays"></div>
+  </div>
+
+  <div class="panel">
+    <h2>ರಜೆ ನಿರ್ವಹಣೆ</h2>
+    <div class="grid">
+      <div class="field"><label>ರಜೆ ದಿನಾಂಕ</label><input id="leaveDate" type="date"></div>
+      <div class="field" style="grid-column:span 3"><label>ರಜೆಯ ಕಾರಣ</label><input id="leaveReason" type="text" placeholder="ಉದಾ: ಸಾರ್ವಜನಿಕ ರಜೆ"></div>
+      <div class="field" style="display:flex;align-items:end"><button class="btn" onclick="saveLeave()">ರಜೆ Save</button></div>
+    </div>
+    <div id="leaveList" class="leave-list" style="margin-top:12px"></div>
+  </div>
+
+  <div class="panel">
+    <h2>ಆಯ್ಕೆ ಮಾಡಿದ ತಿಂಗಳ ಎಲ್ಲಾ ದಿನಾಂಕಗಳು</h2>
+    <div id="monthList"></div>
+  </div>
 </div>
+
+<div id="printRoot"></div>
 
 <script>
 const SUPABASE_URL="https://xhskrohrrsxlfbdbhyji.supabase.co";
 const SUPABASE_KEY="sb_publishable_0amt5yG7ZIm6JD7oub6JTw_Hv5Nx2cl";
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
 const DAY_NAMES=["ಭಾನುವಾರ","ಸೋಮವಾರ","ಮಂಗಳವಾರ","ಬುಧವಾರ","ಗುರುವಾರ","ಶುಕ್ರವಾರ","ಶನಿವಾರ"];
 const MONTHS=["ಜನವರಿ","ಫೆಬ್ರವರಿ","ಮಾರ್ಚ್","ಏಪ್ರಿಲ್","ಮೇ","ಜೂನ್","ಜುಲೈ","ಆಗಸ್ಟ್","ಸೆಪ್ಟೆಂಬರ್","ಅಕ್ಟೋಬರ್","ನವೆಂಬರ್","ಡಿಸೆಂಬರ್"];
-const PERIODS={1:["10:00-10:45"],2:["10:45-11:30"],3:["11:40-12:25"],4:["12:25-1:10"],5:["1:55-2:40"],6:["2:40-3:25"],7:["3:35-4:20"]};
-const SATURDAY={1:["8:40-9:20"],2:["9:20-10:00"],3:["10:30-11:10"],4:["11:10-11:50"],5:["11:50-12:30"]};
-const TEACHING=["8TH ಪಾಠ ಬೋಧನೆ","8TH ಘಟಕ ಪರೀಕ್ಷೆ","9TH ಪಾಠ ಬೋಧನೆ","9TH ಘಟಕ ಪರೀಕ್ಷೆ","10TH ಪಾಠ ಬೋಧನೆ","10TH ಘಟಕ ಪರೀಕ್ಷೆ"];
-const OTHER=["ಪಾಠದ ಸಿದ್ದತೆ","ಪರೀಕ್ಷೆ ಮೌಲ್ಯಮಾಪನ","ಚಟುವಟಿಕೆ ಮೌಲ್ಯಮಾಪನ","ಗೃಹಪಾಠ ವೀಕ್ಷಣೆ"];
-const NON=["ಸಿಬ್ಬಂದಿ ಸಭೆ/ಸಾಮಾನ್ಯ ಸಭೆ","ಮದ್ಯಾಹ್ನ ಭೋಜನಾ ಮೇಲ್ವಿಚಾರಣೆ","ಸ್ವಚ್ಛತಾ ಕಾರ್ಯ","ಪೋಷಕರ ಸಂಪರ್ಕ","ಆನ್ಲೈನ್‌ ಕಾರ್ಯ","ಗ್ರಂಥಾಲಯ ವ್ಯವಸ್ಥೆ","ಕ್ರೀಡೆ/ಸಾಂಸ್ಕೃತಿಕ ಸಿದ್ದತೆ","SDMC ಸಭೆ"];
-let schoolId=null,monthDays=[],activeDate=null,loadSeq=0,leaves=[];
-const $=id=>document.getElementById(id);
-function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]));}
-function pad(n){return String(n).padStart(2,"0")}
-function iso(y,m,d){return `${y}-${pad(m)}-${pad(d)}`}
-function addDays(s,n){const d=new Date(s+"T00:00:00");d.setDate(d.getDate()+n);return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
-function dayName(s){return DAY_NAMES[new Date(s+"T00:00:00").getDay()]}
-function monthName(s){return MONTHS[new Date(s+"T00:00:00").getMonth()]}
-function fmtDate(s){if(!s)return "";const [y,m,d]=s.split("-");return `${d}-${m}-${y}`}
-function parseDisplay(s){const m=String(s||"").trim().match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);if(!m)return null;const d=pad(m[1]),mo=pad(m[2]),y=m[3],v=`${y}-${mo}-${d}`;const x=new Date(v+"T00:00:00");return x.getFullYear()==+y&&x.getMonth()+1==+m[2]&&x.getDate()==+m[1]?v:null}
-function showMsg(t,ok=true){const e=$("topMsg");e.textContent=t;e.className="message "+(ok?"ok":"err");clearTimeout(showMsg.t);showMsg.t=setTimeout(()=>e.className="message",3000)}
-function blankDay(date){return {date,leave:false,leaveReason:"",locked:false,rows:[]}}
-function shape(d){const x={...blankDay(d?.date||""),...(d||{})};x.rows=Array.isArray(x.rows)?x.rows:[];x.locked=!!x.locked;return x}
-function getAcademicYearMonth(){const y=$("year").value.trim(),m=$("monthFilter").value;if(!/^\d{4}-\d{2}$/.test(y)||m==="")return null;const academic=+y.slice(0,4),mn=+m+1,cy=mn>=4?academic:academic+1;return {year:y,monthNo:mn,calendarYear:cy,start:iso(cy,mn,1),end:iso(cy,mn,new Date(cy,mn,0).getDate())}}
-function periodsFor(date){return dayName(date)==="ಶನಿವಾರ"?SATURDAY:PERIODS}
-function parseMin(v,c){if(v==="45"||v==="40")return +v;if(v==="custom"){const m=String(c||"").match(/\d+/);return m?+m[0]:0}return 0}
-function catTotal(d,k){return (d.rows||[]).reduce((s,r)=>s+parseMin(r[k+"min"],r[k+"minCustom"]),0)}
-function hm(n){return `${Math.floor(n/60)} ಗಂಟೆ ${n%60} ನಿಮಿಷ`}
-function getMonday(date){const d=new Date(date+"T00:00:00");d.setDate(d.getDate()-((d.getDay()+6)%7));return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
-function taskSelect(type,v="",c="",disabled=false){const a=type==="t1"?TEACHING:type==="t2"?OTHER:NON;let h=`<select class="task-select" ${disabled?"disabled":""}><option value="">ಖಾಲಿ</option>`;a.forEach(x=>h+=`<option value="${esc(x)}" ${v===x?"selected":""}>${esc(x)}</option>`);h+=`<option value="__custom__" ${v==="__custom__"?"selected":""}>ಇತರೆ / ಸ್ವಂತವಾಗಿ ಬರೆಯಿರಿ</option></select><input class="custom task-custom" value="${esc(v==="__custom__"?c:"")}" placeholder="ಸ್ವಂತವಾಗಿ ಬರೆಯಿರಿ" ${disabled?"disabled":""} style="${v==="__custom__"?"display:block":"display:none"}">`;return h}
-function timeSelect(v="",c="",disabled=false){return `<select class="time-select" ${disabled?"disabled":""}><option value="">ಖಾಲಿ</option><option value="45" ${v==="45"?"selected":""}>45ನಿ</option><option value="40" ${v==="40"?"selected":""}>40ನಿ</option><option value="custom" ${v==="custom"?"selected":""}>ಸ್ವಂತವಾಗಿ ಬರೆಯಿರಿ</option></select><input class="custom time-custom" value="${esc(c)}" placeholder="ಉದಾ: 35ನಿ" ${disabled?"disabled":""} style="${v==="custom"?"display:block":"display:none"}">`}
-function readEditor(date){const base=shape(monthDays.find(x=>x.date===date)||blankDay(date)),el=document.querySelector(`.editor-wrap[data-date="${date}"]`);if(!el)return base;const rows=[];el.querySelectorAll("tbody tr[data-period]").forEach(tr=>{const c=tr.children;const tv=[3,5,7].map(i=>({v:c[i].querySelector(".task-select")?.value||"",c:c[i].querySelector(".task-custom")?.value||""}));const mv=[4,6,8].map(i=>({v:c[i].querySelector(".time-select")?.value||"",c:c[i].querySelector(".time-custom")?.value||""}));rows.push({period:tr.dataset.period,used:c[2].querySelector("select")?.value||"",t1:tv[0].v,t1custom:tv[0].c,t1min:mv[0].v,t1minCustom:mv[0].c,t2:tv[1].v,t2custom:tv[1].c,t2min:mv[1].v,t2minCustom:mv[1].c,t3:tv[2].v,t3custom:tv[2].c,t3min:mv[2].v,t3minCustom:mv[2].c});});return {...base,rows}}
-function renderEditor(date){activeDate=date;const d=shape(monthDays.find(x=>x.date===date));const box=$("weekEditor");if(!d.date){box.innerHTML="";return}if(d.leave){box.innerHTML=`<div class="editor-wrap" data-date="${date}"><div class="day-head"><span>${esc(dayName(date))} — ${esc(fmtDate(date))}</span><span>🏖️ ರಜೆ</span></div><div class="leave-banner">ರಜೆ — ${esc(d.leaveReason||"")}</div></div>`;return}const locked=d.locked,ps=periodsFor(date);let h=`<div class="editor-wrap" data-date="${date}"><div class="day-head"><span>${esc(dayName(date))} — ${esc(fmtDate(date))}</span><span>${locked?"🔒 Locked":"✏️ Entry"}</span></div><table class="entry-table"><thead><tr><th class="pno">ಅವಧಿ</th><th class="time">ಸಮಯ</th><th class="used">ತರಗತಿ ಬೋಧನೆಗೆ<br>ಬಳಸಿದ/ಇಲ್ಲ</th><th>1. ಬೋಧನ ಕಾರ್ಯ<br><span class="small">ನಿರ್ವಹಿಸಿದ ಕಾರ್ಯ</span></th><th class="mins">ಬಳಸಿದ ಸಮಯ</th><th>2. ಇತರೆ ಬೋಧನ ಕಾರ್ಯ<br><span class="small">ನಿರ್ವಹಿಸಿದ ಕಾರ್ಯ</span></th><th class="mins">ಬಳಸಿದ ಸಮಯ</th><th>3. ಬೋಧನೇತರ ಕಾರ್ಯ<br><span class="small">ನಿರ್ವಹಿಸಿದ ಕಾರ್ಯ</span></th><th class="mins">ಬಳಸಿದ ಸಮಯ</th></tr></thead><tbody>`;
-for(const [p,a] of Object.entries(ps)){const r=d.rows.find(x=>String(x.period)===p)||{};h+=`<tr data-period="${p}"><td class="pno">${p}</td><td class="time">${a[0]}</td><td><select ${locked?"disabled":""}><option value=""></option><option value="ಬಳಸಿದೆ" ${r.used==="ಬಳಸಿದೆ"?"selected":""}>ಬಳಸಿದೆ</option><option value="ಇಲ್ಲ" ${r.used==="ಇಲ್ಲ"?"selected":""}>ಇಲ್ಲ</option></select></td><td>${taskSelect("t1",r.t1,r.t1custom,locked)}</td><td>${timeSelect(r.t1min,r.t1minCustom,locked)}</td><td>${taskSelect("t2",r.t2,r.t2custom,locked)}</td><td>${timeSelect(r.t2min,r.t2minCustom,locked)}</td><td>${taskSelect("t3",r.t3,r.t3custom,locked)}</td><td>${timeSelect(r.t3min,r.t3minCustom,locked)}</td></tr>`}
-const t1=catTotal(d,"t1"),t2=catTotal(d,"t2"),t3=catTotal(d,"t3");h+=`</tbody><tfoot><tr><td colspan="9" class="total-row"><span class="cat-total"><b>ಒಟ್ಟು ಬೋಧನ ಕಾರ್ಯ:</b> <span id="dt1">${hm(t1)}</span></span><span class="cat-total"><b>ಒಟ್ಟು ಇತರೆ ಬೋಧನ ಕಾರ್ಯ:</b> <span id="dt2">${hm(t2)}</span></span><span class="cat-total"><b>ಒಟ್ಟು ಬೋಧನೇತರ ಕಾರ್ಯ:</b> <span id="dt3">${hm(t3)}</span></span></td></tr></tfoot></table><div class="day-actions"><span class="lock-badge">${locked?"🔒 Locked":"Entry ಬರೆಯಬಹುದು"}</span>${locked?`<button class="btn edit" data-action="edit-day" data-date="${date}">✏️ Edit</button>`:`<button class="btn green" data-action="save-day" data-date="${date}">💾 Save</button>`}</div></div>`;box.innerHTML=h;requestAnimationFrame(()=>{const e=box.querySelector(".editor-wrap");if(e)e.scrollIntoView({behavior:"smooth",block:"center"})})}
-function updateTotals(){const el=document.querySelector(".editor-wrap[data-date]");if(!el||!activeDate)return;const d=readEditor(activeDate);const a=el.querySelector("#dt1"),b=el.querySelector("#dt2"),c=el.querySelector("#dt3");if(a)a.textContent=hm(catTotal(d,"t1"));if(b)b.textContent=hm(catTotal(d,"t2"));if(c)c.textContent=hm(catTotal(d,"t3"))}
-function renderMonthList(){const list=$("monthList");if(!monthDays.length){list.innerHTML='<div class="notice">ತಿಂಗಳು ಆಯ್ಕೆಮಾಡಿ.</div>';return}let h='<table class="month-table"><thead><tr><th>ದಿನಾಂಕ</th><th>ವಾರ</th><th>ಸ್ಥಿತಿ</th><th>Diary Entry</th></tr></thead><tbody>';for(const d of monthDays){h+=`<tr><td class="date">${fmtDate(d.date)}</td><td>${esc(dayName(d.date))}</td><td class="${d.locked?"status-locked":"status-empty"}">${d.leave?"🏖️ ರಜೆ":d.locked?"🔒 Locked":"Entry ಇಲ್ಲ"}</td><td class="month-open">${d.leave?"—":`<button class="btn" data-action="open-day" data-date="${d.date}">${activeDate===d.date?"Close":"Open Entry"}</button>`}</td></tr>`}h+='</tbody></table>';list.innerHTML=h}
-function buildMonthDates(){const info=getAcademicYearMonth();if(!info){monthDays=[];activeDate=null;$("weekEditor").innerHTML='<div class="notice">ವರ್ಷ, ತಿಂಗಳು ಮತ್ತು ಶಿಕ್ಷಕರನ್ನು ಆಯ್ಕೆಮಾಡಿ.</div>';renderMonthList();return}const a=[];for(let d=1;d<=new Date(info.calendarYear,info.monthNo,0).getDate();d++)a.push(blankDay(iso(info.calendarYear,info.monthNo,d)));monthDays=a;activeDate=null;renderMonthList();$("weekEditor").innerHTML='<div class="notice">ದಿನಾಂಕ ಪಟ್ಟಿಯಿಂದ ಬೇಕಾದ ದಿನದ Open Entry ಒತ್ತಿ.</div>'}
-async function ensureSchool(){if(schoolId)return schoolId;const {data,error}=await sb.rpc("get_my_school_id");if(error||!data)throw new Error(error?.message||"School mapping ಇಲ್ಲ.");schoolId=data;return data}
-async function checkLogin(){const {data}=await sb.auth.getSession();if(!data?.session){location.href="login.html";return false}return true}
-async function loadTeachers(selectId=""){const sel=$("teacherSelect");sel.innerHTML='<option value="">ಶಿಕ್ಷಕರನ್ನು ಆಯ್ಕೆಮಾಡಿ</option>';const {data,error}=await sb.from("teacher_diary_teachers").select("id,name").eq("school_id",schoolId).order("name");if(error)throw error;(data||[]).forEach(t=>sel.insertAdjacentHTML("beforeend",`<option value="${esc(t.id)}">${esc(t.name)}</option>`));if(selectId)sel.value=selectId}
-function lockKey(){return `teacherDiaryHeaderLock:${schoolId}`}
-function getHeaderLock(){try{return JSON.parse(localStorage.getItem(lockKey())||"null")}catch{return null}}
-function applyHeaderLock(){const l=getHeaderLock(),locked=!!l;if(l){$("year").value=l.year||"";$("monthFilter").value=l.month??"";$("teacherSelect").value=l.teacher||""}$("year").disabled=locked;$("monthFilter").disabled=locked;$("teacherSelect").disabled=locked;$("topLockBtn").classList.toggle("hidden",locked);$("topEditBtn").classList.toggle("hidden",!locked)}
-function lockHeader(){const year=$("year").value.trim(),month=$("monthFilter").value,teacher=$("teacherSelect").value;if(!/^\d{4}-\d{2}$/.test(year)||month===""||!teacher){alert("ವರ್ಷ, ತಿಂಗಳು ಮತ್ತು ಶಿಕ್ಷಕರನ್ನು ಸರಿಯಾಗಿ ಆಯ್ಕೆಮಾಡಿ.");return}localStorage.setItem(lockKey(),JSON.stringify({year,month,teacher}));applyHeaderLock();showMsg("ವರ್ಷ, ತಿಂಗಳು ಮತ್ತು ಶಿಕ್ಷಕರ ಮಾಹಿತಿ Lock ಆಗಿದೆ.");}
-function editHeader(){localStorage.removeItem(lockKey());applyHeaderLock();showMsg("Edit ಮಾಡಲು Unlock ಆಗಿದೆ.");}
-async function addTeacher(){const name=prompt("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ:");if(name===null)return;const clean=name.trim();if(!clean){alert("ಹೆಸರು ನಮೂದಿಸಿ.");return}const {data:dup,error:de}=await sb.from("teacher_diary_teachers").select("id,name").eq("school_id",schoolId).ilike("name",clean).maybeSingle();if(de&&de.code!=="PGRST116"){showMsg(de.message,false);return}if(dup){$("teacherSelect").value=dup.id;showMsg("ಈ ಶಿಕ್ಷಕರ ಹೆಸರು ಈಗಾಗಲೇ ಇದೆ.");return}const {data,error}=await sb.from("teacher_diary_teachers").insert({school_id:schoolId,name:clean}).select("id,name").single();if(error){showMsg(error.message,false);return}await loadTeachers(data.id);showMsg("ಶಿಕ್ಷಕರ ಹೆಸರು ಸೇರಿಸಲಾಗಿದೆ.")}
-async function deleteTeacher(){const id=$("teacherSelect").value;if(!id){alert("ಮೊದಲು ಶಿಕ್ಷಕರನ್ನು ಆಯ್ಕೆಮಾಡಿ.");return}const name=$("teacherSelect").selectedOptions[0]?.text||"";if(!confirm(`"${name}" ಅವರನ್ನು ಅಳಿಸಬೇಕೇ?`))return;const {error}=await sb.from("teacher_diary_teachers").delete().eq("school_id",schoolId).eq("id",id);if(error){showMsg(error.message,false);return}localStorage.removeItem(lockKey());await loadTeachers();buildMonthDates();showMsg("ಶಿಕ್ಷಕರ ಹೆಸರು ಅಳಿಸಲಾಗಿದೆ.")}
-async function loadMonthData(){const info=getAcademicYearMonth();if(!info||!schoolId)return;const token=++loadSeq;buildMonthDates();try{const [w,l]=await Promise.all([sb.from("teacher_diary_weeks").select("week_start,data").eq("school_id",schoolId).eq("teacher_id",$("teacherSelect").value).eq("academic_year",info.year).gte("week_start",getMonday(info.start)).lte("week_start",getMonday(info.end)),sb.from("teacher_diary_leaves").select("leave_date,reason").eq("school_id",schoolId).eq("teacher_id",$("teacherSelect").value).eq("academic_year",info.year).gte("leave_date",info.start).lte("leave_date",info.end)]);if(token!==loadSeq)return;if(w.error)throw w.error;const saved=new Map();(w.data||[]).forEach(row=>(Array.isArray(row.data)?row.data:[]).forEach(d=>{if(d?.date)saved.set(d.date,shape(d))}));const leaveMap=new Map((l.data||[]).map(x=>[x.leave_date,x.reason]));monthDays=monthDays.map(d=>{const x=shape(saved.get(d.date)||d);if(leaveMap.has(d.date)){x.leave=true;x.leaveReason=leaveMap.get(d.date)||""}return x});renderMonthList();if(activeDate)renderEditor(activeDate)}catch(e){if(token===loadSeq)showMsg("Saved data load ಆಗಲಿಲ್ಲ: "+(e.message||e),false)}}
-async function saveDay(date){const d=monthDays.find(x=>x.date===date);if(!d||d.leave||d.locked)return;const day=readEditor(date);day.locked=true;const teacher=$("teacherSelect").value,year=$("year").value.trim();const wm=getMonday(date);const {data:existing,error}=await sb.from("teacher_diary_weeks").select("id,data").eq("school_id",schoolId).eq("teacher_id",teacher).eq("academic_year",year).eq("week_start",wm).maybeSingle();if(error){showMsg(error.message,false);return}let days=Array.from({length:6},(_,i)=>blankDay(addDays(wm,i)));if(Array.isArray(existing?.data?.data))days=days.map(x=>shape(existing.data.data.find(y=>y.date===x.date)||x));const i=days.findIndex(x=>x.date===date);days[i]=day;const payload={school_id:schoolId,teacher_id:teacher,academic_year:year,week_start:wm,month_no:new Date(wm+"T00:00:00").getMonth()+1,data:days,updated_at:new Date().toISOString()};const res=existing?await sb.from("teacher_diary_weeks").update(payload).eq("id",existing.id):await sb.from("teacher_diary_weeks").insert(payload);if(res.error){showMsg(res.error.message,false);return}monthDays=monthDays.map(x=>x.date===date?day:x);renderMonthList();renderEditor(date);showMsg(`${fmtDate(date)} Diary Save ಆಗಿದೆ ಮತ್ತು Lock ಆಗಿದೆ.`)}
-function editDay(date){const d=monthDays.find(x=>x.date===date);if(!d||d.leave)return;d.locked=false;renderMonthList();renderEditor(date)}
-function openDay(date){if(activeDate===date){activeDate=null;$("weekEditor").innerHTML='<div class="notice">ದಿನಾಂಕ ಪಟ್ಟಿಯಿಂದ ಬೇಕಾದ ದಿನದ Open Entry ಒತ್ತಿ.</div>';renderMonthList();return}renderEditor(date);renderMonthList()}
-async function loadLeaves(){const teacher=$("teacherSelect").value,year=$("year").value.trim();if(!teacher||!year){$("leaveList").innerHTML="";return}const {data,error}=await sb.from("teacher_diary_leaves").select("id,leave_date,reason").eq("school_id",schoolId).eq("teacher_id",teacher).eq("academic_year",year).order("leave_date");if(error)return;leaves=data||[];$("leaveList").innerHTML=leaves.length?`<table class="leave-table"><tr><th>ದಿನಾಂಕ</th><th>ವಾರ</th><th>ಕಾರಣ</th><th>Action</th></tr>${leaves.map(x=>`<tr><td>${fmtDate(x.leave_date)}</td><td>${esc(dayName(x.leave_date))}</td><td>${esc(x.reason)}</td><td><button class="btn edit" data-leave-edit="${x.id}">Edit</button> <button class="btn red" data-leave-delete="${x.id}">Delete</button></td></tr>`).join("")}</table>`:"ಯಾವುದೇ ರಜೆ ದಾಖಲೆ ಇಲ್ಲ."}
-async function saveLeave(){const date=$("leaveDate").value,reason=$("leaveReason").value.trim(),teacher=$("teacherSelect").value,year=$("year").value.trim();if(!date||!reason||!teacher||!year){alert("ವರ್ಷ, ಶಿಕ್ಷಕ, ದಿನಾಂಕ ಮತ್ತು ಕಾರಣ ನಮೂದಿಸಿ.");return}const {error}=await sb.from("teacher_diary_leaves").upsert({school_id:schoolId,teacher_id:teacher,academic_year:year,leave_date:date,reason},{onConflict:"school_id,teacher_id,academic_year,leave_date"});if(error){showMsg(error.message,false);return}$("leaveDate").value="";$("leaveReason").value="";await loadLeaves();await loadMonthData();showMsg("ರಜೆ Save ಆಗಿದೆ.")}
-async function editLeave(id){const x=leaves.find(a=>a.id===id);if(!x)return;const r=prompt("ರಜೆಯ ಕಾರಣ",x.reason);if(r===null)return;const d=prompt("ದಿನಾಂಕ (DD-MM-YYYY)",fmtDate(x.leave_date));if(d===null)return;const isoD=parseDisplay(d);if(!isoD){alert("ದಿನಾಂಕ DD-MM-YYYY ರೂಪದಲ್ಲಿ ನಮೂದಿಸಿ.");return}const {error}=await sb.from("teacher_diary_leaves").update({leave_date:isoD,reason:r.trim()}).eq("id",id).eq("school_id",schoolId);if(error){showMsg(error.message,false);return}await loadLeaves();await loadMonthData()}
-async function deleteLeave(id){if(!confirm("ಈ ರಜೆ ದಾಖಲೆಯನ್ನು ಅಳಿಸಬೇಕೇ?"))return;const {error}=await sb.from("teacher_diary_leaves").delete().eq("id",id).eq("school_id",schoolId);if(error){showMsg(error.message,false);return}await loadLeaves();await loadMonthData()}
-function setPrint(which,v){const text=$(which+"Text"),date=$(which);if(v){date.value=v;text.value=fmtDate(v)}}
-function wireDatePicker(which){$(which+"Cal").addEventListener("click",()=>{const e=$(which);if(e.showPicker){try{e.showPicker()}catch{e.click()}}else e.click()});$(which).addEventListener("change",()=>setPrint(which,$(which).value));$(which+"Text").addEventListener("input",()=>{const v=parseDisplay($(which+"Text").value);if(v)$(which).value=v})}
-function taskText(v,c){return v==="__custom__"?c:(v||"")}function timeText(v,c){return v==="45"?"45ನಿ":v==="40"?"40ನಿ":v==="custom"?(c||""):""}
-function printDay(day){const ps=periodsFor(day.date);let rows="";if(day.leave){rows=`<tr><td colspan="9" style="height:18mm;text-align:center;font-weight:800">ರಜೆ — ${esc(day.leaveReason||"")}</td></tr>`}else{for(const [p,a] of Object.entries(ps)){const r=(day.rows||[]).find(x=>String(x.period)===p)||{};rows+=`<tr><td>${p}</td><td>${a[0]}</td><td>${esc(r.used||"")}</td><td>${esc(taskText(r.t1,r.t1custom))}</td><td>${esc(timeText(r.t1min,r.t1minCustom))}</td><td>${esc(taskText(r.t2,r.t2custom))}</td><td>${esc(timeText(r.t2min,r.t2minCustom))}</td><td>${esc(taskText(r.t3,r.t3custom))}</td><td>${esc(timeText(r.t3min,r.t3minCustom))}</td></tr>`}rows+=`<tr class="total"><td colspan="3">ಒಟ್ಟು (ಘಂಟೆ ನಿಮಿಷಗಳಲ್ಲಿ)</td><td>${hm(catTotal(day,"t1"))}</td><td></td><td>${hm(catTotal(day,"t2"))}</td><td></td><td>${hm(catTotal(day,"t3"))}</td><td></td></tr>`}return `<div class="pday"><div class="ptitle">ದಿನಾಂಕ: <b>${fmtDate(day.date)}</b> &nbsp; ವಾರ: ${esc(dayName(day.date))}</div><table><thead><tr><th rowspan="2">ಅವಧಿ</th><th rowspan="2">ಸಮಯ</th><th rowspan="2">ತರಗತಿ ಬೋಧನೆಗೆ<br>ಬಳಸಿದ/ಇಲ್ಲ</th><th colspan="2">1. ಬೋಧನ ಕಾರ್ಯ</th><th colspan="2">2. ಇತರೆ ಬೋಧನ ಕಾರ್ಯ</th><th colspan="2">3. ಬೋಧನೇತರ ಕಾರ್ಯ</th></tr><tr><th>ನಿರ್ವಹಿಸಿದ ಕಾರ್ಯ</th><th>ಬಳಸಿದ ಸಮಯ</th><th>ನಿರ್ವಹಿಸಿದ ಕಾರ್ಯ</th><th>ಬಳಸಿದ ಸಮಯ</th><th>ನಿರ್ವಹಿಸಿದ ಕಾರ್ಯ</th><th>ಬಳಸಿದ ಸಮಯ</th></tr></thead><tbody>${rows}</tbody></table></div>`}
-function weeklySummary(days){const c={t1:0,t2:0,t3:0};days.forEach(d=>{c.t1+=catTotal(d,"t1");c.t2+=catTotal(d,"t2");c.t3+=catTotal(d,"t3")});return `<div class="weekly-title">ವಾರದಲ್ಲಿ ಬಳಸಿದ ಸಮಯದ ಕ್ರೋಢೀಕೃತ ಪಟ್ಟಿ</div><table class="weekly"><tr><th>ಅವಧಿ</th><th>ವಾರ</th><th>ತರಗತ ಬೋಧನೆಗೆ ಬಳಸಿದ/ಇಲ್ಲ</th><th>ಬೋಧನ ಕಾರ್ಯ</th><th>ಇತರೆ ಬೋಧನ ಕಾರ್ಯ</th><th>ಬೋಧನೇತರ ಕಾರ್ಯ</th><th>ಒಟ್ಟು</th></tr>${days.map((d,i)=>`<tr><td>${i+1}</td><td>${esc(dayName(d.date))}</td><td>${d.leave?"ರಜೆ":(d.rows||[]).some(r=>r.used==="ಬಳಸಿದೆ")?"ಬಳಸಿದೆ":""}</td><td>${hm(catTotal(d,"t1"))}</td><td>${hm(catTotal(d,"t2"))}</td><td>${hm(catTotal(d,"t3"))}</td><td>${hm(catTotal(d,"t1")+catTotal(d,"t2")+catTotal(d,"t3"))}</td></tr>`).join("")}<tr><th colspan="3">ಒಟ್ಟು</th><th>${hm(c.t1)}</th><th>${hm(c.t2)}</th><th>${hm(c.t3)}</th><th>${hm(c.t1+c.t2+c.t3)}</th></tr></table><div class="signs"><span>ಶಿಕ್ಷಕರ ಸಹಿ :</span><span>ವೀಕ್ಷಣಾಧಿಕಾರರ ಸಹಿ :</span><span>ಮುಖ್ಯ ಶಿಕ್ಷಕರ ಸಹಿ :</span></div>`}
-async function getPrintDays(from,to){const teacher=$("teacherSelect").value,year=$("year").value.trim();const first=getMonday(from),last=getMonday(to);const [w,l]=await Promise.all([sb.from("teacher_diary_weeks").select("week_start,data").eq("school_id",schoolId).eq("teacher_id",teacher).eq("academic_year",year).gte("week_start",first).lte("week_start",last).order("week_start"),sb.from("teacher_diary_leaves").select("leave_date,reason").eq("school_id",schoolId).eq("teacher_id",teacher).eq("academic_year",year).gte("leave_date",first).lte("leave_date",addDays(last,5))]);if(w.error)throw w.error;if(l.error)throw l.error;const byDate=new Map(),byWeek=new Map();(w.data||[]).forEach(row=>{const raw=Array.isArray(row.data)?row.data:[];const arr=Array.from({length:6},(_,i)=>shape(raw.find(x=>x.date===addDays(row.week_start,i))||blankDay(addDays(row.week_start,i))));byWeek.set(row.week_start,arr);arr.forEach(d=>byDate.set(d.date,d));});const lm=new Map((l.data||[]).map(x=>[x.leave_date,x.reason]));const selected=[];for(let d=from;d<=to;d=addDays(d,1)){let x=shape(byDate.get(d)||blankDay(d));if(lm.has(d)){x.leave=true;x.leaveReason=lm.get(d)||""}selected.push(x)}return {selected,byWeek,lm}}
-function printWindow(html){const w=window.open("","_blank");if(!w){alert("Print window ತೆರೆಯಲು browser popup allow ಮಾಡಿ.");return}w.document.open();w.document.write(html);w.document.close();setTimeout(()=>{w.focus();w.print()},300)}
-async function printDateRange(){const from=$("printFrom").value||parseDisplay($("printFromText").value),to=$("printTo").value||parseDisplay($("printToText").value);const teacher=$("teacherSelect").value,year=$("year").value.trim();if(!teacher||!year){alert("ವರ್ಷ ಮತ್ತು ಶಿಕ್ಷಕರನ್ನು ಆಯ್ಕೆಮಾಡಿ.");return}if(!from||!to){alert("From Date ಮತ್ತು To Date ಆಯ್ಕೆಮಾಡಿ.");return}if(from>to){alert("From Date, To Dateಗಿಂತ ಹಿಂದಿನ ದಿನಾಂಕವಾಗಿರಬೇಕು.");return}const btn=$("rangePrintBtn");btn.disabled=true;btn.textContent="⏳ Preparing...";try{const {selected,byWeek,lm}=await getPrintDays(from,to);const pages=[];for(let i=0;i<selected.length;i+=3){const chunk=selected.slice(i,i+3).map(x=>({...x}));chunk.forEach(d=>{if(dayName(d.date)==="ಶನಿವಾರ"){const wm=getMonday(d.date);let wk=byWeek.get(wm);if(!wk)wk=Array.from({length:6},(_,j)=>blankDay(addDays(wm,j)));wk=wk.map(x=>{const z=shape(x);if(lm.has(z.date)){z.leave=true;z.leaveReason=lm.get(z.date)||""}return z});d.summary=wk}});pages.push(chunk)}const teacherName=$("teacherSelect").selectedOptions[0]?.text||"";const school=window.schoolName||"ಶ್ರೀ ವೀರಬಲ್ಲಾಳ ಗ್ರಾಮಾಂತರ ಪ್ರೌಢಶಾಲೆ ಬಲ್ಲಾಳಸಮುದ್ರ ಹೊಸದುರ್ಗ ತಾಲ್ಲೂಕು ಚಿತ್ರದುರ್ಗ ಜಿಲ್ಲೆ";let html=`<!doctype html><html lang="kn"><head><meta charset="UTF-8"><title>Teacher Diary</title><style>@page{size:A4 landscape;margin:7mm}*{box-sizing:border-box}body{margin:0;font-family:"Noto Sans Kannada","Nirmala UI",Arial,sans-serif;color:#111}.page{height:196mm;overflow:hidden;page-break-after:always}.page:last-child{page-break-after:auto}.head{text-align:center}.yearline{font-weight:800;font-size:15px}.main{background:#f6df75;border:1px solid #222;font-weight:900;font-size:16px;padding:5px;margin-top:4px}.school{font-weight:700;text-align:left;font-size:12px;margin:5px 0}.pday{margin-bottom:3px}.ptitle{font-weight:800;font-size:10px;margin:2px 0}.pday table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8px}.pday th,.pday td{border:1px solid #222;padding:2px;line-height:1.05;vertical-align:middle}.pday th{text-align:center}.pday th:nth-child(1){width:3.5%}.pday th:nth-child(2){width:8%}.pday th:nth-child(3){width:9%}.pday th:nth-child(4){width:14%}.pday th:nth-child(5){width:5.5%}.pday th:nth-child(6){width:14%}.pday th:nth-child(7){width:5.5%}.pday th:nth-child(8){width:14%}.pday th:nth-child(9){width:5.5%}.total{font-weight:800;text-align:center;background:#fafafa}.weekly-title{background:#f6df75;border:1px solid #222;text-align:center;font-weight:900;padding:4px;font-size:10px;margin-top:4px}.weekly{width:100%;border-collapse:collapse;font-size:8px}.weekly th,.weekly td{border:1px solid #222;padding:2px;text-align:center}.signs{display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:10px;font-size:9px;text-align:center}.signs span{padding-top:15px}</style></head><body>`;pages.forEach((page,pi)=>{html+=`<section class="page">${pi===0?`<div class="head"><div class="yearline">${esc(year)}ನೇ ಸಾಲಿನಲ್ಲಿ ಶಿಕ್ಷಕರು ಶಾಲೆಗಳಲ್ಲಿ ವೇಳಾಪಟ್ಟಿಯನುಸಾರ ಬಳಸಿಕೊಂಡ ಸಮಯ ನಿರ್ವಹಣೆ ವಿವರ</div><div class="main">ಶಿಕ್ಷಕರ ದಿನಚರಿ - ದೈನಂದಿನ ಕಾರ್ಯನಿರ್ವಹಣಾ ವಿವರ/ಪಟ್ಟಿ (Teacher's Daily Time-Used Report)</div><div class="school">ಶಾಲೆಯ ಹೆಸರು: ${esc(school)} &nbsp;&nbsp;&nbsp; ಶಿಕ್ಷಕರ ಹೆಸರು: ${esc(teacherName)}</div></div>`:""}`;page.forEach(d=>{html+=printDay(d);if(d.summary)html+=weeklySummary(d.summary)});html+='</section>'});html+='</body></html>';printWindow(html)}catch(e){alert("PDF ತಯಾರಿಸುವಾಗ ದೋಷ: "+(e.message||e))}finally{btn.disabled=false;btn.textContent="🖨️ Print / PDF"}}
-async function init(){try{if(!(await checkLogin()))return;await ensureSchool();await loadTeachers();applyHeaderLock();if(getHeaderLock()){await loadLeaves();await loadMonthData()}$("addTeacherBtn").onclick=addTeacher;$("deleteTeacherBtn").onclick=deleteTeacher;$("topLockBtn").onclick=lockHeader;$("topEditBtn").onclick=editHeader;$("rangePrintBtn").onclick=printDateRange;wireDatePicker("printFrom");wireDatePicker("printTo");$("leaveSaveBtn").onclick=saveLeave;$("year").addEventListener("change",()=>{if(getHeaderLock())return;buildMonthDates()});$("monthFilter").addEventListener("change",()=>{if(getHeaderLock())return;loadMonthData()});$("teacherSelect").addEventListener("change",async()=>{if(getHeaderLock())return;activeDate=null;await loadLeaves();await loadMonthData()});$("weekEditor").addEventListener("change",e=>{if(e.target.matches(".task-select")){const inp=e.target.parentElement.querySelector(".task-custom");if(inp)inp.style.display=e.target.value==="__custom__"?"block":"none"}if(e.target.matches(".time-select")){const inp=e.target.parentElement.querySelector(".time-custom");if(inp)inp.style.display=e.target.value==="custom"?"block":"none"}if(e.target.closest(".entry-table"))updateTotals()});$("weekEditor").addEventListener("click",e=>{const b=e.target.closest("[data-action]");if(!b)return;const date=b.dataset.date;if(b.dataset.action==="open-day")openDay(date);if(b.dataset.action==="save-day")saveDay(date);if(b.dataset.action==="edit-day")editDay(date)});$("monthList").addEventListener("click",e=>{const b=e.target.closest("[data-action='open-day']");if(b)openDay(b.dataset.date)});$("leaveList").addEventListener("click",e=>{const ed=e.target.closest("[data-leave-edit]");const del=e.target.closest("[data-leave-delete]");if(ed)editLeave(ed.dataset.leaveEdit);if(del)deleteLeave(del.dataset.leaveDelete)});await loadLeaves();if(!getHeaderLock())buildMonthDates()}catch(e){console.error(e);showMsg(e.message||"Teacher Diary load error",false)}}
+const periods={
+  1:["10:00-10:45",45],2:["10:45-11:30",45],3:["11:40-12:25",45],4:["12:25-1:10",45],
+  5:["1:55-2:40",45],6:["2:40-3:25",45],7:["3:35-4:20",45]
+};
+const saturdayPeriods={1:["8:40-9:20",40],2:["9:20-10:00",40],3:["10:30-11:10",40],4:["11:10-11:50",40],5:["11:50-12:30",40]};
+const teaching=["8TH ಪಾಠ ಬೋಧನೆ","8TH ಘಟಕ ಪರೀಕ್ಷೆ","9TH ಪಾಠ ಬೋಧನೆ","9TH ಘಟಕ ಪರೀಕ್ಷೆ","10TH ಪಾಠ ಬೋಧನೆ","10TH ಘಟಕ ಪರೀಕ್ಷೆ"];
+const otherTeaching=["ಪಾಠದ ಸಿದ್ದತೆ","ಪರೀಕ್ಷೆ ಮೌಲ್ಯಮಾಪನ","ಚಟುವಟಿಕೆ ಮೌಲ್ಯಮಾಪನ","ಗೃಹಪಾಠ ವೀಕ್ಷಣೆ"];
+const nonTeaching=["ಸಿಬ್ಬಂದಿ ಸಭೆ/ಸಾಮಾನ್ಯ ಸಭೆ","ಮದ್ಯಾಹ್ನ ಭೋಜನಾ ಮೇಲ್ವಿಚಾರಣೆ","ಸ್ವಚ್ಛತಾ ಕಾರ್ಯ","ಪೋಷಕರ ಸಂಪರ್ಕ","ಆನ್ಲೈನ್‌ ಕಾರ್ಯ","ಗ್ರಂಥಾಲಯ ವ್ಯವಸ್ಥೆ","ಕ್ರೀಡೆ/ಸಾಂಸ್ಕೃತಿಕ ಸಿದ್ದತೆ","SDMC ಸಭೆ"];
+let schoolId=null, editingId=null, weekData=[];
+
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
+function dayName(date){return date?DAY_NAMES[new Date(date+"T00:00:00").getDay()]: "";}
+function addDays(dateStr,n){const d=new Date(dateStr+"T00:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
+function monthName(date){return date?MONTHS[new Date(date+"T00:00:00").getMonth()]:"";}
+function showMsg(text,ok=true){const el=document.getElementById("topMsg");el.textContent=text;el.className="message "+(ok?"ok":"err");setTimeout(()=>el.className="message",3500)}
+
+async function getSchoolId(){
+  const {data,error}=await sb.rpc("get_my_school_id");
+  if(error) throw error;
+  if(!data) throw new Error("ಈ Login userಗೆ School mapping ಇಲ್ಲ.");
+  return data;
+}
+async function checkLogin(){
+  const {data}=await sb.auth.getSession();
+  if(!data?.session){location.href="login.html";return false}
+  return true;
+}
+async function loadSchoolName(){
+  try{
+    const {data}=await sb.from("school_cashbook_settings").select("school_name").eq("school_id",schoolId).maybeSingle();
+    window.schoolName=data?.school_name||"";
+  }catch(e){window.schoolName=""}
+}
+
+async function loadTeachers(selectId=""){
+  const sel=document.getElementById("teacherSelect");
+  if(!sel) return;
+  sel.innerHTML='<option value="">ಶಿಕ್ಷಕರನ್ನು ಆಯ್ಕೆಮಾಡಿ</option>';
+
+  if(!schoolId){
+    showMsg("School ID ಸಿಗಲಿಲ್ಲ. Login/School mapping ಪರಿಶೀಲಿಸಿ.",false);
+    return false;
+  }
+
+  const {data,error}=await sb
+    .from("teacher_diary_teachers")
+    .select("id,name")
+    .eq("school_id",schoolId)
+    .order("name",{ascending:true});
+
+  if(error){
+    console.error("loadTeachers error:",error);
+    showMsg("Teacher table load ಆಗಲಿಲ್ಲ: "+(error.message||"Unknown error"),false);
+    return false;
+  }
+
+  (data||[]).forEach(t=>{
+    const o=document.createElement("option");
+    o.value=t.id;
+    o.textContent=t.name;
+    sel.appendChild(o);
+  });
+
+  if(selectId) sel.value=selectId;
+  return true;
+}
+
+async function ensureSchoolId(){
+  if(schoolId) return schoolId;
+  try{
+    const {data,error}=await sb.rpc("get_my_school_id");
+    if(error){
+      console.error("get_my_school_id error:",error);
+      throw new Error(error.message||"get_my_school_id failed");
+    }
+    if(!data) throw new Error("ಈ Login userಗೆ School mapping ಇಲ್ಲ.");
+    schoolId=data;
+    return schoolId;
+  }catch(e){
+    showMsg("School ID ಪಡೆಯಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ: "+e.message,false);
+    return null;
+  }
+}
+
+async function addTeacher(ev){
+  if(ev) ev.preventDefault();
+
+  const sid=await ensureSchoolId();
+  if(!sid) return;
+
+  const name=prompt("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ:");
+  if(name===null) return;
+  const cleanName=name.trim();
+  if(!cleanName){
+    alert("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ.");
+    return;
+  }
+
+  // ಮೊದಲು ಅದೇ ಶಾಲೆಯಲ್ಲಿ ಈ ಹೆಸರು ಇದೆಯೇ ಎಂದು ಪರಿಶೀಲನೆ
+  const {data:duplicate,error:dupError}=await sb
+    .from("teacher_diary_teachers")
+    .select("id,name")
+    .eq("school_id",sid)
+    .ilike("name",cleanName)
+    .maybeSingle();
+
+  if(dupError && dupError.code!=="PGRST116"){
+    console.error("duplicate check error:",dupError);
+    showMsg("Teacher ಪರಿಶೀಲನೆ ವಿಫಲ: "+(dupError.message||"Unknown error"),false);
+    return;
+  }
+
+  if(duplicate){
+    showMsg("ಈ ಶಿಕ್ಷಕರ ಹೆಸರು ಈಗಾಗಲೇ ಇದೆ.",false);
+    document.getElementById("teacherSelect").value=duplicate.id;
+    return;
+  }
+
+  const {data:inserted,error}=await sb
+    .from("teacher_diary_teachers")
+    .insert({school_id:sid,name:cleanName})
+    .select("id,name")
+    .single();
+
+  if(error){
+    console.error("addTeacher insert error:",error);
+    let msg=error.message||"Teacher save failed";
+    if(error.code==="42501" || /row-level security|permission denied/i.test(msg)){
+      msg="Teacher add ಮಾಡಲು RLS permission ಇಲ್ಲ. teacher_diary_teachers SQL/RLS policy ಪರಿಶೀಲಿಸಿ.";
+    }
+    showMsg(msg,false);
+    return;
+  }
+
+  await loadTeachers(inserted?.id||"");
+  showMsg("ಶಿಕ್ಷಕರ ಹೆಸರು ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ.");
+}
+
+async function deleteTeacher(ev){
+  if(ev) ev.preventDefault();
+
+  const sid=await ensureSchoolId();
+  if(!sid) return;
+
+  const sel=document.getElementById("teacherSelect"), id=sel.value;
+  if(!id){alert("ಮೊದಲು ಶಿಕ್ಷಕರನ್ನು ಆಯ್ಕೆಮಾಡಿ.");return}
+
+  const name=sel.options[sel.selectedIndex]?.text||"";
+  if(!confirm(`"${name}" ಅವರನ್ನು ಅಳಿಸಬೇಕೇ?`)) return;
+
+  const {error}=await sb
+    .from("teacher_diary_teachers")
+    .delete()
+    .eq("id",id)
+    .eq("school_id",sid);
+
+  if(error){
+    console.error("deleteTeacher error:",error);
+    showMsg(error.message||"Teacher delete failed",false);
+    return;
+  }
+
+  await loadTeachers();
+  showMsg("ಶಿಕ್ಷಕರ ಹೆಸರು ಅಳಿಸಲಾಗಿದೆ.");
+}
+
+function taskSelect(type,value="",custom=""){
+  const arr=type==="teaching"?teaching:type==="other"?otherTeaching:nonTeaching;
+  const id="t_"+Math.random().toString(36).slice(2);
+  const customVal=value==="__custom__"?custom:"";
+  let html=`<select class="task-select" onchange="toggleCustom(this)" data-custom="${esc(customVal)}"><option value="">ಖಾಲಿ</option>`;
+  arr.forEach(x=>html+=`<option value="${esc(x)}" ${value===x?"selected":""}>${esc(x)}</option>`);
+  html+=`<option value="__custom__" ${value==="__custom__"?"selected":""}>ಇತರೆ / ಸ್ವಂತವಾಗಿ ಬರೆಯಿರಿ</option></select>`;
+  html+=`<input class="custom" type="text" value="${esc(customVal)}" placeholder="ಸ್ವಂತವಾಗಿ ಬರೆಯಿರಿ" ${value==="__custom__"?"style='display:block'":""}>`;
+  return html;
+}
+function timeSelect(value="",custom=""){
+  return `<select class="time-select" onchange="toggleTimeCustom(this)"><option value="">ಖಾಲಿ</option><option value="45" ${value==="45"?"selected":""}>45ನಿ</option><option value="40" ${value==="40"?"selected":""}>40ನಿ</option><option value="custom" ${value==="custom"?"selected":""}>ಸ್ವಂತವಾಗಿ ಬರೆಯಿರಿ</option></select><input class="custom time-custom" type="text" value="${esc(custom)}" placeholder="ಉದಾ: 35ನಿ" ${value==="custom"?"style='display:block'":""}>`;
+}
+function toggleCustom(sel){const inp=sel.parentElement.querySelector(".custom");inp.style.display=sel.value==="__custom__"?"block":"none";}
+function toggleTimeCustom(sel){const inp=sel.parentElement.querySelector(".time-custom");inp.style.display=sel.value==="custom"?"block":"none";}
+
+let openDayKeys=new Set();
+let openedDays=new Map();
+
+function isoDateParts(date){const d=new Date(date+"T00:00:00");return {y:d.getFullYear(),m:d.getMonth()+1,day:d.getDate()}}
+function formatDate(date){const {y,m,day}=isoDateParts(date);return `${String(day).padStart(2,"0")}-${String(m).padStart(2,"0")}-${y}`}
+function defaultDay(date){return {date,leave:false,leaveReason:"",locked:false,rows:[]}}
+function weekStartFor(date){const d=new Date(date+"T00:00:00");d.setDate(d.getDate()-((d.getDay()+6)%7));return d.toISOString().slice(0,10)}
+function dayIndexInWeek(date){const d=new Date(date+"T00:00:00");return (d.getDay()+6)%7}
+
+function dayEditorHTML(day,key){
+  const di=dayIndexInWeek(day.date), isSat=di===5, ps=isSat?saturdayPeriods:periods;
+  const locked=!!day.locked;
+  let html=`<div class="day-editor" id="day-${key}" data-date="${day.date}">
+    <div class="day-title"><span>${dayName(day.date)} — ${formatDate(day.date)} <small>(${monthName(day.date)})</small></span>
+    <span class="day-actions"><button class="btn gray" type="button" onclick="hideDay('${key}')">Hide</button>
+    <button class="btn ${locked?'':'green'}" type="button" onclick="${locked?`editDay('${key}')`:`saveDay('${key}')`}">${locked?'✏️ Edit':'💾 Save'}</button></span></div><div class="day-card-body">`;
+  if(day.leave){
+    html+=`<div class="leave-banner">ರಜೆ — ${esc(day.leaveReason||"")}<br><small>ಈ ದಿನದ ಸಮಯ ಒಟ್ಟು: 0</small></div></div></div>`;
+    return html;
+  }
+  html+=`<table class="entry-table"><thead><tr>
+    <th class="pno">ಅವಧಿ</th><th class="time">ಸಮಯ</th><th class="used">ತರಗತಿ ಬೋಧನೆಗೆ ಬಳಸಿದ/ಇಲ್ಲ</th>
+    <th class="task">1. ಬೋಧನ ಕಾರ್ಯ<br><span class="small">ನಿರ್ವಹಿಸಿದ ಕಾರ್ಯ</span></th><th class="mins">ಬಳಸಿದ ಸಮಯ</th>
+    <th class="task">2. ಇತರೆ ಬೋಧನ ಕಾರ್ಯ<br><span class="small">ನಿರ್ವಹಿಸಿದ ಕಾರ್ಯ</span></th><th class="mins">ಬಳಸಿದ ಸಮಯ</th>
+    <th class="task">3. ಬೋಧನೇತರ ಕಾರ್ಯ<br><span class="small">ನಿರ್ವಹಿಸಿದ ಕಾರ್ಯ</span></th><th class="mins">ಬಳಸಿದ ಸಮಯ</th>
+  </tr></thead><tbody>`;
+  for(const [periodNo,[tm]] of Object.entries(ps)){
+    const r=day.rows.find(x=>x.period==periodNo)||{};
+    html+=`<tr data-period="${periodNo}">
+      <td class="pno">${periodNo}</td><td class="time">${tm}</td>
+      <td class="used"><select class="used-select" ${locked?'disabled':''}><option value=""></option><option value="ಬಳಸಿದೆ" ${r.used==="ಬಳಸಿದೆ"?"selected":""}>ಬಳಸಿದೆ</option><option value="ಇಲ್ಲ" ${r.used==="ಇಲ್ಲ"?"selected":""}>ಇಲ್ಲ</option></select></td>
+      <td>${taskSelect("teaching",r.t1,r.t1custom,locked)}</td><td>${timeSelect(r.t1min,r.t1minCustom,locked)}</td>
+      <td>${taskSelect("other",r.t2,r.t2custom,locked)}</td><td>${timeSelect(r.t2min,r.t2minCustom,locked)}</td>
+      <td>${taskSelect("non",r.t3,r.t3custom,locked)}</td><td>${timeSelect(r.t3min,r.t3minCustom,locked)}</td>
+    </tr>`;
+  }
+  html+=`</tbody><tfoot><tr><td colspan="9" class="total-row">ಒಟ್ಟು (ಘಂಟೆ ನಿಮಿಷಗಳಲ್ಲಿ): <span class="day-total">${hm(dayTotal(day))}</span></td></tr></tfoot></table></div></div>`;
+  return html;
+}
+function taskSelect(type,value="",custom="",disabled=false){
+  const arr=type==="teaching"?teaching:type==="other"?otherTeaching:nonTeaching;
+  const customVal=value==="__custom__"?custom:"";
+  let html=`<select class="task-select" onchange="toggleCustom(this)" ${disabled?'disabled':''}><option value="">ಖಾಲಿ</option>`;
+  arr.forEach(x=>html+=`<option value="${esc(x)}" ${value===x?"selected":""}>${esc(x)}</option>`);
+  html+=`<option value="__custom__" ${value==="__custom__"?"selected":""}>ಇತರೆ / ಸ್ವಂತವಾಗಿ ಬರೆಯಿರಿ</option></select>`;
+  html+=`<input class="custom" type="text" value="${esc(customVal)}" placeholder="ಸ್ವಂತವಾಗಿ ಬರೆಯಿರಿ" ${value==="__custom__"?"style='display:block'":""} ${disabled?'disabled':''}>`;
+  return html;
+}
+function timeSelect(value="",custom="",disabled=false){
+  return `<select class="time-select" onchange="toggleTimeCustom(this)" ${disabled?'disabled':''}><option value="">ಖಾಲಿ</option><option value="45" ${value==="45"?"selected":""}>45ನಿ</option><option value="40" ${value==="40"?"selected":""}>40ನಿ</option><option value="custom" ${value==="custom"?"selected":""}>ಸ್ವಂತವಾಗಿ ಬರೆಯಿರಿ</option></select><input class="custom time-custom" type="text" value="${esc(custom)}" placeholder="ಉದಾ: 35ನಿ" ${value==="custom"?"style='display:block'":""} ${disabled?'disabled':''}>`;
+}
+
+function readDayFromElement(el){
+  const day=openedDays.get(el.dataset.key);
+  if(!day)return null;
+  const result={...day,rows:[]};
+  if(day.leave)return result;
+  el.querySelectorAll("tbody tr").forEach(tr=>{
+    const c=tr.children;
+    const vals=[3,5,7].map(i=>{const s=c[i].querySelector(".task-select"),custom=c[i].querySelector(".custom");return {v:s?.value||"",c:custom?.value||""}});
+    const times=[4,6,8].map(i=>{const s=c[i].querySelector(".time-select"),custom=c[i].querySelector(".time-custom");return {v:s?.value||"",c:custom?.value||""}});
+    result.rows.push({period:tr.dataset.period,used:c[2].querySelector("select")?.value||"",t1:vals[0].v,t1custom:vals[0].c,t1min:times[0].v,t1minCustom:times[0].c,t2:vals[1].v,t2custom:vals[1].c,t2min:times[1].v,t2minCustom:times[1].c,t3:vals[2].v,t3custom:vals[2].c,t3min:times[2].v,t3minCustom:times[2].c});
+  });
+  return result;
+}
+function refreshTotals(){document.querySelectorAll(".day-editor").forEach(el=>{const d=readDayFromElement(el);const x=el.querySelector(".day-total");if(d&&x)x.textContent=hm(dayTotal(d))})}
+document.addEventListener("change",e=>{if(e.target.closest(".entry-table"))refreshTotals()});
+
+async function getWeekDataForDate(date){
+  const teacherId=document.getElementById("teacherSelect").value, year=document.getElementById("year").value.trim(), week=weekStartFor(date);
+  if(!teacherId||!year)return {week,startIndex:dayIndexInWeek(date),days:[]};
+  const {data,error}=await sb.from("teacher_diary_weeks").select("*").eq("school_id",schoolId).eq("teacher_id",teacherId).eq("academic_year",year).eq("week_start",week).maybeSingle();
+  if(error)throw error;
+  let days=Array.from({length:6},(_,i)=>defaultDay(addDays(week,i)));
+  if(data?.data) days=data.data.map(x=>({...defaultDay(x.date),...x,locked:!!x.locked}));
+  return {week,startIndex:dayIndexInWeek(date),days,record:data};
+}
+async function openDay(date){
+  const key=date;
+  if(openDayKeys.has(key)){document.getElementById("day-"+key)?.scrollIntoView({behavior:"smooth",block:"start"});return}
+  try{
+    const result=await getWeekDataForDate(date);
+    const day=result.days[result.startIndex]||defaultDay(date);
+    day.locked=!!day.locked;
+    openedDays.set(key,day);openDayKeys.add(key);
+    document.getElementById("openDays").insertAdjacentHTML("beforeend",dayEditorHTML(day,key));
+    refreshTotals();
+  }catch(e){showMsg("ದಿನದ Diary load ಆಗಲಿಲ್ಲ: "+e.message,false)}
+}
+function hideDay(key){openDayKeys.delete(key);openedDays.delete(key);document.getElementById("day-"+key)?.remove();const row=document.querySelector(`[data-date-row="${key}"]`);if(row)row.classList.remove("opened")}
+
+async function saveDay(key){
+  const el=document.getElementById("day-"+key);if(!el)return;
+  const day=readDayFromElement(el);if(!day)return;
+  const teacherId=document.getElementById("teacherSelect").value,year=document.getElementById("year").value.trim();
+  if(!year||!teacherId){alert("ವರ್ಷ ಮತ್ತು ಶಿಕ್ಷಕರನ್ನು ಆಯ್ಕೆಮಾಡಿ.");return}
+  const week=weekStartFor(day.date);
+  const result=await getWeekDataForDate(day.date);
+  const days=result.days.map(x=>({...x}));days[result.startIndex]={...day,locked:true};
+  const payload={school_id:schoolId,teacher_id:teacherId,academic_year:year,week_start:week,month_no:new Date(week+"T00:00:00").getMonth()+1,data:days,updated_at:new Date().toISOString()};
+  let error;
+  if(result.record)({error}=await sb.from("teacher_diary_weeks").update(payload).eq("id",result.record.id).eq("school_id",schoolId));
+  else({error}=await sb.from("teacher_diary_weeks").insert(payload));
+  if(error){showMsg(error.message,false);return}
+  openedDays.set(key,days[result.startIndex]);document.getElementById("day-"+key).outerHTML=dayEditorHTML(days[result.startIndex],key);showMsg(`${formatDate(day.date)} Diary Save ಆಗಿ Lock ಆಗಿದೆ.`);await loadSelectedMonth();
+}
+function editDay(key){const d=openedDays.get(key);if(!d)return;d.locked=false;openedDays.set(key,d);const el=document.getElementById("day-"+key);if(el)el.outerHTML=dayEditorHTML(d,key);}
+
+async function loadSelectedMonth(){
+  const m=document.getElementById("monthFilter").value, teacherId=document.getElementById("teacherSelect").value, year=document.getElementById("year").value.trim();
+  const list=document.getElementById("monthList");
+  if(!m||!teacherId||!year){list.innerHTML="";return}
+  const y=Number(year.slice(0,4)); if(!y){list.innerHTML="";return}
+  const monthNo=Number(m)+1;
+  const calendarYear=monthNo>=4?y:y+1;
+  const start=`${calendarYear}-${String(monthNo).padStart(2,"0")}-01`;
+  const endDate=new Date(calendarYear,monthNo,0);const end=endDate.toISOString().slice(0,10);
+  const {data,error}=await sb.from("teacher_diary_weeks").select("week_start,data").eq("school_id",schoolId).eq("teacher_id",teacherId).eq("academic_year",year);
+  if(error){list.innerHTML='<div class="notice">Database table setup ಬೇಕಾಗಿದೆ.</div>';return}
+  const dayMap=new Map();
+  (data||[]).forEach(w=>(w.data||[]).forEach(d=>dayMap.set(d.date,d)));
+  let html='<div class="date-list"><table><thead><tr><th>ಕ್ರಮ</th><th>ದಿನಾಂಕ</th><th>ವಾರ</th><th>ಸ್ಥಿತಿ</th><th>Action</th></tr></thead><tbody>';
+  let i=1;for(let dt=start;dt<=end;dt=addDays(dt,1)){
+    const d=dayMap.get(dt), status=d?.locked?'Lock ಆಗಿದೆ':(d?.leave?'ರಜೆ':'Entry ಇಲ್ಲ');
+    html+=`<tr data-date-row="${dt}" class="${openDayKeys.has(dt)?'opened':''}"><td>${i++}</td><td>${formatDate(dt)}</td><td>${dayName(dt)}</td><td>${status}</td><td><button class="btn" type="button" onclick="openDay('${dt}')">Open</button></td></tr>`;
+  }
+  html+='</tbody></table></div>';list.innerHTML=html;
+}
+
+async function clearOpenedDays(){openDayKeys.clear();openedDays.clear();document.getElementById("openDays").innerHTML="";}
+
+async function makePrintData(){
+  const teacherSel=document.getElementById("teacherSelect"), teacher=teacherSel.options[teacherSel.selectedIndex]?.text||"";
+  const year=document.getElementById("year").value.trim(), days=[...openedDays.values()].sort((a,b)=>a.date.localeCompare(b.date));
+  return {teacher,year,days,school:window.schoolName||"ಶ್ರೀ ವೀರಬಲ್ಲಾಳ ಗ್ರಾಮಾಂತರ ಪ್ರೌಢಶಾಲೆ ಬಲ್ಲಾಳಸಮುದ್ರ ಹೊಸದುರ್ಗ ತಾ||"};
+}
+function taskText(v,c){return v==="__custom__"?c:(v||"")}
+function timeText(v,c){if(v==="45")return"45ನಿ";if(v==="40")return"40ನಿ";if(v==="custom")return c||"";return""}
+function printDayTable(day,di){
+  const sat=dayIndexInWeek(day.date)===5, ps=sat?saturdayPeriods:periods;
+  let rows="";
+  if(day.leave){
+    rows=`<tr><td colspan="9" style="height:25mm;text-align:center;font-weight:900;font-size:12px">ರಜೆ — ${esc(day.leaveReason||"")}</td></tr>`;
+  }else{
+    for(const [p,[tm]] of Object.entries(ps)){
+      const r=day.rows.find(x=>x.period==p)||{};
+      rows+=`<tr><td>${p}</td><td>${tm}</td><td>${esc(r.used||"")}</td><td>${esc(taskText(r.t1,r.t1custom))}</td><td>${esc(timeText(r.t1min,r.t1minCustom))}</td><td>${esc(taskText(r.t2,r.t2custom))}</td><td>${esc(timeText(r.t2min,r.t2minCustom))}</td><td>${esc(taskText(r.t3,r.t3custom))}</td><td>${esc(timeText(r.t3min,r.t3minCustom))}</td></tr>`;
+    }
+    rows+=`<tr><td colspan="9" class="print-total">ಒಟ್ಟು (ಘಂಟೆ ನಿಮಿಷಗಳಲ್ಲಿ): ${hm(dayTotal(day))}</td></tr>`;
+  }
+  return `<div class="print-day"><div class="print-day-title">ತಿಂಗಳು: ${esc(monthName(day.date))} &nbsp;&nbsp; ದಿನಾಂಕ: ${esc(day.date)} &nbsp;&nbsp; ವಾರ: ${esc(dayName(day.date))}</div>
+  <table class="print-table"><thead><tr><th rowspan="2" class="c1">ಅವಧಿ</th><th rowspan="2" class="c2">ಸಮಯ</th><th rowspan="2" class="c3">ತರಗತಿ ಬೋಧನೆಗೆ<br>ಬಳಸಿದ/ಇಲ್ಲ</th><th colspan="2">1. ಬೋಧನ ಕಾರ್ಯ</th><th colspan="2">2. ಇತರೆ ಬೋಧನ ಕಾರ್ಯ</th><th colspan="2">3. ಬೋಧನೇತರ ಕಾರ್ಯ</th></tr>
+  <tr><th class="c4">ನಿರ್ವಹಿಸಿದ ಕಾರ್ಯ</th><th class="c5">ಬಳಸಿದ ಸಮಯ</th><th class="c6">ನಿರ್ವಹಿಸಿದ ಕಾರ್ಯ</th><th class="c7">ಬಳಸಿದ ಸಮಯ</th><th class="c8">ನಿರ್ವಹಿಸಿದ ಕಾರ್ಯ</th><th class="c9">ಬಳಸಿದ ಸಮಯ</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function weeklySummary(days){
+  const data=days.map((d,i)=>({name:dayName(d.date),total:dayTotal(d),leave:!!d.leave,used:(d.rows||[]).some(r=>r.used)}));
+  const total=data.reduce((sum,x)=>sum+x.total,0);
+  const first=days[0]?.date||"", last=days[5]?.date||days[days.length-1]?.date||"";
+  return `<div class="weekly-title">ವಾರದಲ್ಲಿ ಬಳಸಿದ ಸಮಯದ ಕ್ರೋಢೀಕೃತ ಪಟ್ಟಿ (ದಿನಾಂಕ: ${esc(formatDate(first))} ರಿಂದ ದಿನಾಂಕ: ${esc(formatDate(last))} ರವರೆಗೆ)</div><table class="weekly-table"><tr><th>ಅವಧಿ</th><th>ವಾರ</th><th>ತರಗತ ಬೋಧನೆಗೆ ಬಳಸಿದ/ಇಲ್ಲ</th><th>ಚಟುವಟಿಕೆವಾರು ಬಳಸಿಕೊಂಡ ಒಟ್ಟು ಸಮಯ (ಘಂಟೆ/ನಿಮಿಷಗಳಲ್ಲಿ)</th></tr>${data.map((x,i)=>`<tr><td>${i+1}</td><td>${x.name}</td><td>${x.leave?'ರಜೆ':(x.used?'ಬಳಸಿದೆ':'')}</td><td>${hm(x.total)}</td></tr>`).join('')}<tr><th colspan="3">ಒಟ್ಟು</th><th>${hm(total)}</th></tr></table>`;
+}
+async function printWeek(){
+  const from=document.getElementById("printFrom")?.value,to=document.getElementById("printTo")?.value;
+  if(!from||!to){alert("Print From Date ಮತ್ತು Print To Date ಆಯ್ಕೆಮಾಡಿ.");return}
+  if(from>to){alert("From Date, To Dateಗಿಂತ ಹಿಂದಿನ ದಿನಾಂಕವಾಗಿರಬೇಕು.");return}
+  const teacherId=document.getElementById("teacherSelect").value,year=document.getElementById("year").value.trim();
+  if(!teacherId||!year){alert("ವರ್ಷ ಮತ್ತು ಶಿಕ್ಷಕರನ್ನು ಆಯ್ಕೆಮಾಡಿ.");return}
+  const all=[];
+  for(let dt=from;dt<=to;dt=addDays(dt,1)){
+    try{const r=await getWeekDataForDate(dt);all.push(openedDays.get(dt)||r.days[r.startIndex]||defaultDay(dt));}
+    catch(e){showMsg("Print data load ಆಗಲಿಲ್ಲ: "+e.message,false);return}
+  }
+  const d=await makePrintData();d.days=all;
+  const chunks=[];for(let i=0;i<d.days.length;i+=3)chunks.push(d.days.slice(i,i+3));
+  let pages="";
+  for(let pi=0;pi<chunks.length;pi++){
+    const chunk=chunks[pi];let body=chunk.map((x,i)=>printDayTable(x,i)).join("");
+    const sat=chunk.find(x=>dayIndexInWeek(x.date)===5);
+    if(sat){let summaryDays;try{summaryDays=(await getWeekDataForDate(sat.date)).days}catch(e){summaryDays=chunk}body+=weeklySummary(summaryDays);body+=`<div class="signs"><div>ಶಿಕ್ಷಕರ ಸಹಿ :</div><div>ವೀಕ್ಷಣಾಧಿಕಾರರ ಸಹಿ :</div><div>ಮುಖ್ಯ ಶಿಕ್ಷಕರ ಸಹಿ :</div></div>`;}
+    pages+=`<section class="print-page">${pi===0?`<div class="phead"><div class="yearline">${esc(d.year)}ನೇ ಸಾಲಿನಲ್ಲಿ ಶಿಕ್ಷಕರು ಶಾಲೆಗಳಲ್ಲಿ ವೇಳಾಪಟ್ಟಿಯನುಸಾರ ಬಳಸಿಕೊಂಡ ಸಮಯ ನಿರ್ವಹಣೆ ವಿವರ</div><div class="mainhead">ಶಿಕ್ಷಕರ ದಿನಚರಿ - ದೈನಂದಿನ ಕಾರ್ಯನಿರ್ವಹಣಾ ವಿವರ/ಪಟ್ಟಿ (Teacher's Daily Time-Used Report)</div><div class="schoolline">ಶಾಲೆಯ ಹೆಸರು: ${esc(d.school)} &nbsp;&nbsp;&nbsp; ಶಿಕ್ಷಕರ ಹೆಸರು: ${esc(d.teacher)}</div></div>`:""}${body}</section>`;
+  }
+  document.getElementById("printRoot").innerHTML=pages;window.print();
+}
+
+async function init(){
+  try{
+    if(!(await checkLogin()))return;
+    schoolId=await ensureSchoolId();
+    if(!schoolId)return;
+    await loadSchoolName();
+    await loadTeachers();
+    document.getElementById("teacherSelect").addEventListener("change",async()=>{await clearOpenedDays();await loadLeaves();await loadSelectedMonth()});
+    document.getElementById("year").addEventListener("change",async()=>{await clearOpenedDays();await loadLeaves();await loadSelectedMonth()});
+  }catch(e){
+    console.error("Teacher Diary init error:",e);
+    showMsg("Teacher Diary load error: "+(e.message||e),false);
+  }
+}
 init();
 </script>
 </body>
