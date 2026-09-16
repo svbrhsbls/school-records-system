@@ -101,8 +101,8 @@ button{border:0;border-radius:6px;padding:9px 13px;cursor:pointer;font-weight:70
         <select id="teacherSelect"><option value="">ಶಿಕ್ಷಕರನ್ನು ಆಯ್ಕೆಮಾಡಿ</option></select>
       </div>
       <div class="field" style="display:flex;align-items:end;gap:6px">
-        <button class="btn" onclick="addTeacher()">+ Add Teacher</button>
-        <button class="btn red" onclick="deleteTeacher()">Delete Teacher</button>
+        <button type="button" class="btn" onclick="addTeacher(event)">+ Add Teacher</button>
+        <button type="button" class="btn red" onclick="deleteTeacher(event)">Delete Teacher</button>
       </div>
     </div>
     <div class="notice">ದಿನಾಂಕ ಆಯ್ಕೆ ಮಾಡಿದಾಗ ವಾರದ ದಿನ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ತುಂಬುತ್ತದೆ. ತಿಂಗಳ dropdownನಲ್ಲಿ ಆಯ್ಕೆ ಮಾಡಿದ ತಿಂಗಳ ದಾಖಲೆಗಳಷ್ಟೇ ಪಟ್ಟಿಯಲ್ಲಿ/printನಲ್ಲಿ ಬಳಸಲಾಗುತ್ತದೆ.</div>
@@ -178,101 +178,136 @@ async function loadSchoolName(){
   }catch(e){window.schoolName=""}
 }
 
-async function loadTeachers(){
+async function loadTeachers(selectId=""){
   const sel=document.getElementById("teacherSelect");
+  if(!sel) return;
   sel.innerHTML='<option value="">ಶಿಕ್ಷಕರನ್ನು ಆಯ್ಕೆಮಾಡಿ</option>';
-  const {data,error}=await sb.from("teacher_diary_teachers").select("id,name").eq("school_id",schoolId).order("name");
-  if(error){showMsg("Teachers table ಸಿಗಲಿಲ್ಲ. SQL setup file run ಮಾಡಿ.",false);return}
-  (data||[]).forEach(t=>{const o=document.createElement("option");o.value=t.id;o.textContent=t.name;sel.appendChild(o)});
+
+  if(!schoolId){
+    showMsg("School ID ಸಿಗಲಿಲ್ಲ. Login/School mapping ಪರಿಶೀಲಿಸಿ.",false);
+    return false;
+  }
+
+  const {data,error}=await sb
+    .from("teacher_diary_teachers")
+    .select("id,name")
+    .eq("school_id",schoolId)
+    .order("name",{ascending:true});
+
+  if(error){
+    console.error("loadTeachers error:",error);
+    showMsg("Teacher table load ಆಗಲಿಲ್ಲ: "+(error.message||"Unknown error"),false);
+    return false;
+  }
+
+  (data||[]).forEach(t=>{
+    const o=document.createElement("option");
+    o.value=t.id;
+    o.textContent=t.name;
+    sel.appendChild(o);
+  });
+
+  if(selectId) sel.value=selectId;
+  return true;
 }
-async function addTeacher() {
-  try {
-    if (!schoolId) {
-      alert("School ID ಸಿಗಲಿಲ್ಲ. ಮೊದಲು page ಅನ್ನು refresh ಮಾಡಿ.");
-      return;
+
+async function ensureSchoolId(){
+  if(schoolId) return schoolId;
+  try{
+    const {data,error}=await sb.rpc("get_my_school_id");
+    if(error){
+      console.error("get_my_school_id error:",error);
+      throw new Error(error.message||"get_my_school_id failed");
     }
-
-    const name = prompt("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ:");
-
-    if (name === null) return;
-
-    const teacherName = name.trim();
-
-    if (!teacherName) {
-      alert("ಶಿಕ್ಷಕರ ಹೆಸರನ್ನು ನಮೂದಿಸಿ.");
-      return;
-    }
-
-    // Duplicate teacher check
-    const { data: existing, error: checkError } = await sb
-      .from("teacher_diary_teachers")
-      .select("id,name")
-      .eq("school_id", schoolId)
-      .ilike("name", teacherName)
-      .maybeSingle();
-
-    if (checkError) {
-      console.error("Teacher check error:", checkError);
-      alert("ಶಿಕ್ಷಕರ ಪಟ್ಟಿಯನ್ನು ಪರಿಶೀಲಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ:\n" + checkError.message);
-      return;
-    }
-
-    if (existing) {
-      alert("ಈ ಶಿಕ್ಷಕರ ಹೆಸರು ಈಗಾಗಲೇ ಸೇರಿಸಲಾಗಿದೆ.");
-      return;
-    }
-
-    // Insert teacher
-    const { data, error } = await sb
-      .from("teacher_diary_teachers")
-      .insert({
-        school_id: schoolId,
-        name: teacherName
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Teacher insert error:", error);
-
-      alert(
-        "ಶಿಕ್ಷಕರನ್ನು ಸೇರಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.\n\n" +
-        "Supabase Error:\n" +
-        error.message
-      );
-
-      return;
-    }
-
-    // Reload dropdown
-    await loadTeachers();
-
-    // Automatically select newly added teacher
-    document.getElementById("teacherSelect").value = data.id;
-
-    showMsg("ಶಿಕ್ಷಕರ ಹೆಸರು ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ.");
-
-    await loadLeaves();
-    await loadSelectedMonth();
-
-  } catch (err) {
-    console.error("Add Teacher Error:", err);
-
-    alert(
-      "Add Teacher ನಲ್ಲಿ ದೋಷ ಸಂಭವಿಸಿದೆ.\n\n" +
-      (err.message || err)
-    );
+    if(!data) throw new Error("ಈ Login userಗೆ School mapping ಇಲ್ಲ.");
+    schoolId=data;
+    return schoolId;
+  }catch(e){
+    showMsg("School ID ಪಡೆಯಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ: "+e.message,false);
+    return null;
   }
 }
+
+async function addTeacher(ev){
+  if(ev) ev.preventDefault();
+
+  const sid=await ensureSchoolId();
+  if(!sid) return;
+
+  const name=prompt("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ:");
+  if(name===null) return;
+  const cleanName=name.trim();
+  if(!cleanName){
+    alert("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ.");
+    return;
+  }
+
+  // ಮೊದಲು ಅದೇ ಶಾಲೆಯಲ್ಲಿ ಈ ಹೆಸರು ಇದೆಯೇ ಎಂದು ಪರಿಶೀಲನೆ
+  const {data:duplicate,error:dupError}=await sb
+    .from("teacher_diary_teachers")
+    .select("id,name")
+    .eq("school_id",sid)
+    .ilike("name",cleanName)
+    .maybeSingle();
+
+  if(dupError && dupError.code!=="PGRST116"){
+    console.error("duplicate check error:",dupError);
+    showMsg("Teacher ಪರಿಶೀಲನೆ ವಿಫಲ: "+(dupError.message||"Unknown error"),false);
+    return;
+  }
+
+  if(duplicate){
+    showMsg("ಈ ಶಿಕ್ಷಕರ ಹೆಸರು ಈಗಾಗಲೇ ಇದೆ.",false);
+    document.getElementById("teacherSelect").value=duplicate.id;
+    return;
+  }
+
+  const {data:inserted,error}=await sb
+    .from("teacher_diary_teachers")
+    .insert({school_id:sid,name:cleanName})
+    .select("id,name")
+    .single();
+
+  if(error){
+    console.error("addTeacher insert error:",error);
+    let msg=error.message||"Teacher save failed";
+    if(error.code==="42501" || /row-level security|permission denied/i.test(msg)){
+      msg="Teacher add ಮಾಡಲು RLS permission ಇಲ್ಲ. teacher_diary_teachers SQL/RLS policy ಪರಿಶೀಲಿಸಿ.";
+    }
+    showMsg(msg,false);
+    return;
+  }
+
+  await loadTeachers(inserted?.id||"");
+  showMsg("ಶಿಕ್ಷಕರ ಹೆಸರು ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ.");
 }
-async function deleteTeacher(){
+
+async function deleteTeacher(ev){
+  if(ev) ev.preventDefault();
+
+  const sid=await ensureSchoolId();
+  if(!sid) return;
+
   const sel=document.getElementById("teacherSelect"), id=sel.value;
   if(!id){alert("ಮೊದಲು ಶಿಕ್ಷಕರನ್ನು ಆಯ್ಕೆಮಾಡಿ.");return}
-  const name=sel.options[sel.selectedIndex].text;
-  if(!confirm(`"${name}" ಅವರನ್ನು ಅಳಿಸಬೇಕೇ?`))return;
-  const {error}=await sb.from("teacher_diary_teachers").delete().eq("id",id).eq("school_id",schoolId);
-  if(error){showMsg(error.message,false);return}
-  await loadTeachers(); showMsg("ಶಿಕ್ಷಕರ ಹೆಸರು ಅಳಿಸಲಾಗಿದೆ.");
+
+  const name=sel.options[sel.selectedIndex]?.text||"";
+  if(!confirm(`"${name}" ಅವರನ್ನು ಅಳಿಸಬೇಕೇ?`)) return;
+
+  const {error}=await sb
+    .from("teacher_diary_teachers")
+    .delete()
+    .eq("id",id)
+    .eq("school_id",sid);
+
+  if(error){
+    console.error("deleteTeacher error:",error);
+    showMsg(error.message||"Teacher delete failed",false);
+    return;
+  }
+
+  await loadTeachers();
+  showMsg("ಶಿಕ್ಷಕರ ಹೆಸರು ಅಳಿಸಲಾಗಿದೆ.");
 }
 
 function taskSelect(type,value="",custom=""){
@@ -484,13 +519,22 @@ async function printWeek(){
 
 async function clearEditor(){if(confirm("ಈ ವಾರದ entry screen clear ಮಾಡಬೇಕೇ?")){buildWeek()}}
 async function init(){
-  if(!(await checkLogin()))return;
-  schoolId=await getSchoolId(); await loadSchoolName(); await loadTeachers();
-  document.getElementById("teacherSelect").addEventListener("change",async()=>{await loadLeaves();await loadSelectedMonth()});
-  document.getElementById("year").addEventListener("change",async()=>{await loadLeaves();await loadSelectedMonth()});
-  document.getElementById("leaveDate").addEventListener("change",()=>{});
-  // default to current week's Monday, but month filter remains empty until user selects it.
-  const now=new Date(), monday=new Date(now);monday.setDate(now.getDate()-((now.getDay()+6)%7));document.getElementById("weekStart").value=monday.toISOString().slice(0,10);buildWeek();
+  try{
+    if(!(await checkLogin()))return;
+    schoolId=await ensureSchoolId();
+    if(!schoolId)return;
+    await loadSchoolName();
+    await loadTeachers();
+    document.getElementById("teacherSelect").addEventListener("change",async()=>{await loadLeaves();await loadSelectedMonth()});
+    document.getElementById("year").addEventListener("change",async()=>{await loadLeaves();await loadSelectedMonth()});
+    const now=new Date(), monday=new Date(now);
+    monday.setDate(now.getDate()-((now.getDay()+6)%7));
+    document.getElementById("weekStart").value=monday.toISOString().slice(0,10);
+    buildWeek();
+  }catch(e){
+    console.error("Teacher Diary init error:",e);
+    showMsg("Teacher Diary load error: "+(e.message||e),false);
+  }
 }
 init();
 </script>
