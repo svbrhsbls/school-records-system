@@ -96,7 +96,6 @@ button{border:0;border-radius:6px;padding:9px 13px;cursor:pointer;font-weight:70
           <option value="9">ಅಕ್ಟೋಬರ್</option><option value="10">ನವೆಂಬರ್</option><option value="11">ಡಿಸೆಂಬರ್</option>
         </select>
       </div>
-      <div class="field"><label>ವಾರದ ಸೋಮವಾರದ ದಿನಾಂಕ</label><input id="weekStart" type="date" onchange="buildWeek()"></div>
       <div class="field"><label>ಶಿಕ್ಷಕರ ಹೆಸರು</label>
         <select id="teacherSelect"><option value="">ಶಿಕ್ಷಕರನ್ನು ಆಯ್ಕೆಮಾಡಿ</option></select>
       </div>
@@ -105,8 +104,18 @@ button{border:0;border-radius:6px;padding:9px 13px;cursor:pointer;font-weight:70
         <button type="button" class="btn red" onclick="deleteTeacher(event)">Delete Teacher</button>
       </div>
     </div>
-    <div class="notice">ದಿನಾಂಕ ಆಯ್ಕೆ ಮಾಡಿದಾಗ ವಾರದ ದಿನ ಸ್ವಯಂಚಾಲಿತವಾಗಿ ತುಂಬುತ್ತದೆ. ತಿಂಗಳ dropdownನಲ್ಲಿ ಆಯ್ಕೆ ಮಾಡಿದ ತಿಂಗಳ ದಾಖಲೆಗಳಷ್ಟೇ ಪಟ್ಟಿಯಲ್ಲಿ/printನಲ್ಲಿ ಬಳಸಲಾಗುತ್ತದೆ.</div>
+    <div class="notice">ತಿಂಗಳ ಆಯ್ಕೆ ಮಾಡಿದಾಗ ಆ ತಿಂಗಳ ಉಳಿಸಿರುವ ಎಲ್ಲಾ ದಿನಾಂಕ/ವಾರದ ದಾಖಲೆಗಳು ಕೆಳಗೆ ಕಾಣಿಸುತ್ತವೆ. ಮುಖ್ಯ ಪರದೆಯಲ್ಲಿ ಪ್ರತ್ಯೇಕ ದಿನಾಂಕ field ಇಲ್ಲ.</div>
     <div id="topMsg" class="message"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Print / PDF — ದಿನಾಂಕ ವ್ಯಾಪ್ತಿ</h2>
+    <div class="grid" style="grid-template-columns:repeat(3,minmax(180px,1fr));">
+      <div class="field"><label>From Date (DD-MM-YYYY)</label><input id="printFrom" type="date" title="DD-MM-YYYY"></div>
+      <div class="field"><label>To Date (DD-MM-YYYY)</label><input id="printTo" type="date" title="DD-MM-YYYY"></div>
+      <div class="field" style="display:flex;align-items:end"><button class="btn green" onclick="printDateRange()">🖨️ Print / PDF</button></div>
+    </div>
+    <div class="notice">ದಿನಾಂಕ ವ್ಯಾಪ್ತಿ ವಾರವನ್ನು ಮಾತ್ರ ಆಯ್ಕೆ ಮಾಡುತ್ತದೆ. Print layout ಬದಲಾಗುವುದಿಲ್ಲ: Page 1 = ಸೋಮವಾರ–ಬುಧವಾರ, Page 2 = ಗುರುವಾರ–ಶನಿವಾರ. ಶನಿವಾರ ರಜೆ ಇದ್ದರೂ ವಾರದ ಕ್ರೋಢೀಕೃತ ಪಟ್ಟಿ ಮತ್ತು ಸಹಿ ಸ್ಥಳ ಬರುತ್ತದೆ.</div>
   </div>
 
   <div class="panel">
@@ -156,19 +165,26 @@ let schoolId=null, editingId=null, weekData=[];
 
 function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
 function dayName(date){return date?DAY_NAMES[new Date(date+"T00:00:00").getDay()]: "";}
-function fmtDate(date){
-  if(!date) return "";
-  const m=String(date).match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  return m ? `${m[3]}-${m[2]}-${m[1]}` : String(date);
-}
-function parseDisplayDate(value){
-  const v=String(value||"").trim();
-  const m=v.match(/^(\d{2})-(\d{2})-(\d{4})$/);
-  return m ? `${m[3]}-${m[2]}-${m[1]}` : v;
-}
 function addDays(dateStr,n){const d=new Date(dateStr+"T00:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
 function monthName(date){return date?MONTHS[new Date(date+"T00:00:00").getMonth()]:"";}
 function showMsg(text,ok=true){const el=document.getElementById("topMsg");el.textContent=text;el.className="message "+(ok?"ok":"err");setTimeout(()=>el.className="message",3500)}
+function fmtDate(date){
+  if(!date)return "";
+  const [y,m,d]=String(date).split("-");
+  return y&&m&&d?`${d}-${m}-${y}`:String(date);
+}
+function isoToDateText(v){return fmtDate(v)}
+function parseDateInput(v){
+  const m=String(v||"").trim().match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if(!m)return null;
+  const d=m[1].padStart(2,"0"), mo=m[2].padStart(2,"0"), y=m[3];
+  const dt=new Date(`${y}-${mo}-${d}T00:00:00`);
+  return dt.getFullYear()==Number(y)&&dt.getMonth()+1==Number(mo)&&dt.getDate()==Number(d)?`${y}-${mo}-${d}`:null;
+}
+function categoryTotal(day,key){return (day.rows||[]).reduce((s,r)=>s+parseMin(r[key+"min"],r[key+"minCustom"]),0)}
+function weekCategoryTotals(days){
+  return {t1:days.reduce((s,d)=>s+categoryTotal(d,"t1"),0),t2:days.reduce((s,d)=>s+categoryTotal(d,"t2"),0),t3:days.reduce((s,d)=>s+categoryTotal(d,"t3"),0)};
+}
 
 async function getSchoolId(){
   const {data,error}=await sb.rpc("get_my_school_id");
@@ -241,65 +257,57 @@ async function ensureSchoolId(){
 async function addTeacher(ev){
   if(ev) ev.preventDefault();
 
-  // IMPORTANT: prompt first so button always responds even if school mapping has an issue.
-  const name=window.prompt("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ:");
+  const sid=await ensureSchoolId();
+  if(!sid) return;
+
+  const name=prompt("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ:");
   if(name===null) return;
   const cleanName=name.trim();
   if(!cleanName){
-    window.alert("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ.");
+    alert("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ.");
     return;
   }
 
-  showMsg("ಶಿಕ್ಷಕರನ್ನು ಸೇರಿಸಲಾಗುತ್ತಿದೆ...",true);
+  // ಮೊದಲು ಅದೇ ಶಾಲೆಯಲ್ಲಿ ಈ ಹೆಸರು ಇದೆಯೇ ಎಂದು ಪರಿಶೀಲನೆ
+  const {data:duplicate,error:dupError}=await sb
+    .from("teacher_diary_teachers")
+    .select("id,name")
+    .eq("school_id",sid)
+    .ilike("name",cleanName)
+    .maybeSingle();
 
-  try{
-    const sid=await ensureSchoolId();
-    if(!sid){
-      showMsg("School ID ಸಿಗಲಿಲ್ಲ. Supabase Login/School mapping ಪರಿಶೀಲಿಸಿ.",false);
-      return;
-    }
-
-    // Existing teacher check. Do not use maybeSingle because duplicate rows can
-    // cause a confusing error; fetch a small list instead.
-    const {data:existing,error:checkError}=await sb
-      .from("teacher_diary_teachers")
-      .select("id,name")
-      .eq("school_id",sid)
-      .ilike("name",cleanName)
-      .limit(1);
-
-    if(checkError) throw new Error("Teacher table read error: "+checkError.message);
-
-    if(existing && existing.length){
-      const old=existing[0];
-      document.getElementById("teacherSelect").value=old.id;
-      showMsg("ಈ ಶಿಕ್ಷಕರ ಹೆಸರು ಈಗಾಗಲೇ ಇದೆ.",false);
-      return;
-    }
-
-    const {data:inserted,error:insertError}=await sb
-      .from("teacher_diary_teachers")
-      .insert({school_id:sid,name:cleanName})
-      .select("id,name")
-      .single();
-
-    if(insertError){
-      console.error("ADD TEACHER INSERT ERROR",insertError);
-      let m=insertError.message||"Unknown error";
-      if(insertError.code==="42501" || /row-level security|permission denied/i.test(m)){
-        m="RLS permission error. teacher_diary_teachers table policy ಸರಿಪಡಿಸಬೇಕು.";
-      }
-      throw new Error(m);
-    }
-
-    await loadTeachers(inserted?.id||"");
-    document.getElementById("teacherSelect").value=inserted.id;
-    showMsg("✓ ಶಿಕ್ಷಕರ ಹೆಸರು ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ.",true);
-  }catch(err){
-    console.error("ADD TEACHER ERROR",err);
-    showMsg("Add Teacher Error: "+(err?.message||err),false);
+  if(dupError && dupError.code!=="PGRST116"){
+    console.error("duplicate check error:",dupError);
+    showMsg("Teacher ಪರಿಶೀಲನೆ ವಿಫಲ: "+(dupError.message||"Unknown error"),false);
+    return;
   }
+
+  if(duplicate){
+    showMsg("ಈ ಶಿಕ್ಷಕರ ಹೆಸರು ಈಗಾಗಲೇ ಇದೆ.",false);
+    document.getElementById("teacherSelect").value=duplicate.id;
+    return;
+  }
+
+  const {data:inserted,error}=await sb
+    .from("teacher_diary_teachers")
+    .insert({school_id:sid,name:cleanName})
+    .select("id,name")
+    .single();
+
+  if(error){
+    console.error("addTeacher insert error:",error);
+    let msg=error.message||"Teacher save failed";
+    if(error.code==="42501" || /row-level security|permission denied/i.test(msg)){
+      msg="Teacher add ಮಾಡಲು RLS permission ಇಲ್ಲ. teacher_diary_teachers SQL/RLS policy ಪರಿಶೀಲಿಸಿ.";
+    }
+    showMsg(msg,false);
+    return;
+  }
+
+  await loadTeachers(inserted?.id||"");
+  showMsg("ಶಿಕ್ಷಕರ ಹೆಸರು ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ.");
 }
+
 async function deleteTeacher(ev){
   if(ev) ev.preventDefault();
 
@@ -344,13 +352,16 @@ function timeSelect(value="",custom=""){
 function toggleCustom(sel){const inp=sel.parentElement.querySelector(".custom");inp.style.display=sel.value==="__custom__"?"block":"none";}
 function toggleTimeCustom(sel){const inp=sel.parentElement.querySelector(".time-custom");inp.style.display=sel.value==="custom"?"block":"none";}
 
-function buildWeek(){
-  const start=document.getElementById("weekStart").value;
-  if(!start){document.getElementById("weekEditor").innerHTML="";return}
+function buildWeek(start=null){
+  if(!start){
+    const now=new Date();
+    const monday=new Date(now);
+    monday.setDate(now.getDate()-((now.getDay()+6)%7));
+    start=monday.toISOString().slice(0,10);
+  }
   const d=new Date(start+"T00:00:00");
   const monday=new Date(d); monday.setDate(d.getDate()-((d.getDay()+6)%7));
   const mondayStr=monday.toISOString().slice(0,10);
-  document.getElementById("weekStart").value=mondayStr;
   weekData=Array.from({length:6},(_,i)=>({date:addDays(mondayStr,i),leave:false,rows:[]}));
   renderWeekEditor();
 }
@@ -359,7 +370,7 @@ function renderWeekEditor(){
   weekData.forEach((day,di)=>{
     const isSat=di===5, ps=isSat?saturdayPeriods:periods;
     let html=`<div class="day-editor" data-day="${di}">
-      <div class="day-title"><span>${DAY_NAMES[new Date(day.date+"T00:00:00").getDay()]} — ${fmtDate(day.date)}</span><span>${monthName(day.date)}</span></div>`;
+      <div class="day-title"><span>${DAY_NAMES[new Date(day.date+"T00:00:00").getDay()]} — ${day.date}</span><span>${monthName(day.date)}</span></div>`;
     if(day.leave){
       html+=`<div class="leave-banner">ರಜೆ — ${esc(day.leaveReason||"")}</div></div>`;
       box.insertAdjacentHTML("beforeend",html);return;
@@ -445,19 +456,31 @@ async function loadWeek(week){
   if(!teacherId||!year)return;
   const {data,error}=await sb.from("teacher_diary_weeks").select("*").eq("school_id",schoolId).eq("teacher_id",teacherId).eq("academic_year",year).eq("week_start",week).maybeSingle();
   if(error){showMsg(error.message,false);return}
-  document.getElementById("weekStart").value=week;
   if(data?.data){weekData=data.data;renderWeekEditor()}else buildWeek();
 }
 async function loadSelectedMonth(){
   const m=document.getElementById("monthFilter").value, teacherId=document.getElementById("teacherSelect").value, year=document.getElementById("year").value.trim();
   if(!m||!teacherId||!year){document.getElementById("monthList").innerHTML="";return}
-  const start=`${year.slice(0,4)}-${String(Number(m)+1).padStart(2,"0")}-01`;
-  const endDate=new Date(Number(year.slice(0,4)),Number(m)+1,0);
+  const y=Number(year.slice(0,4));
+  if(!y){document.getElementById("monthList").innerHTML="ವರ್ಷ ಸರಿಯಾಗಿ ನಮೂದಿಸಿ.";return}
+  const monthNo=Number(m)+1;
+  // Academic year month mapping: Apr-Dec belongs to first year, Jan-Mar to next year.
+  const calendarYear=monthNo>=4?y:y+1;
+  const start=`${calendarYear}-${String(monthNo).padStart(2,"0")}-01`;
+  const endDate=new Date(calendarYear,monthNo,0);
   const end=endDate.toISOString().slice(0,10);
-  const {data,error}=await sb.from("teacher_diary_weeks").select("id,week_start,updated_at").eq("school_id",schoolId).eq("teacher_id",teacherId).eq("academic_year",year).gte("week_start",start).lte("week_start",end).order("week_start");
+  const {data,error}=await sb.from("teacher_diary_weeks").select("id,week_start,updated_at,data").eq("school_id",schoolId).eq("teacher_id",teacherId).eq("academic_year",year).lte("week_start",end).gte("week_start",addDays(start,-5)).order("week_start");
   if(error){document.getElementById("monthList").innerHTML='<div class="notice">Database table setup ಬೇಕಾಗಿದೆ.</div>';return}
-  document.getElementById("monthList").innerHTML=(data||[]).length?`<table class="leave-list"><tr><th>ವಾರ</th><th>ದಿನಾಂಕ</th><th>Action</th></tr>${data.map(x=>`<tr><td>ವಾರ</td><td>${fmtDate(x.week_start)}</td><td><button class="btn" onclick="loadWeek('${x.week_start}')">Open / Edit</button><button class="btn red" onclick="deleteWeek('${x.id}')">Delete</button></td></tr>`).join("")}</table>`:"ಈ ತಿಂಗಳಿಗೆ ದಾಖಲೆ ಇಲ್ಲ.";
+  const rows=[];
+  (data||[]).forEach(x=>{
+    const days=Array.isArray(x.data)?x.data:[];
+    days.forEach((d,i)=>{
+      if(d.date>=start && d.date<=end) rows.push({date:d.date,day:dayName(d.date),week:x.week_start,id:x.id,leave:d.leave,reason:d.leaveReason||""});
+    });
+  });
+  document.getElementById("monthList").innerHTML=rows.length?`<table class="leave-list"><tr><th>ದಿನಾಂಕ</th><th>ವಾರ</th><th>ಸ್ಥಿತಿ</th><th>ವಾರದ Entry</th></tr>${rows.map(x=>`<tr><td>${fmtDate(x.date)}</td><td>${esc(x.day)}</td><td>${x.leave?"ರಜೆ":"Entry"}${x.leave&&x.reason?" — "+esc(x.reason):""}</td><td><button class="btn" onclick="loadWeek('${x.week}')">Open / Edit</button></td></tr>`).join("")}</table>`:"ಈ ತಿಂಗಳಿಗೆ ದಾಖಲೆ ಇಲ್ಲ.";
 }
+
 async function deleteWeek(id){if(!confirm("ಈ ವಾರದ Diary ಅಳಿಸಬೇಕೇ?"))return;const {error}=await sb.from("teacher_diary_weeks").delete().eq("id",id).eq("school_id",schoolId);if(error)showMsg(error.message,false);else{showMsg("ವಾರದ Diary ಅಳಿಸಲಾಗಿದೆ.");loadSelectedMonth()}}
 
 async function saveLeave(){
@@ -478,9 +501,7 @@ async function loadLeaves(){
 async function editLeave(id){
   const x=window.leaves.find(a=>a.id===id);if(!x)return;
   const reason=prompt("ರಜೆಯ ಕಾರಣ ಬದಲಿಸಿ",x.reason);if(reason===null)return;
-  const enteredDate=prompt("ದಿನಾಂಕ (DD-MM-YYYY)",fmtDate(x.leave_date));if(enteredDate===null)return;
-  const date=parseDisplayDate(enteredDate);
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){alert("ದಿನಾಂಕ DD-MM-YYYY ರೂಪದಲ್ಲಿ ನಮೂದಿಸಿ.");return;}
+  const date=prompt("ದಿನಾಂಕ (YYYY-MM-DD)",x.leave_date);if(date===null)return;
   const {error}=await sb.from("teacher_diary_leaves").update({leave_date:date,reason:reason.trim()}).eq("id",id).eq("school_id",schoolId);
   if(error)showMsg(error.message,false);else{showMsg("ರಜೆ Update ಆಗಿದೆ.");await loadLeaves();await applyLeavesToCurrentWeek()}
 }
@@ -492,9 +513,9 @@ async function applyLeavesToCurrentWeek(){
   renderWeekEditor();
 }
 
-async function makePrintData(){
+async function makePrintData(days){
   const teacherSel=document.getElementById("teacherSelect"), teacher=teacherSel.options[teacherSel.selectedIndex]?.text||"";
-  const year=document.getElementById("year").value.trim(), days=readEditor();
+  const year=document.getElementById("year").value.trim();
   return {teacher,year,days,school:window.schoolName||"ಶ್ರೇ ವೀರಬಲ್ಲಾಳ ಗ್ರಾಮಾಂತರ ಪ್ರೌಢಶಾಲೆ ಬಲ್ಲಾಳಸಮುದ್ರ ಹೊಸದುರ್ಗ ತಾ||"};
 }
 function taskText(v,c){return v==="__custom__"?c:(v||"")}
@@ -506,7 +527,7 @@ function printDayTable(day,di){
     rows=`<tr><td colspan="9" style="height:25mm;text-align:center;font-weight:900;font-size:12px">ರಜೆ — ${esc(day.leaveReason||"")}</td></tr>`;
   }else{
     for(const [p,[tm]] of Object.entries(ps)){
-      const r=day.rows.find(x=>x.period==p)||{};
+      const r=(day.rows||[]).find(x=>x.period==p)||{};
       rows+=`<tr><td>${p}</td><td>${tm}</td><td>${esc(r.used||"")}</td><td>${esc(taskText(r.t1,r.t1custom))}</td><td>${esc(timeText(r.t1min,r.t1minCustom))}</td><td>${esc(taskText(r.t2,r.t2custom))}</td><td>${esc(timeText(r.t2min,r.t2minCustom))}</td><td>${esc(taskText(r.t3,r.t3custom))}</td><td>${esc(timeText(r.t3min,r.t3minCustom))}</td></tr>`;
     }
     rows+=`<tr><td colspan="9" class="print-total">ಒಟ್ಟು (ಘಂಟೆ ನಿಮಿಷಗಳಲ್ಲಿ): ${hm(dayTotal(day))}</td></tr>`;
@@ -515,66 +536,60 @@ function printDayTable(day,di){
   <table class="print-table"><thead><tr><th rowspan="2" class="c1">ಅವಧಿ</th><th rowspan="2" class="c2">ಸಮಯ</th><th rowspan="2" class="c3">ತರಗತಿ ಬೋಧನೆಗೆ<br>ಬಳಸಿದ/ಇಲ್ಲ</th><th colspan="2">1. ಬೋಧನ ಕಾರ್ಯ</th><th colspan="2">2. ಇತರೆ ಬೋಧನ ಕಾರ್ಯ</th><th colspan="2">3. ಬೋಧನೇತರ ಕಾರ್ಯ</th></tr>
   <tr><th class="c4">ನಿರ್ವಹಿಸಿದ ಕಾರ್ಯ</th><th class="c5">ಬಳಸಿದ ಸಮಯ</th><th class="c6">ನಿರ್ವಹಿಸಿದ ಕಾರ್ಯ</th><th class="c7">ಬಳಸಿದ ಸಮಯ</th><th class="c8">ನಿರ್ವಹಿಸಿದ ಕಾರ್ಯ</th><th class="c9">ಬಳಸಿದ ಸಮಯ</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
-function categoryTotal(day,key){
-  return (day.rows||[]).reduce((sum,r)=>sum+parseMin(r[key+"min"],r[key+"minCustom"]),0);
-}
-function usedStatus(day){
-  if(day.leave) return "ಇಲ್ಲ";
-  const vals=(day.rows||[]).map(r=>r.used||"");
-  if(vals.some(v=>v==="ಬಳಸಿದೆ")) return "ಬಳಸಿದೆ";
-  if(vals.length && vals.every(v=>v==="ಇಲ್ಲ")) return "ಇಲ್ಲ";
-  return "";
-}
 function weeklySummary(days){
-  const data=days.slice(0,6).map(d=>({
-    name:dayName(d.date),
-    used:usedStatus(d),
-    teaching:categoryTotal(d,"t1"),
-    other:categoryTotal(d,"t2"),
-    non:categoryTotal(d,"t3")
-  }));
-  const teachingTotal=data.reduce((s,x)=>s+x.teaching,0);
-  const otherTotal=data.reduce((s,x)=>s+x.other,0);
-  const nonTotal=data.reduce((s,x)=>s+x.non,0);
-  const total=teachingTotal+otherTotal+nonTotal;
-  const first=days[0]?.date||"";
-  const last=days[5]?.date||"";
-  return `<div class="weekly-title">ವಾರದಲ್ಲಿ ಬಳಸಿದ ಸಮಯದ ಕ್ರೋಢೀಕೃತ ಪಟ್ಟಿ (ದಿನಾಂಕ: ${esc(fmtDate(first))} ರಿಂದ ದಿ: ${esc(fmtDate(last))} ರವರೆಗೆ)</div>
-  <table class="weekly-table">
-    <tr>
-      <th rowspan="2">ಅವಧಿ</th>
-      <th rowspan="2">ವಾರ</th>
-      <th rowspan="2">ತರಗತ ಬೋಧನೆಗೆ<br>ಬಳಸಿದ/ಇಲ್ಲ</th>
-      <th colspan="3">ಚಟುವಟಿಕೆವಾರು ಬಳಸಿಕೊಂಡ ಒಟ್ಟು ಸಮಯ (ಘಂಟೆ/ನಿಮಿಷಗಳಲ್ಲಿ)</th>
-    </tr>
-    <tr>
-      <th>ಬೋಧನ ಕಾರ್ಯ</th>
-      <th>ಇತರೆ ಬೋಧನ ಕಾರ್ಯ</th>
-      <th>ಬೋಧನೇತರ ಕಾರ್ಯ</th>
-    </tr>
-    ${data.map((x,i)=>`<tr>
-      <td>${i+1}</td><td>${x.name}</td><td>${x.used}</td>
-      <td>${hm(x.teaching)}</td><td>${hm(x.other)}</td><td>${hm(x.non)}</td>
-    </tr>`).join("")}
-    <tr>
-      <th colspan="3">ಒಟ್ಟು</th>
-      <th>${hm(teachingTotal)}</th><th>${hm(otherTotal)}</th><th>${hm(nonTotal)}</th>
-    </tr>
-  </table>`;
+  const cat=weekCategoryTotals(days);
+  const total=cat.t1+cat.t2+cat.t3;
+  return `<div class="weekly-title">ವಾರದಲ್ಲಿ ಬಳಸಿದ ಸಮಯದ ಕ್ರೋಢೀಕೃತ ಪಟ್ಟಿ (ದಿನಾಂಕ: ${esc(fmtDate(days[0]?.date||""))} ರಿಂದ ದಿನಾಂಕ: ${esc(fmtDate(days[5]?.date||""))} ರವರೆಗೆ)</div>
+  <table class="weekly-table"><tr><th>ಅವಧಿ</th><th>ವಾರ</th><th>ತರಗತ ಬೋಧನೆಗೆ ಬಳಸಿದ/ಇಲ್ಲ</th><th>ಬೋಧನ ಕಾರ್ಯ</th><th>ಇತರೆ ಬೋಧನ ಕಾರ್ಯ</th><th>ಬೋಧನೇತರ ಕಾರ್ಯ</th><th>ಒಟ್ಟು ಸಮಯ</th></tr>
+  ${days.map((d,i)=>`<tr><td>${i+1}</td><td>${esc(dayName(d.date))}</td><td>${d.leave?"ರಜೆ":((d.rows||[]).some(r=>r.used==="ಬಳಸಿದೆ")?"ಬಳಸಿದೆ":"")}</td><td>${hm(categoryTotal(d,"t1"))}</td><td>${hm(categoryTotal(d,"t2"))}</td><td>${hm(categoryTotal(d,"t3"))}</td><td>${hm(dayTotal(d))}</td></tr>`).join("")}
+  <tr><th colspan="3">ಒಟ್ಟು</th><th>${hm(cat.t1)}</th><th>${hm(cat.t2)}</th><th>${hm(cat.t3)}</th><th>${hm(total)}</th></tr></table>`;
+}
+function renderPrint(weeks){
+  const d=makePrintData;
+  const all=weeks.map(w=>w.days);
+  let html="";
+  all.forEach(days=>{
+    const page1=days.slice(0,3).map((x,i)=>printDayTable(x,i)).join("");
+    const page2=days.slice(3).map((x,i)=>printDayTable(x,i+3)).join("");
+    const first=html==="";
+    html+=`<section class="print-page">${first?`<div class="phead"><div class="yearline">${esc(wYear)}ನೇ ಸಾಲಿನಲ್ಲಿ ಶಿಕ್ಷಕರು ಶಾಲೆಗಳಲ್ಲಿ ವೇಳಾಪಟ್ಟಿಯನುಸಾರ ಬಳಸಿಕೊಂಡ ಸಮಯ ನಿರ್ವಹಣೆ ವಿವರ</div><div class="mainhead">ಶಿಕ್ಷಕರ ದಿನಚರಿ - ದೈನಂದಿನ ಕಾರ್ಯನಿರ್ವಹಣಾ ವಿವರ/ಪಟ್ಟಿ (Teacher's Daily Time-Used Report)</div><div class="schoolline">ಶಾಲೆಯ ಹೆಸರು: ${esc(wSchool)} &nbsp;&nbsp;&nbsp; ಶಿಕ್ಷಕರ ಹೆಸರು: ${esc(wTeacher)}</div></div>`:""}${page1}</section><section class="print-page">${page2}${weeklySummary(days)}<div class="signs"><div>ಶಿಕ್ಷಕರ ಸಹಿ :</div><div>ವೀಕ್ಷಣಾಧಿಕಾರರ ಸಹಿ :</div><div>ಮುಖ್ಯ ಶಿಕ್ಷಕರ ಸಹಿ :</div></div></section>`;
+  });
+  document.getElementById("printRoot").innerHTML=html;
+  window.print();
+}
+let wYear="",wSchool="",wTeacher="";
+async function printDateRange(){
+  const from=document.getElementById("printFrom").value, to=document.getElementById("printTo").value;
+  const teacherId=document.getElementById("teacherSelect").value, year=document.getElementById("year").value.trim();
+  if(!teacherId||!year){alert("ವರ್ಷ ಮತ್ತು ಶಿಕ್ಷಕರನ್ನು ಆಯ್ಕೆಮಾಡಿ.");return}
+  if(!from||!to){alert("From Date ಮತ್ತು To Date ಆಯ್ಕೆಮಾಡಿ.");return}
+  if(from>to){alert("From Date, To Dateಗಿಂತ ಹಿಂದಿನ ದಿನಾಂಕವಾಗಿರಬೇಕು.");return}
+  const {data,error}=await sb.from("teacher_diary_weeks").select("id,week_start,data").eq("school_id",schoolId).eq("teacher_id",teacherId).eq("academic_year",year).lte("week_start",to).gte("week_start",addDays(from,-5)).order("week_start");
+  if(error){alert(error.message);return}
+  const leavesRes=await sb.from("teacher_diary_leaves").select("leave_date,reason").eq("school_id",schoolId).eq("teacher_id",teacherId).eq("academic_year",year).gte("leave_date",addDays(from,-5)).lte("leave_date",addDays(to,5));
+  if(leavesRes.error){alert(leavesRes.error.message);return}
+  const leaveMap=new Map((leavesRes.data||[]).map(x=>[x.leave_date,x.reason]));
+  const weeks=[];
+  (data||[]).forEach(x=>{
+    const raw=Array.isArray(x.data)?x.data:[];
+    if(raw.length!==6)return;
+    const weekEnd=raw[5].date;
+    if(x.week_start<=to && weekEnd>=from){
+      const days=raw.map(d=>{const reason=leaveMap.get(d.date);return reason!==undefined?{...d,leave:true,leaveReason:reason}:d});
+      weeks.push({days});
+    }
+  });
+  if(!weeks.length){alert("ಆಯ್ಕೆ ಮಾಡಿದ Date Range ಒಳಗೆ ಯಾವುದೇ ವಾರದ Diary ದಾಖಲೆ ಸಿಗಲಿಲ್ಲ.");return}
+  const teacherSel=document.getElementById("teacherSelect");
+  wYear=year; wSchool=window.schoolName||"ಶ್ರೇ ವೀರಬಲ್ಲಾಳ ಗ್ರಾಮಾಂತರ ಪ್ರೌಢಶಾಲೆ ಬಲ್ಲಾಳಸಮುದ್ರ ಹೊಸದುರ್ಗ ತಾ||"; wTeacher=teacherSel.options[teacherSel.selectedIndex]?.text||"";
+  renderPrint(weeks);
 }
 async function printWeek(){
-  const d=await makePrintData();
-  if(!d.days.length){alert("ಮೊದಲು ವಾರದ ದಿನಾಂಕಗಳನ್ನು ಆಯ್ಕೆಮಾಡಿ.");return}
-  const weekDays=d.days.slice(0,6);
-  const page1=weekDays.slice(0,3).map((x,i)=>printDayTable(x,i)).join("");
-  const page2=weekDays.slice(3,6).map((x,i)=>printDayTable(x,i+3)).join("");
-  document.getElementById("printRoot").innerHTML=`
-  <section class="print-page"><div class="phead">
-  <div class="yearline">${esc(d.year)}ನೇ ಸಾಲಿನಲ್ಲಿ ಶಿಕ್ಷಕರು ಶಾಲೆಗಳಲ್ಲಿ ವೇಳಾಪಟ್ಟಿಯನುಸಾರ ಬಳಸಿಕೊಂಡ ಸಮಯ ನಿರ್ವಹಣೆ ವಿವರ</div>
-  <div class="mainhead">ಶಿಕ್ಷಕರ ದಿನಚರಿ - ದೈನಂದಿನ ಕಾರ್ಯನಿರ್ವಹಣಾ ವಿವರ/ಪಟ್ಟಿ (Teacher's Daily Time-Used Report)</div>
-  <div class="schoolline">ಶಾಲೆಯ ಹೆಸರು: ${esc(d.school)} &nbsp;&nbsp;&nbsp; ಶಿಕ್ಷಕರ ಹೆಸರು: ${esc(d.teacher)}</div></div>${page1}</section>
-  <section class="print-page">${page2}${weeklySummary(weekDays)}<div class="signs"><div>ಶಿಕ್ಷಕರ ಸಹಿ :</div><div>ವೀಕ್ಷಣಾಧಿಕಾರರ ಸಹಿ :</div><div>ಮುಖ್ಯ ಶಿಕ್ಷಕರ ಸಹಿ :</div></div></section>`;
-  window.print();
+  const start=weekData[0]?.date;
+  if(!start){alert("ವಾರದ Entry ಇಲ್ಲ.");return}
+  document.getElementById("printFrom").value=start;
+  document.getElementById("printTo").value=weekData[5]?.date||start;
+  await printDateRange();
 }
 
 async function clearEditor(){if(confirm("ಈ ವಾರದ entry screen clear ಮಾಡಬೇಕೇ?")){buildWeek()}}
@@ -587,9 +602,6 @@ async function init(){
     await loadTeachers();
     document.getElementById("teacherSelect").addEventListener("change",async()=>{await loadLeaves();await loadSelectedMonth()});
     document.getElementById("year").addEventListener("change",async()=>{await loadLeaves();await loadSelectedMonth()});
-    const now=new Date(), monday=new Date(now);
-    monday.setDate(now.getDate()-((now.getDay()+6)%7));
-    document.getElementById("weekStart").value=monday.toISOString().slice(0,10);
     buildWeek();
   }catch(e){
     console.error("Teacher Diary init error:",e);
