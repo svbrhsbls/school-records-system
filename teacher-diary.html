@@ -58,6 +58,7 @@ function pad(n){return String(n).padStart(2,"0")}
 function iso(y,m,d){return `${y}-${pad(m)}-${pad(d)}`}
 function addDays(s,n){const d=new Date(s+"T00:00:00");d.setDate(d.getDate()+n);return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
 function dayName(s){return DAY_NAMES[new Date(s+"T00:00:00").getDay()]}
+function monthName(s){if(!s)return "";const m=+s.split("-")[1];return MONTHS[m-1]||""}
 function fmtDate(s){if(!s)return "";const [y,m,d]=s.split("-");return `${d}-${m}-${y}`}
 function parseDisplay(s){const m=String(s||"").trim().match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);if(!m)return null;const d=pad(m[1]),mo=pad(m[2]),y=m[3],v=`${y}-${mo}-${d}`,x=new Date(v+"T00:00:00");return x.getFullYear()==+y&&x.getMonth()+1==+m[2]&&x.getDate()==+m[1]?v:null}
 function showMsg(t,ok=true){const e=$("topMsg");e.textContent=t;e.className="message "+(ok?"ok":"err");clearTimeout(showMsg.t);showMsg.t=setTimeout(()=>e.className="message",3500)}
