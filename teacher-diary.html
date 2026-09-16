@@ -196,8 +196,7 @@ window.addTeacher=function(ev){
       showMsg("✓ ಶಿಕ್ಷಕರ ಹೆಸರು ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ.",true);
     }catch(e){
       console.error("ADD TEACHER ERROR",e);
-      alert("Add Teacher Error:
-"+(e.message||e));
+      alert("Add Teacher Error:\n"+(e.message||e));
       showMsg("Add Teacher Error: "+(e.message||e),false);
     }
   })();
@@ -496,7 +495,7 @@ function printDayTable(day,di){
 function weeklySummary(days){
   const data=days.map(d=>({name:dayName(d.date),total:dayTotal(d)}));
   const total=data.reduce((s,x)=>s+x.total,0);
-  return `<div class="weekly-title">ವಾರದಲ್ಲಿ ಬಳಸಿದ ಸಮಯದ ಕ್ರೋಢೀಕೃತ ಪಟ್ಟಿ (ದಿನಾಂಕ: ${esc(days[0]?.date||"")} ರಿಂದ ದಿನಾಂಕ: ${esc(days[5]?.date||" ರವರೆಗೆ)})</div>
+  return `<div class="weekly-title">ವಾರದಲ್ಲಿ ಬಳಸಿದ ಸಮಯದ ಕ್ರೋಢೀಕೃತ ಪಟ್ಟಿ (ದಿನಾಂಕ: ${esc(days[0]?.date||"")} ರಿಂದ ದಿ: ${esc(days[5]?.date||"")} ರವರೆಗೆ)</div>
   <table class="weekly-table"><tr><th>ಅವಧಿ</th><th>ವಾರ</th><th>ತರಗತ<br>ಬೋಧನೆಗೆ ಬಳಸಿದ/ಇಲ್ಲ</th><th>ಚಟುವಟಿಕೆವಾರು ಬಳಸಿಕೊಂಡ ಒಟ್ಟು ಸಮಯ (ಘಂಟೆ/ನಿಮಿಷಗಳಲ್ಲಿ)</th></tr>
   ${data.map((x,i)=>`<tr><td>${i+1}</td><td>${x.name}</td><td>${days[i].leave?"ರಜೆ":""}</td><td>${hm(x.total)}</td></tr>`).join("")}
   <tr><th colspan="3">ಒಟ್ಟು</th><th>${hm(total)}</th></tr></table>`;
