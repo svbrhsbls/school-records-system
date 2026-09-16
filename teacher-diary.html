@@ -142,7 +142,14 @@ $("monthFilter").addEventListener("change",()=>{if(getHeaderLock())return;loadMo
 $("teacherSelect").addEventListener("change",async()=>{if(getHeaderLock())return;await loadLeaves();await loadMonthData()});
 $("weekEditor").addEventListener("change",e=>{const editor=e.target.closest(".editor-wrap");if(!editor)return;if(e.target.matches(".task-select")){const inp=e.target.parentElement.querySelector(".task-custom");if(inp)inp.style.display=e.target.value==="__custom__"?"block":"none"}if(e.target.matches(".time-select")){const inp=e.target.parentElement.querySelector(".time-custom");if(inp)inp.style.display=e.target.value==="custom"?"block":"none"}updateTotalsFor(editor.dataset.date)});
 $("weekEditor").addEventListener("click",e=>{const b=e.target.closest("[data-action]");if(!b)return;const date=b.dataset.date;const a=b.dataset.action;if(a==="save-day")saveDay(date);else if(a==="edit-day")editDay(date);else if(a==="hide-day")hideDay(date)});
-$("monthList").addEventListener("click",e=>{const b=e.target.closest("[data-action='open-day']");if(b)openDay(b.dataset.date)});
+$("monthList").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-action='open-day']");
+  if(!b)return;
+  e.preventDefault();
+  e.stopPropagation();
+  const date=b.getAttribute("data-date");
+  if(date)openDay(date);
+});
 $("leaveList").addEventListener("click",e=>{const ed=e.target.closest("[data-leave-edit]"),del=e.target.closest("[data-leave-delete]");if(ed)editLeave(ed.dataset.leaveEdit);if(del)deleteLeave(del.dataset.leaveDelete)});
 }
 async function init(){try{if(!(await checkLogin()))return;await ensureSchool();await loadTeachers();initEvents();const lock=getHeaderLock();if(lock){applyHeaderLock();await loadMonthData();await loadLeaves()}else{buildMonthDates();await loadLeaves()}}catch(e){console.error(e);showMsg(e.message||"Teacher Diary load error",false)}}
