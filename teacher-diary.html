@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ಶಿಕ್ಷಕರ ದಿನಚರಿ - Teacher Diary</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
 <style>
 :root{--blue:#123b66;--gold:#f4d35e;--green:#16803c;--red:#b42318;--border:#333;--bg:#f3f6fa}
 *{box-sizing:border-box}
@@ -140,7 +140,26 @@ button{border:0;border-radius:6px;padding:9px 13px;cursor:pointer;font-weight:70
 <script>
 const SUPABASE_URL="https://xhskrohrrsxlfbdbhyji.supabase.co";
 const SUPABASE_KEY="sb_publishable_0amt5yG7ZIm6JD7oub6JTw_Hv5Nx2cl";
-const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let sb=null;
+function initSupabase(){
+  try{
+    if(!window.supabase || typeof window.supabase.createClient !== "function"){
+      throw new Error("Supabase library load ಆಗಿಲ್ಲ. Internet/CDN ಪರಿಶೀಲಿಸಿ.");
+    }
+    sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    return true;
+  }catch(e){
+    console.error(e);
+    showMsg("Supabase Error: "+e.message,false);
+    return false;
+  }
+}
+function requireSB(){
+  if(sb) return true;
+  if(initSupabase()) return true;
+  alert("Supabase library load ಆಗಿಲ್ಲ. Browser Internet connection/CDN block ಪರಿಶೀಲಿಸಿ.");
+  return false;
+}
 
 const DAY_NAMES=["ಭಾನುವಾರ","ಸೋಮವಾರ","ಮಂಗಳವಾರ","ಬುಧವಾರ","ಗುರುವಾರ","ಶುಕ್ರವಾರ","ಶನಿವಾರ"];
 const MONTHS=["ಜನವರಿ","ಫೆಬ್ರವರಿ","ಮಾರ್ಚ್","ಏಪ್ರಿಲ್","ಮೇ","ಜೂನ್","ಜುಲೈ","ಆಗಸ್ಟ್","ಸೆಪ್ಟೆಂಬರ್","ಅಕ್ಟೋಬರ್","ನವೆಂಬರ್","ಡಿಸೆಂಬರ್"];
@@ -154,6 +173,36 @@ const otherTeaching=["ಪಾಠದ ಸಿದ್ದತೆ","ಪರೀಕ್ಷೆ
 const nonTeaching=["ಸಿಬ್ಬಂದಿ ಸಭೆ/ಸಾಮಾನ್ಯ ಸಭೆ","ಮದ್ಯಾಹ್ನ ಭೋಜನಾ ಮೇಲ್ವಿಚಾರಣೆ","ಸ್ವಚ್ಛತಾ ಕಾರ್ಯ","ಪೋಷಕರ ಸಂಪರ್ಕ","ಆನ್ಲೈನ್‌ ಕಾರ್ಯ","ಗ್ರಂಥಾಲಯ ವ್ಯವಸ್ಥೆ","ಕ್ರೀಡೆ/ಸಾಂಸ್ಕೃತಿಕ ಸಿದ್ದತೆ","SDMC ಸಭೆ"];
 let schoolId=null, editingId=null, weekData=[];
 
+window.addTeacher=function(ev){
+  if(ev) ev.preventDefault();
+  const name=window.prompt("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ:");
+  if(name===null) return;
+  const cleanName=name.trim();
+  if(!cleanName){ alert("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ."); return; }
+  (async()=>{
+    if(!requireSB()) return;
+    try{
+      const sid=await ensureSchoolId();
+      if(!sid) return;
+      const {data:existing,error:checkError}=await sb.from("teacher_diary_teachers").select("id,name").eq("school_id",sid).ilike("name",cleanName).limit(1);
+      if(checkError) throw checkError;
+      if(existing?.length){
+        document.getElementById("teacherSelect").value=existing[0].id;
+        showMsg("ಈ ಶಿಕ್ಷಕರ ಹೆಸರು ಈಗಾಗಲೇ ಇದೆ.",false); return;
+      }
+      const {data:inserted,error}=await sb.from("teacher_diary_teachers").insert({school_id:sid,name:cleanName}).select("id,name").single();
+      if(error) throw error;
+      await loadTeachers(inserted.id);
+      showMsg("✓ ಶಿಕ್ಷಕರ ಹೆಸರು ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ.",true);
+    }catch(e){
+      console.error("ADD TEACHER ERROR",e);
+      alert("Add Teacher Error:
+"+(e.message||e));
+      showMsg("Add Teacher Error: "+(e.message||e),false);
+    }
+  })();
+};
+
 function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
 function dayName(date){return date?DAY_NAMES[new Date(date+"T00:00:00").getDay()]: "";}
 function addDays(dateStr,n){const d=new Date(dateStr+"T00:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
@@ -161,6 +210,7 @@ function monthName(date){return date?MONTHS[new Date(date+"T00:00:00").getMonth(
 function showMsg(text,ok=true){const el=document.getElementById("topMsg");el.textContent=text;el.className="message "+(ok?"ok":"err");setTimeout(()=>el.className="message",3500)}
 
 async function getSchoolId(){
+  if(!requireSB()) throw new Error("Supabase unavailable");
   const {data,error}=await sb.rpc("get_my_school_id");
   if(error) throw error;
   if(!data) throw new Error("ಈ Login userಗೆ School mapping ಇಲ್ಲ.");
@@ -228,70 +278,10 @@ async function ensureSchoolId(){
   }
 }
 
-async function addTeacher(ev){
-  if(ev) ev.preventDefault();
-
-  // IMPORTANT: prompt first so button always responds even if school mapping has an issue.
-  const name=window.prompt("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ:");
-  if(name===null) return;
-  const cleanName=name.trim();
-  if(!cleanName){
-    window.alert("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ.");
-    return;
-  }
-
-  showMsg("ಶಿಕ್ಷಕರನ್ನು ಸೇರಿಸಲಾಗುತ್ತಿದೆ...",true);
-
-  try{
-    const sid=await ensureSchoolId();
-    if(!sid){
-      showMsg("School ID ಸಿಗಲಿಲ್ಲ. Supabase Login/School mapping ಪರಿಶೀಲಿಸಿ.",false);
-      return;
-    }
-
-    // Existing teacher check. Do not use maybeSingle because duplicate rows can
-    // cause a confusing error; fetch a small list instead.
-    const {data:existing,error:checkError}=await sb
-      .from("teacher_diary_teachers")
-      .select("id,name")
-      .eq("school_id",sid)
-      .ilike("name",cleanName)
-      .limit(1);
-
-    if(checkError) throw new Error("Teacher table read error: "+checkError.message);
-
-    if(existing && existing.length){
-      const old=existing[0];
-      document.getElementById("teacherSelect").value=old.id;
-      showMsg("ಈ ಶಿಕ್ಷಕರ ಹೆಸರು ಈಗಾಗಲೇ ಇದೆ.",false);
-      return;
-    }
-
-    const {data:inserted,error:insertError}=await sb
-      .from("teacher_diary_teachers")
-      .insert({school_id:sid,name:cleanName})
-      .select("id,name")
-      .single();
-
-    if(insertError){
-      console.error("ADD TEACHER INSERT ERROR",insertError);
-      let m=insertError.message||"Unknown error";
-      if(insertError.code==="42501" || /row-level security|permission denied/i.test(m)){
-        m="RLS permission error. teacher_diary_teachers table policy ಸರಿಪಡಿಸಬೇಕು.";
-      }
-      throw new Error(m);
-    }
-
-    await loadTeachers(inserted?.id||"");
-    document.getElementById("teacherSelect").value=inserted.id;
-    showMsg("✓ ಶಿಕ್ಷಕರ ಹೆಸರು ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ.",true);
-  }catch(err){
-    console.error("ADD TEACHER ERROR",err);
-    showMsg("Add Teacher Error: "+(err?.message||err),false);
-  }
-}
+// Add Teacher is defined as window.addTeacher above so the button works even if initialization has an issue.
 async function deleteTeacher(ev){
   if(ev) ev.preventDefault();
+  if(!requireSB()) return;
 
   const sid=await ensureSchoolId();
   if(!sid) return;
@@ -528,6 +518,8 @@ async function printWeek(){
 async function clearEditor(){if(confirm("ಈ ವಾರದ entry screen clear ಮಾಡಬೇಕೇ?")){buildWeek()}}
 async function init(){
   try{
+    await new Promise(r=>setTimeout(r,300));
+    if(!initSupabase()) return;
     if(!(await checkLogin()))return;
     schoolId=await ensureSchoolId();
     if(!schoolId)return;
