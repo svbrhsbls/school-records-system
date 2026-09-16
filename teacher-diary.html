@@ -357,6 +357,19 @@ function setHeaderLock(v){try{if(v)localStorage.setItem(getTopLockKey(),JSON.str
 function applyHeaderLock(){
   const lock=getHeaderLock();
   const locked=!!lock;
+
+  // Restore the exact locked selection before disabling the controls.
+  // This is important after a page refresh; otherwise the controls become
+  // disabled while Month/Teacher remain blank and no daily entries can load.
+  if(lock){
+    const yearEl=document.getElementById("year");
+    const monthEl=document.getElementById("monthFilter");
+    const teacherEl=document.getElementById("teacherSelect");
+    if(yearEl && lock.year) yearEl.value=lock.year;
+    if(monthEl && lock.month!==undefined) monthEl.value=String(lock.month);
+    if(teacherEl && lock.teacher) teacherEl.value=lock.teacher;
+  }
+
   ["year","monthFilter","teacherSelect"].forEach(id=>{
     const el=document.getElementById(id);
     if(el)el.disabled=locked;
@@ -833,6 +846,10 @@ async function init(){
     await loadSchoolName();
     await loadTeachers();
 
+    // Restore saved header selection first, then load the corresponding month.
+    // Do not trigger change events here; loadSelectedMonth is called exactly once.
+    applyHeaderLock();
+
     document.getElementById("teacherSelect").addEventListener("change",async()=>{
       if(getHeaderLock())return;
       activeDate=null;
@@ -852,8 +869,8 @@ async function init(){
       await loadSelectedMonth();
     });
 
+    await loadLeaves();
     await loadSelectedMonth();
-    applyHeaderLock();
   }catch(e){
     console.error("Teacher Diary init error:",e);
     showMsg("Teacher Diary load error: "+(e.message||e),false);
