@@ -383,7 +383,7 @@ function applyHeaderLock(){
   if(lb)lb.style.display=locked?"none":"inline-block";
   if(eb)eb.style.display=locked?"inline-block":"none";
 }
-async function lockHeader(){
+function lockHeader(){
   const year=document.getElementById("year").value.trim();
   const month=document.getElementById("monthFilter").value;
   const teacher=document.getElementById("teacherSelect").value;
@@ -392,14 +392,13 @@ async function lockHeader(){
   if(!teacher){alert("ಮೊದಲು ಶಿಕ್ಷಕರನ್ನು ಆಯ್ಕೆಮಾಡಿ.");return}
   setHeaderLock({year,month,teacher});
   applyHeaderLock();
-  // Lock ಮಾಡಿದ ಕೂಡಲೇ ಆಯ್ಕೆ ಮಾಡಿದ ತಿಂಗಳ ದಿನಾಂಕಗಳನ್ನು load ಮಾಡಬೇಕು.
-  await loadSelectedMonth();
+  // Existing calendar is left untouched. A single background load updates saved records.
+  loadSelectedMonth();
   showMsg("ವರ್ಷ, ತಿಂಗಳು ಮತ್ತು ಶಿಕ್ಷಕರ ಮಾಹಿತಿ Lock ಆಗಿದೆ.");
 }
 function editHeader(){
   setHeaderLock(null);
   applyHeaderLock();
-  // Edit ಮಾತ್ರ unlock ಮಾಡುತ್ತದೆ; month/day list ಅನ್ನು ಮರುಮರು render ಮಾಡುವುದಿಲ್ಲ.
   showMsg("ವರ್ಷ, ತಿಂಗಳು ಮತ್ತು ಶಿಕ್ಷಕರ ಮಾಹಿತಿ Edit ಮಾಡಲು Unlock ಆಗಿದೆ.");
 }
 function getPeriodsForDate(date){return dayName(date)==="ಶನಿವಾರ"?saturdayPeriods:periods}
@@ -589,78 +588,119 @@ function openDayFromMonth(date){
   requestAnimationFrame(()=>{const el=document.querySelector(`.day-editor[data-date="${date}"]`);if(el)el.scrollIntoView({behavior:"smooth",block:"center"})});
 }
 
+let monthLoadToken=0;
+
 async function loadSelectedMonth(){
-  const m=document.getElementById("monthFilter").value;
-  const teacherId=document.getElementById("teacherSelect").value;
-  const year=document.getElementById("year").value.trim();
+  const token=++monthLoadToken;
+  const m=document.getElementById("monthFilter")?.value||"";
+  const teacherId=document.getElementById("teacherSelect")?.value||"";
+  const year=document.getElementById("year")?.value.trim()||"";
+
   activeDate=null;
-  if(m===""||!teacherId||!year){
+
+  const box=document.getElementById("weekEditor");
+  const list=document.getElementById("monthList");
+
+  if(m===""||!teacherId||!/^[0-9]{4}-[0-9]{2}$/.test(year)){
     monthDays=[];
-    document.getElementById("weekEditor").innerHTML='<div class="notice">ವರ್ಷ, ತಿಂಗಳು ಮತ್ತು ಶಿಕ್ಷಕರನ್ನು ಆಯ್ಕೆಮಾಡಿ.</div>';
-    document.getElementById("monthList").innerHTML="";
-    return;
-  }
-  if(!/^\d{4}-\d{2}$/.test(year)){
-    monthDays=[];
-    document.getElementById("monthList").innerHTML="ವರ್ಷವನ್ನು 2026-27 ರೀತಿಯಲ್ಲಿ ನಮೂದಿಸಿ.";
-    document.getElementById("weekEditor").innerHTML="";
+    weekData=[];
+    if(box)box.innerHTML='<div class="notice">ವರ್ಷ, ತಿಂಗಳು ಮತ್ತು ಶಿಕ್ಷಕರನ್ನು ಆಯ್ಕೆಮಾಡಿ.</div>';
+    if(list)list.innerHTML="";
     return;
   }
 
-  const y=Number(year.slice(0,4));
+  const academicStart=Number(year.slice(0,4));
   const monthNo=Number(m)+1;
-  const calendarYear=monthNo>=4?y:y+1;
-  const start=`${calendarYear}-${String(monthNo).padStart(2,"0")}-01`;
+  // Academic year 2026-27: Apr-Dec 2026, Jan-Mar 2027.
+  const calendarYear=monthNo>=4?academicStart:academicStart+1;
+  const mm=String(monthNo).padStart(2,"0");
+  const start=`${calendarYear}-${mm}-01`;
   const lastDay=new Date(calendarYear,monthNo,0).getDate();
-  const end=`${calendarYear}-${String(monthNo).padStart(2,"0")}-${String(lastDay).padStart(2,"0")}`;
-  const firstMonday=getMonday(start), lastMonday=getMonday(end);
+  const end=`${calendarYear}-${mm}-${String(lastDay).padStart(2,"0")}`;
 
-  // One database read for the complete month (plus the week containing the last day).
-  const weeksRes=await sb.from("teacher_diary_weeks")
-    .select("id,week_start,updated_at,data")
-    .eq("school_id",schoolId)
-    .eq("teacher_id",teacherId)
-    .eq("academic_year",year)
-    .gte("week_start",firstMonday)
-    .lte("week_start",lastMonday)
-    .order("week_start");
-  if(weeksRes.error){
-    showMsg(weeksRes.error.message||"Month load failed",false);
-    monthDays=[];
-    document.getElementById("weekEditor").innerHTML="";
-    return;
-  }
-
-  const leavesRes=await sb.from("teacher_diary_leaves")
-    .select("leave_date,reason")
-    .eq("school_id",schoolId)
-    .eq("teacher_id",teacherId)
-    .eq("academic_year",year)
-    .gte("leave_date",start)
-    .lte("leave_date",end);
-  if(leavesRes.error){showMsg(leavesRes.error.message||"Leave load failed",false);return}
-
-  const leaveMap=new Map((leavesRes.data||[]).map(x=>[x.leave_date,x.reason]));
-  const map=new Map();
-  (weeksRes.data||[]).forEach(x=>{
-    const raw=Array.isArray(x.data)?x.data:[];
-    raw.forEach(item=>{
-      const d=ensureDayShape(item);
-      if(d.date>=start&&d.date<=end)map.set(d.date,d);
-    });
-  });
-
-  // Always create every calendar date from 01 to the month's last date.
+  // IMPORTANT: build the complete calendar immediately, without waiting for Supabase.
+  // This guarantees that 01 to the last date is always visible.
   monthDays=[];
-  for(let dt=start;dt<=end;dt=addDays(dt,1)){
-    const d=ensureDayShape(map.get(dt)||blankDay(dt));
-    if(leaveMap.has(dt)){d.leave=true;d.leaveReason=leaveMap.get(dt)}
-    monthDays.push(d);
+  for(let dayNo=1;dayNo<=lastDay;dayNo++){
+    const date=`${calendarYear}-${mm}-${String(dayNo).padStart(2,"0")}`;
+    monthDays.push(blankDay(date));
   }
-
   weekData=monthDays.slice();
   renderMonthEditor();
   updateMonthListFromDays();
+
+  // Load saved diary records in the background and merge them into the calendar.
+  // Never clear the already-rendered dates if a query fails or returns late.
+  const firstMonday=getMonday(start);
+  const lastMonday=getMonday(end);
+
+  try{
+    const [weeksRes,leavesRes]=await Promise.all([
+      sb.from("teacher_diary_weeks")
+        .select("id,week_start,updated_at,data")
+        .eq("school_id",schoolId)
+        .eq("teacher_id",teacherId)
+        .eq("academic_year",year)
+        .gte("week_start",firstMonday)
+        .lte("week_start",lastMonday)
+        .order("week_start"),
+      sb.from("teacher_diary_leaves")
+        .select("leave_date,reason")
+        .eq("school_id",schoolId)
+        .eq("teacher_id",teacherId)
+        .eq("academic_year",year)
+        .gte("leave_date",start)
+        .lte("leave_date",end)
+    ]);
+
+    if(token!==monthLoadToken)return;
+
+    if(weeksRes.error){
+      console.error("Diary month load error:",weeksRes.error);
+      showMsg("Diary ದಾಖಲೆ load ಆಗಲಿಲ್ಲ: "+(weeksRes.error.message||"Unknown error"),false);
+      return;
+    }
+
+    if(leavesRes.error){
+      console.error("Leave month load error:",leavesRes.error);
+      showMsg("ರಜೆ ಮಾಹಿತಿ load ಆಗಲಿಲ್ಲ: "+(leavesRes.error.message||"Unknown error"),false);
+    }
+
+    const savedMap=new Map();
+    (weeksRes.data||[]).forEach(row=>{
+      const raw=Array.isArray(row.data)?row.data:[];
+      raw.forEach(item=>{
+        if(item?.date && item.date>=start && item.date<=end){
+          savedMap.set(item.date,ensureDayShape(item));
+        }
+      });
+    });
+
+    const leaveMap=new Map((leavesRes.data||[]).map(x=>[x.leave_date,x.reason]));
+
+    monthDays=monthDays.map(d=>{
+      const saved=savedMap.get(d.date);
+      const out=ensureDayShape(saved||d);
+      if(leaveMap.has(d.date)){
+        out.leave=true;
+        out.leaveReason=leaveMap.get(d.date)||"";
+      }else if(!saved){
+        out.leave=false;
+        out.leaveReason="";
+      }
+      return out;
+    });
+
+    weekData=monthDays.slice();
+    renderMonthEditor();
+    updateMonthListFromDays();
+  }catch(err){
+    console.error("loadSelectedMonth exception:",err);
+    if(token===monthLoadToken){
+      // Keep all calendar dates visible even if the database is temporarily unavailable.
+      showMsg("Database ಸಂಪರ್ಕದಲ್ಲಿ ತೊಂದರೆ. ದಿನಾಂಕಗಳ ಪಟ್ಟಿಯನ್ನು ತೋರಿಸಲಾಗಿದೆ.",false);
+    }
+  }
 }
 
 async function saveLeave(){
@@ -877,7 +917,7 @@ async function init(){
     });
 
     await loadLeaves();
-    await loadSelectedMonth();
+    loadSelectedMonth();
   }catch(e){
     console.error("Teacher Diary init error:",e);
     showMsg("Teacher Diary load error: "+(e.message||e),false);
