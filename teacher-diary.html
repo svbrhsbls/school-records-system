@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ಶಿಕ್ಷಕರ ದಿನಚರಿ - Teacher Diary</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--blue:#123b66;--gold:#f4d35e;--green:#16803c;--red:#b42318;--border:#333;--bg:#f3f6fa}
 *{box-sizing:border-box}
@@ -140,26 +140,7 @@ button{border:0;border-radius:6px;padding:9px 13px;cursor:pointer;font-weight:70
 <script>
 const SUPABASE_URL="https://xhskrohrrsxlfbdbhyji.supabase.co";
 const SUPABASE_KEY="sb_publishable_0amt5yG7ZIm6JD7oub6JTw_Hv5Nx2cl";
-let sb=null;
-function initSupabase(){
-  try{
-    if(!window.supabase || typeof window.supabase.createClient !== "function"){
-      throw new Error("Supabase library load ಆಗಿಲ್ಲ. Internet/CDN ಪರಿಶೀಲಿಸಿ.");
-    }
-    sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-    return true;
-  }catch(e){
-    console.error(e);
-    showMsg("Supabase Error: "+e.message,false);
-    return false;
-  }
-}
-function requireSB(){
-  if(sb) return true;
-  if(initSupabase()) return true;
-  alert("Supabase library load ಆಗಿಲ್ಲ. Browser Internet connection/CDN block ಪರಿಶೀಲಿಸಿ.");
-  return false;
-}
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 const DAY_NAMES=["ಭಾನುವಾರ","ಸೋಮವಾರ","ಮಂಗಳವಾರ","ಬುಧವಾರ","ಗುರುವಾರ","ಶುಕ್ರವಾರ","ಶನಿವಾರ"];
 const MONTHS=["ಜನವರಿ","ಫೆಬ್ರವರಿ","ಮಾರ್ಚ್","ಏಪ್ರಿಲ್","ಮೇ","ಜೂನ್","ಜುಲೈ","ಆಗಸ್ಟ್","ಸೆಪ್ಟೆಂಬರ್","ಅಕ್ಟೋಬರ್","ನವೆಂಬರ್","ಡಿಸೆಂಬರ್"];
@@ -173,43 +154,23 @@ const otherTeaching=["ಪಾಠದ ಸಿದ್ದತೆ","ಪರೀಕ್ಷೆ
 const nonTeaching=["ಸಿಬ್ಬಂದಿ ಸಭೆ/ಸಾಮಾನ್ಯ ಸಭೆ","ಮದ್ಯಾಹ್ನ ಭೋಜನಾ ಮೇಲ್ವಿಚಾರಣೆ","ಸ್ವಚ್ಛತಾ ಕಾರ್ಯ","ಪೋಷಕರ ಸಂಪರ್ಕ","ಆನ್ಲೈನ್‌ ಕಾರ್ಯ","ಗ್ರಂಥಾಲಯ ವ್ಯವಸ್ಥೆ","ಕ್ರೀಡೆ/ಸಾಂಸ್ಕೃತಿಕ ಸಿದ್ದತೆ","SDMC ಸಭೆ"];
 let schoolId=null, editingId=null, weekData=[];
 
-window.addTeacher=function(ev){
-  if(ev) ev.preventDefault();
-  const name=window.prompt("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ:");
-  if(name===null) return;
-  const cleanName=name.trim();
-  if(!cleanName){ alert("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ."); return; }
-  (async()=>{
-    if(!requireSB()) return;
-    try{
-      const sid=await ensureSchoolId();
-      if(!sid) return;
-      const {data:existing,error:checkError}=await sb.from("teacher_diary_teachers").select("id,name").eq("school_id",sid).ilike("name",cleanName).limit(1);
-      if(checkError) throw checkError;
-      if(existing?.length){
-        document.getElementById("teacherSelect").value=existing[0].id;
-        showMsg("ಈ ಶಿಕ್ಷಕರ ಹೆಸರು ಈಗಾಗಲೇ ಇದೆ.",false); return;
-      }
-      const {data:inserted,error}=await sb.from("teacher_diary_teachers").insert({school_id:sid,name:cleanName}).select("id,name").single();
-      if(error) throw error;
-      await loadTeachers(inserted.id);
-      showMsg("✓ ಶಿಕ್ಷಕರ ಹೆಸರು ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ.",true);
-    }catch(e){
-      console.error("ADD TEACHER ERROR",e);
-      alert("Add Teacher Error:\n"+(e.message||e));
-      showMsg("Add Teacher Error: "+(e.message||e),false);
-    }
-  })();
-};
-
 function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));}
 function dayName(date){return date?DAY_NAMES[new Date(date+"T00:00:00").getDay()]: "";}
+function fmtDate(date){
+  if(!date) return "";
+  const m=String(date).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : String(date);
+}
+function parseDisplayDate(value){
+  const v=String(value||"").trim();
+  const m=v.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : v;
+}
 function addDays(dateStr,n){const d=new Date(dateStr+"T00:00:00");d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);}
 function monthName(date){return date?MONTHS[new Date(date+"T00:00:00").getMonth()]:"";}
 function showMsg(text,ok=true){const el=document.getElementById("topMsg");el.textContent=text;el.className="message "+(ok?"ok":"err");setTimeout(()=>el.className="message",3500)}
 
 async function getSchoolId(){
-  if(!requireSB()) throw new Error("Supabase unavailable");
   const {data,error}=await sb.rpc("get_my_school_id");
   if(error) throw error;
   if(!data) throw new Error("ಈ Login userಗೆ School mapping ಇಲ್ಲ.");
@@ -277,10 +238,70 @@ async function ensureSchoolId(){
   }
 }
 
-// Add Teacher is defined as window.addTeacher above so the button works even if initialization has an issue.
+async function addTeacher(ev){
+  if(ev) ev.preventDefault();
+
+  // IMPORTANT: prompt first so button always responds even if school mapping has an issue.
+  const name=window.prompt("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ:");
+  if(name===null) return;
+  const cleanName=name.trim();
+  if(!cleanName){
+    window.alert("ಶಿಕ್ಷಕರ ಹೆಸರು ನಮೂದಿಸಿ.");
+    return;
+  }
+
+  showMsg("ಶಿಕ್ಷಕರನ್ನು ಸೇರಿಸಲಾಗುತ್ತಿದೆ...",true);
+
+  try{
+    const sid=await ensureSchoolId();
+    if(!sid){
+      showMsg("School ID ಸಿಗಲಿಲ್ಲ. Supabase Login/School mapping ಪರಿಶೀಲಿಸಿ.",false);
+      return;
+    }
+
+    // Existing teacher check. Do not use maybeSingle because duplicate rows can
+    // cause a confusing error; fetch a small list instead.
+    const {data:existing,error:checkError}=await sb
+      .from("teacher_diary_teachers")
+      .select("id,name")
+      .eq("school_id",sid)
+      .ilike("name",cleanName)
+      .limit(1);
+
+    if(checkError) throw new Error("Teacher table read error: "+checkError.message);
+
+    if(existing && existing.length){
+      const old=existing[0];
+      document.getElementById("teacherSelect").value=old.id;
+      showMsg("ಈ ಶಿಕ್ಷಕರ ಹೆಸರು ಈಗಾಗಲೇ ಇದೆ.",false);
+      return;
+    }
+
+    const {data:inserted,error:insertError}=await sb
+      .from("teacher_diary_teachers")
+      .insert({school_id:sid,name:cleanName})
+      .select("id,name")
+      .single();
+
+    if(insertError){
+      console.error("ADD TEACHER INSERT ERROR",insertError);
+      let m=insertError.message||"Unknown error";
+      if(insertError.code==="42501" || /row-level security|permission denied/i.test(m)){
+        m="RLS permission error. teacher_diary_teachers table policy ಸರಿಪಡಿಸಬೇಕು.";
+      }
+      throw new Error(m);
+    }
+
+    await loadTeachers(inserted?.id||"");
+    document.getElementById("teacherSelect").value=inserted.id;
+    showMsg("✓ ಶಿಕ್ಷಕರ ಹೆಸರು ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ.",true);
+  }catch(err){
+    console.error("ADD TEACHER ERROR",err);
+    showMsg("Add Teacher Error: "+(err?.message||err),false);
+  }
+}
 async function deleteTeacher(ev){
   if(ev) ev.preventDefault();
-  if(!requireSB()) return;
 
   const sid=await ensureSchoolId();
   if(!sid) return;
@@ -338,7 +359,7 @@ function renderWeekEditor(){
   weekData.forEach((day,di)=>{
     const isSat=di===5, ps=isSat?saturdayPeriods:periods;
     let html=`<div class="day-editor" data-day="${di}">
-      <div class="day-title"><span>${DAY_NAMES[new Date(day.date+"T00:00:00").getDay()]} — ${day.date}</span><span>${monthName(day.date)}</span></div>`;
+      <div class="day-title"><span>${DAY_NAMES[new Date(day.date+"T00:00:00").getDay()]} — ${fmtDate(day.date)}</span><span>${monthName(day.date)}</span></div>`;
     if(day.leave){
       html+=`<div class="leave-banner">ರಜೆ — ${esc(day.leaveReason||"")}</div></div>`;
       box.insertAdjacentHTML("beforeend",html);return;
@@ -435,7 +456,7 @@ async function loadSelectedMonth(){
   const end=endDate.toISOString().slice(0,10);
   const {data,error}=await sb.from("teacher_diary_weeks").select("id,week_start,updated_at").eq("school_id",schoolId).eq("teacher_id",teacherId).eq("academic_year",year).gte("week_start",start).lte("week_start",end).order("week_start");
   if(error){document.getElementById("monthList").innerHTML='<div class="notice">Database table setup ಬೇಕಾಗಿದೆ.</div>';return}
-  document.getElementById("monthList").innerHTML=(data||[]).length?`<table class="leave-list"><tr><th>ವಾರ</th><th>ದಿನಾಂಕ</th><th>Action</th></tr>${data.map(x=>`<tr><td>ವಾರ</td><td>${x.week_start}</td><td><button class="btn" onclick="loadWeek('${x.week_start}')">Open / Edit</button><button class="btn red" onclick="deleteWeek('${x.id}')">Delete</button></td></tr>`).join("")}</table>`:"ಈ ತಿಂಗಳಿಗೆ ದಾಖಲೆ ಇಲ್ಲ.";
+  document.getElementById("monthList").innerHTML=(data||[]).length?`<table class="leave-list"><tr><th>ವಾರ</th><th>ದಿನಾಂಕ</th><th>Action</th></tr>${data.map(x=>`<tr><td>ವಾರ</td><td>${fmtDate(x.week_start)}</td><td><button class="btn" onclick="loadWeek('${x.week_start}')">Open / Edit</button><button class="btn red" onclick="deleteWeek('${x.id}')">Delete</button></td></tr>`).join("")}</table>`:"ಈ ತಿಂಗಳಿಗೆ ದಾಖಲೆ ಇಲ್ಲ.";
 }
 async function deleteWeek(id){if(!confirm("ಈ ವಾರದ Diary ಅಳಿಸಬೇಕೇ?"))return;const {error}=await sb.from("teacher_diary_weeks").delete().eq("id",id).eq("school_id",schoolId);if(error)showMsg(error.message,false);else{showMsg("ವಾರದ Diary ಅಳಿಸಲಾಗಿದೆ.");loadSelectedMonth()}}
 
@@ -452,12 +473,14 @@ async function loadLeaves(){
   const {data,error}=await sb.from("teacher_diary_leaves").select("*").eq("school_id",schoolId).eq("teacher_id",teacherId).eq("academic_year",year).order("leave_date");
   if(error){document.getElementById("leaveList").innerHTML="";return}
   window.leaves=data||[];
-  document.getElementById("leaveList").innerHTML=window.leaves.length?`<table><tr><th>ದಿನಾಂಕ</th><th>ವಾರ</th><th>ರಜೆಯ ಕಾರಣ</th><th>Action</th></tr>${window.leaves.map(x=>`<tr><td>${x.leave_date}</td><td>${dayName(x.leave_date)}</td><td>${esc(x.reason)}</td><td><button class="btn" onclick="editLeave('${x.id}')">Edit</button> <button class="btn red" onclick="deleteLeave('${x.id}')">Delete</button></td></tr>`).join("")}</table>`:"ಯಾವುದೇ ರಜೆ ದಾಖಲೆ ಇಲ್ಲ.";
+  document.getElementById("leaveList").innerHTML=window.leaves.length?`<table><tr><th>ದಿನಾಂಕ</th><th>ವಾರ</th><th>ರಜೆಯ ಕಾರಣ</th><th>Action</th></tr>${window.leaves.map(x=>`<tr><td>${fmtDate(x.leave_date)}</td><td>${dayName(x.leave_date)}</td><td>${esc(x.reason)}</td><td><button class="btn" onclick="editLeave('${x.id}')">Edit</button> <button class="btn red" onclick="deleteLeave('${x.id}')">Delete</button></td></tr>`).join("")}</table>`:"ಯಾವುದೇ ರಜೆ ದಾಖಲೆ ಇಲ್ಲ.";
 }
 async function editLeave(id){
   const x=window.leaves.find(a=>a.id===id);if(!x)return;
   const reason=prompt("ರಜೆಯ ಕಾರಣ ಬದಲಿಸಿ",x.reason);if(reason===null)return;
-  const date=prompt("ದಿನಾಂಕ (YYYY-MM-DD)",x.leave_date);if(date===null)return;
+  const enteredDate=prompt("ದಿನಾಂಕ (DD-MM-YYYY)",fmtDate(x.leave_date));if(enteredDate===null)return;
+  const date=parseDisplayDate(enteredDate);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){alert("ದಿನಾಂಕ DD-MM-YYYY ರೂಪದಲ್ಲಿ ನಮೂದಿಸಿ.");return;}
   const {error}=await sb.from("teacher_diary_leaves").update({leave_date:date,reason:reason.trim()}).eq("id",id).eq("school_id",schoolId);
   if(error)showMsg(error.message,false);else{showMsg("ರಜೆ Update ಆಗಿದೆ.");await loadLeaves();await applyLeavesToCurrentWeek()}
 }
@@ -488,37 +511,75 @@ function printDayTable(day,di){
     }
     rows+=`<tr><td colspan="9" class="print-total">ಒಟ್ಟು (ಘಂಟೆ ನಿಮಿಷಗಳಲ್ಲಿ): ${hm(dayTotal(day))}</td></tr>`;
   }
-  return `<div class="print-day"><div class="print-day-title">ತಿಂಗಳು: ${esc(monthName(day.date))} &nbsp;&nbsp; ದಿನಾಂಕ: ${esc(day.date)} &nbsp;&nbsp; ವಾರ: ${esc(dayName(day.date))}</div>
+  return `<div class="print-day"><div class="print-day-title">ತಿಂಗಳು: ${esc(monthName(day.date))} &nbsp;&nbsp; ದಿನಾಂಕ: ${esc(fmtDate(day.date))} &nbsp;&nbsp; ವಾರ: ${esc(dayName(day.date))}</div>
   <table class="print-table"><thead><tr><th rowspan="2" class="c1">ಅವಧಿ</th><th rowspan="2" class="c2">ಸಮಯ</th><th rowspan="2" class="c3">ತರಗತಿ ಬೋಧನೆಗೆ<br>ಬಳಸಿದ/ಇಲ್ಲ</th><th colspan="2">1. ಬೋಧನ ಕಾರ್ಯ</th><th colspan="2">2. ಇತರೆ ಬೋಧನ ಕಾರ್ಯ</th><th colspan="2">3. ಬೋಧನೇತರ ಕಾರ್ಯ</th></tr>
   <tr><th class="c4">ನಿರ್ವಹಿಸಿದ ಕಾರ್ಯ</th><th class="c5">ಬಳಸಿದ ಸಮಯ</th><th class="c6">ನಿರ್ವಹಿಸಿದ ಕಾರ್ಯ</th><th class="c7">ಬಳಸಿದ ಸಮಯ</th><th class="c8">ನಿರ್ವಹಿಸಿದ ಕಾರ್ಯ</th><th class="c9">ಬಳಸಿದ ಸಮಯ</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
+function categoryTotal(day,key){
+  return (day.rows||[]).reduce((sum,r)=>sum+parseMin(r[key+"min"],r[key+"minCustom"]),0);
+}
+function usedStatus(day){
+  if(day.leave) return "ಇಲ್ಲ";
+  const vals=(day.rows||[]).map(r=>r.used||"");
+  if(vals.some(v=>v==="ಬಳಸಿದೆ")) return "ಬಳಸಿದೆ";
+  if(vals.length && vals.every(v=>v==="ಇಲ್ಲ")) return "ಇಲ್ಲ";
+  return "";
+}
 function weeklySummary(days){
-  const data=days.map(d=>({name:dayName(d.date),total:dayTotal(d)}));
-  const total=data.reduce((s,x)=>s+x.total,0);
-  return `<div class="weekly-title">ವಾರದಲ್ಲಿ ಬಳಸಿದ ಸಮಯದ ಕ್ರೋಢೀಕೃತ ಪಟ್ಟಿ (ದಿನಾಂಕ: ${esc(days[0]?.date||"")} ರಿಂದ ದಿ: ${esc(days[5]?.date||"")} ರವರೆಗೆ)</div>
-  <table class="weekly-table"><tr><th>ಅವಧಿ</th><th>ವಾರ</th><th>ತರಗತ<br>ಬೋಧನೆಗೆ ಬಳಸಿದ/ಇಲ್ಲ</th><th>ಚಟುವಟಿಕೆವಾರು ಬಳಸಿಕೊಂಡ ಒಟ್ಟು ಸಮಯ (ಘಂಟೆ/ನಿಮಿಷಗಳಲ್ಲಿ)</th></tr>
-  ${data.map((x,i)=>`<tr><td>${i+1}</td><td>${x.name}</td><td>${days[i].leave?"ರಜೆ":""}</td><td>${hm(x.total)}</td></tr>`).join("")}
-  <tr><th colspan="3">ಒಟ್ಟು</th><th>${hm(total)}</th></tr></table>`;
+  const data=days.slice(0,6).map(d=>({
+    name:dayName(d.date),
+    used:usedStatus(d),
+    teaching:categoryTotal(d,"t1"),
+    other:categoryTotal(d,"t2"),
+    non:categoryTotal(d,"t3")
+  }));
+  const teachingTotal=data.reduce((s,x)=>s+x.teaching,0);
+  const otherTotal=data.reduce((s,x)=>s+x.other,0);
+  const nonTotal=data.reduce((s,x)=>s+x.non,0);
+  const total=teachingTotal+otherTotal+nonTotal;
+  const first=days[0]?.date||"";
+  const last=days[5]?.date||"";
+  return `<div class="weekly-title">ವಾರದಲ್ಲಿ ಬಳಸಿದ ಸಮಯದ ಕ್ರೋಢೀಕೃತ ಪಟ್ಟಿ (ದಿನಾಂಕ: ${esc(fmtDate(first))} ರಿಂದ ದಿ: ${esc(fmtDate(last))} ರವರೆಗೆ)</div>
+  <table class="weekly-table">
+    <tr>
+      <th rowspan="2">ಅವಧಿ</th>
+      <th rowspan="2">ವಾರ</th>
+      <th rowspan="2">ತರಗತ ಬೋಧನೆಗೆ<br>ಬಳಸಿದ/ಇಲ್ಲ</th>
+      <th colspan="3">ಚಟುವಟಿಕೆವಾರು ಬಳಸಿಕೊಂಡ ಒಟ್ಟು ಸಮಯ (ಘಂಟೆ/ನಿಮಿಷಗಳಲ್ಲಿ)</th>
+    </tr>
+    <tr>
+      <th>ಬೋಧನ ಕಾರ್ಯ</th>
+      <th>ಇತರೆ ಬೋಧನ ಕಾರ್ಯ</th>
+      <th>ಬೋಧನೇತರ ಕಾರ್ಯ</th>
+    </tr>
+    ${data.map((x,i)=>`<tr>
+      <td>${i+1}</td><td>${x.name}</td><td>${x.used}</td>
+      <td>${hm(x.teaching)}</td><td>${hm(x.other)}</td><td>${hm(x.non)}</td>
+    </tr>`).join("")}
+    <tr>
+      <th colspan="3">ಒಟ್ಟು</th>
+      <th>${hm(teachingTotal)}</th><th>${hm(otherTotal)}</th><th>${hm(nonTotal)}</th>
+    </tr>
+  </table>`;
 }
 async function printWeek(){
   const d=await makePrintData();
   if(!d.days.length){alert("ಮೊದಲು ವಾರದ ದಿನಾಂಕಗಳನ್ನು ಆಯ್ಕೆಮಾಡಿ.");return}
-  const page1=d.days.slice(0,3).map((x,i)=>printDayTable(x,i)).join("");
-  const page2=d.days.slice(3).map((x,i)=>printDayTable(x,i+3)).join("");
+  const weekDays=d.days.slice(0,6);
+  const page1=weekDays.slice(0,3).map((x,i)=>printDayTable(x,i)).join("");
+  const page2=weekDays.slice(3,6).map((x,i)=>printDayTable(x,i+3)).join("");
   document.getElementById("printRoot").innerHTML=`
   <section class="print-page"><div class="phead">
   <div class="yearline">${esc(d.year)}ನೇ ಸಾಲಿನಲ್ಲಿ ಶಿಕ್ಷಕರು ಶಾಲೆಗಳಲ್ಲಿ ವೇಳಾಪಟ್ಟಿಯನುಸಾರ ಬಳಸಿಕೊಂಡ ಸಮಯ ನಿರ್ವಹಣೆ ವಿವರ</div>
   <div class="mainhead">ಶಿಕ್ಷಕರ ದಿನಚರಿ - ದೈನಂದಿನ ಕಾರ್ಯನಿರ್ವಹಣಾ ವಿವರ/ಪಟ್ಟಿ (Teacher's Daily Time-Used Report)</div>
   <div class="schoolline">ಶಾಲೆಯ ಹೆಸರು: ${esc(d.school)} &nbsp;&nbsp;&nbsp; ಶಿಕ್ಷಕರ ಹೆಸರು: ${esc(d.teacher)}</div></div>${page1}</section>
-  <section class="print-page">${page2}${weeklySummary(d.days)}<div class="signs"><div>ಶಿಕ್ಷಕರ ಸಹಿ :</div><div>ವೀಕ್ಷಣಾಧಿಕಾರರ ಸಹಿ :</div><div>ಮುಖ್ಯ ಶಿಕ್ಷಕರ ಸಹಿ :</div></div></section>`;
+  <section class="print-page">${page2}${weeklySummary(weekDays)}<div class="signs"><div>ಶಿಕ್ಷಕರ ಸಹಿ :</div><div>ವೀಕ್ಷಣಾಧಿಕಾರರ ಸಹಿ :</div><div>ಮುಖ್ಯ ಶಿಕ್ಷಕರ ಸಹಿ :</div></div></section>`;
   window.print();
 }
 
 async function clearEditor(){if(confirm("ಈ ವಾರದ entry screen clear ಮಾಡಬೇಕೇ?")){buildWeek()}}
 async function init(){
   try{
-    await new Promise(r=>setTimeout(r,300));
-    if(!initSupabase()) return;
     if(!(await checkLogin()))return;
     schoolId=await ensureSchoolId();
     if(!schoolId)return;
