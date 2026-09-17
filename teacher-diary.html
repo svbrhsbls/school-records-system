@@ -141,7 +141,35 @@ async function downloadDateRangePDF(){
 }
 function initEvents(){
 $("addTeacherBtn").onclick=addTeacher;$("deleteTeacherBtn").onclick=deleteTeacher;$("topLockBtn").onclick=lockHeader;$("topEditBtn").onclick=editHeader;$("rangePrintBtn").onclick=downloadDateRangePDF;wireDatePicker("printFrom");wireDatePicker("printTo");$("leaveSaveBtn").onclick=saveLeave;
-$("year").addEventListener("change",()=>{if(getHeaderLock())return;buildMonthDates();if($("teacherSelect").value)loadMonthData()});
+$("year").addEventListener("change",()=>{
+if(getHeaderLock())return;
+buildMonthDates();
+if($("teacherSelect").value)loadMonthData();
+// PDF calendar: when academic year changes, move the date-picker year to the selected academic year.
+const m=$("monthFilter").value;
+const y=$("year").value.trim();
+if(/^\d{4}-\d{2}$/.test(y)){
+  const academic=+y.slice(0,4);
+  const monthNo=m===""?4:+m+1;
+  const calYear=monthNo>=4?academic:academic+1;
+  ["printFrom","printTo"].forEach(id=>{
+    const el=$(id);
+    if(!el)return;
+    const old=el.value;
+    if(!old)return;
+    const parts=old.split("-").map(Number);
+    if(parts.length!==3)return;
+    let mm=parts[1],dd=parts[2],yy=parts[0];
+    const targetYear=(mm>=4?academic:academic+1);
+    const candidate=`${targetYear}-${pad(mm)}-${pad(dd)}`;
+    const dt=new Date(candidate+"T00:00:00");
+    if(dt.getFullYear()===targetYear&&dt.getMonth()+1===mm&&dt.getDate()===dd) {
+      el.value=candidate;
+      setPrint(id,candidate);
+    }
+  });
+}
+});
 $("monthFilter").addEventListener("change",()=>{if(getHeaderLock())return;loadMonthData()});
 $("teacherSelect").addEventListener("change",async()=>{if(getHeaderLock())return;await loadLeaves();await loadMonthData()});
 $("weekEditor").addEventListener("change",e=>{const editor=e.target.closest(".editor-wrap");if(!editor)return;if(e.target.matches(".task-select")){const inp=e.target.parentElement.querySelector(".task-custom");if(inp)inp.style.display=e.target.value==="__custom__"?"block":"none"}if(e.target.matches(".time-select")){const inp=e.target.parentElement.querySelector(".time-custom");if(inp)inp.style.display=e.target.value==="custom"?"block":"none"}updateTotalsFor(editor.dataset.date)});
