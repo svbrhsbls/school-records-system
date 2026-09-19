@@ -2,6 +2,59 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box}body{font-family:Arial,"Noto Sans Kannada",sans-serif;margin:0;background:#f3f6fa;color:#18212b}header{background:#123b63;color:#fff;text-align:center;padding:14px}header h1{margin:0}.wrap{max-width:1250px;margin:16px auto;padding:0 12px}.box{background:#fff;border:1px solid #d5dde6;border-radius:9px;padding:15px;margin-bottom:15px}h2{font-size:18px;margin:0 0 12px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}label{font-weight:700;font-size:13px}input,select{width:100%;padding:8px;border:1px solid #b9c4d0;border-radius:6px;margin-top:4px}button{border:0;border-radius:6px;padding:8px 11px;font-weight:700;cursor:pointer;margin:3px}.p{background:#1769aa;color:#fff}.g{background:#18864b;color:#fff}.r{background:#c62828;color:#fff}.s{background:#e8edf3}.actions{margin-top:10px}table{width:100%;border-collapse:collapse;margin-top:10px}th,td{border:1px solid #c8d0d9;padding:6px;text-align:center;font-size:13px}th{background:#edf3f8}.photo{width:58px;height:70px;object-fit:cover;border:1px solid #888;background:#eee}.err{color:#b00020;font-weight:700;margin-top:7px}.ok{color:#08763a;font-weight:700;margin-top:7px}.modal{position:fixed;inset:0;background:#0008;display:flex;align-items:center;justify-content:center;padding:15px;z-index:5}.modal>div{background:white;border-radius:9px;padding:18px;width:min(500px,100%)}.hide{display:none}
+
+/* v12 final Hall Ticket print layout */
+@media print {
+  .print-card {
+    position: relative !important;
+    box-sizing: border-box !important;
+  }
+  .print-card .card-header {
+    text-align: center !important;
+    padding-right: 0 !important;
+  }
+  .print-card .vertical-student-info {
+    width: calc(100% - 145px) !important;
+    margin-top: 8px !important;
+    margin-bottom: 10px !important;
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+    font-weight: 600 !important;
+  }
+  .print-card .vertical-student-info > div {
+    display: block !important;
+    white-space: nowrap !important;
+    margin: 1px 0 !important;
+  }
+  .print-card .photo-box {
+    position: absolute !important;
+    top: 58px !important;
+    right: 10px !important;
+    width: 82px !important;
+    height: 102px !important;
+    z-index: 2 !important;
+    background: #fff !important;
+  }
+  .print-card .photo-box img {
+    width: 82px !important;
+    height: 102px !important;
+    object-fit: cover !important;
+  }
+  .print-card table {
+    margin-top: 8px !important;
+  }
+  .print-card .instructions {
+    margin-top: 8px !important;
+  }
+  .print-card .head-sign {
+    position: absolute !important;
+    right: 12px !important;
+    bottom: 14px !important;
+    white-space: nowrap !important;
+    font-weight: 700 !important;
+  }
+}
+
 </style></head><body>
 <header><h1>📘 Exam Admission Card</h1></header><div class="wrap">
 <div class="box"><h2>1. ಪರೀಕ್ಷೆಯ ಮೂಲ ವಿವರಗಳು</h2><div class="grid">
@@ -18,7 +71,7 @@
 </div>
 
 <div id="photoModal" class="modal hide"><div><h2>Student Photo</h2><input id="photo" type="file" accept="image/*"><button class="g" onclick="savePhoto()">Photo Save</button><button class="s" onclick="closePhoto()">Close</button><div id="pm"></div></div></div>
-<div id="printModal" class="modal hide"><div><h2>Hall Ticket Print</h2><label>ಒಂದು A4ಗೆ</label><select id="per"><option value="2">2 ವಿದ್ಯಾರ್ಥಿಗಳು</option><option value="3">3 ವಿದ್ಯಾರ್ಥಿಗಳು</option></select><button class="p" onclick="printCards()">Print</button><button class="s" onclick="document.getElementById('printModal').classList.add('hide')">Close</button></div></div>
+<div id="printModal" class="modal hide"><div><h2>Hall Ticket Print</h2><label>ಒಂದು A4ಗೆ</label><select id="per"><option value="1">1 ವಿದ್ಯಾರ್ಥಿ</option><option value="2" selected>2 ವಿದ್ಯಾರ್ಥಿಗಳು</option></select><button class="p" onclick="printCards()">Print</button><button class="s" onclick="document.getElementById('printModal').classList.add('hide')">Close</button></div></div>
 
 <script>
 const SUPABASE_URL="https://xhskrohrrsxlfbdbhyji.supabase.co",SUPABASE_KEY="sb_publishable_0amt5yG7ZIm6JD7oub6JTw_Hv5Nx2cl",BUCKET="exam-student-photos";
@@ -158,67 +211,105 @@ function printCards(){
   const list=students.filter(s=>s.selected);
   const per=+$('per').value;
   const type=$('type').value;
-  const year=$('year').value;
-  if(!list.length){alert("ವಿದ್ಯಾರ್ಥಿಗಳನ್ನು Select ಮಾಡಿ.");return;}
+  const year=$('year').value.trim();
+  if(!list.length){alert('ವಿದ್ಯಾರ್ಥಿಗಳನ್ನು Select ಮಾಡಿ.');return;}
+
+  const examHeading = type ? `${esc(type)} ಪ್ರವೇಶ ಪತ್ರ - ${esc(year)}` : `ಪ್ರವೇಶ ಪತ್ರ - ${esc(year)}`;
 
   const html0=`<!doctype html><html><head><meta charset="utf-8"><title>Exam Admission Card</title><style>
   @page{size:A4 portrait;margin:7mm}
   *{box-sizing:border-box}
   html,body{margin:0;padding:0;background:#fff;color:#111;font-family:Arial,"Noto Sans Kannada",sans-serif}
   body{width:100%}
-  .page{height:283mm;display:grid;grid-template-rows:repeat(${per},1fr);gap:3mm;page-break-after:always;break-after:page}
+  .page{height:283mm;display:flex;flex-direction:column;page-break-after:always;break-after:page}
   .page:last-child{page-break-after:auto;break-after:auto}
-  .card{border:1px solid #111;padding:3.5mm 4mm;position:relative;overflow:hidden;display:flex;flex-direction:column;min-height:0;break-inside:avoid}
-  .head{text-align:center;font-weight:800;line-height:1.22;font-size:13px}
-  .schoolName{font-size:12.5px;font-weight:800;line-height:1.15;margin-bottom:0.5mm}
-  .examTitle{font-size:13px;font-weight:800;line-height:1.15}
-  .photo{position:absolute;right:4mm;top:4mm;width:25mm;height:31mm;object-fit:cover;border:1px solid #222}
-  .info{font-size:10.5px;line-height:1.4;padding-right:29mm;margin-top:2.5mm;min-height:13.5mm;font-weight:700}
-  .info .line{display:flex;gap:4.5mm;white-space:nowrap;align-items:baseline}
-  .info .item{display:inline-block}
-  .st{width:100%;border-collapse:collapse;font-size:9.5px;margin-top:1.8mm;table-layout:fixed;font-weight:700}
+  .page.per-2{gap:7mm}
+  .page.per-2 .card{height:138mm;flex:0 0 138mm}
+  .page.per-1 .card{height:283mm;flex:0 0 283mm}
+
+  .card{border:1px solid #111;padding:3.5mm 4.5mm;position:relative;overflow:hidden;display:flex;flex-direction:column;break-inside:avoid;background:#fff}
+
+  .topBlock{position:relative;flex:0 0 auto;padding-right:31mm}
+  .head{text-align:center;font-weight:800;line-height:1.12}
+  .schoolName{width:100%;white-space:nowrap;font-size:9.2px;font-weight:800;line-height:1.05;margin:0 0 .8mm;text-align:center}
+  .examTitle{width:100%;font-size:12.5px;font-weight:800;line-height:1.1;text-align:center;margin:0 0 2.5mm}
+
+  .photo{position:absolute;right:0;top:1mm;width:25mm;height:31mm;object-fit:cover;border:1px solid #222;background:#fff}
+
+  .info{font-size:10px;line-height:1.25;margin-top:1mm;font-weight:700;width:calc(100% - 31mm)}
+  .info .line{display:block;white-space:nowrap;margin:0 0 1.15mm}
+  .info .item{display:block}
+
+  .st{width:100%;border-collapse:collapse;font-size:9.5px;margin-top:1.5mm;table-layout:fixed;font-weight:700;clear:both}
   .st th,.st td{border:1px solid #222;padding:1.5px 2px;text-align:center;line-height:1.05;font-weight:700}
   .st th{font-size:10px;font-weight:800;height:6.5mm}
   .st td{font-size:9.5px;height:6.8mm}
   .st th:nth-child(1){width:7%}.st th:nth-child(2){width:25%}.st th:nth-child(3){width:18%}.st th:nth-child(4){width:14%}.st th:nth-child(5){width:16%}.st th:nth-child(6){width:20%}
-  .roomSig{font-size:8px;min-height:6.5mm;display:flex;align-items:center;justify-content:center;line-height:1.05}
-  .roomSig span{display:block;border-bottom:1px solid #111;min-width:27mm;margin-left:1.5mm;height:3.5mm}
-  .bottomArea{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:5mm;min-height:18mm;padding-top:2mm}
-  .instructions{width:68%;font-size:8px;line-height:1.18;font-weight:700;text-align:left}
+  .roomSig{min-height:6.5mm;display:flex;align-items:center;justify-content:center;line-height:1.05}
+  .roomSig span{display:block;border-bottom:1px solid #111;min-width:27mm;height:3.5mm}
+
+  .bottomArea{margin-top:3mm;display:block;width:100%;padding-top:0}
+  .instructions{width:100%;font-size:8px;line-height:1.18;font-weight:700;text-align:left}
   .instructions .ititle{font-size:9px;font-weight:800;margin-bottom:1mm}
-  .instructions div{margin-bottom:.7mm}
-  .headSig{width:29%;text-align:right;font-size:9px;min-height:17mm;padding-top:2mm;padding-right:1mm;line-height:1.2;display:flex;flex-direction:column;justify-content:flex-end}
-  .headSig .space{height:11mm}.footLabel{font-weight:800;white-space:nowrap}.subjectEmpty{padding:2mm;text-align:center}.printDate{white-space:nowrap}
-  @media print{html,body{width:210mm} .page{page-break-after:always;break-after:page}.page:last-child{page-break-after:auto;break-after:auto}.card{break-inside:avoid}}
+  .instructions>div{margin-bottom:.7mm}
+  .lastInstructionRow{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;column-gap:5mm}
+  .lastInstructionRow>span:first-child{min-width:0}
+  .principalSign{white-space:nowrap;text-align:right;font-weight:800;font-size:8.5px}
+
+  /* 1 student: use the page height without creating a blank area in the card content. */
+  .page.per-1 .card{padding:6mm}
+  .page.per-1 .topBlock{padding-right:36mm}
+  .page.per-1 .schoolName{font-size:11px}
+  .page.per-1 .examTitle{font-size:15px;margin-bottom:4mm}
+  .page.per-1 .photo{width:31mm;height:38mm;top:1mm}
+  .page.per-1 .info{font-size:12px;line-height:1.35;width:calc(100% - 38mm)}
+  .page.per-1 .info .line{margin-bottom:1.8mm}
+  .page.per-1 .st{margin-top:4mm}
+  .page.per-1 .st th{font-size:12px;height:8mm}
+  .page.per-1 .st td{font-size:11px;height:8.5mm}
+  .page.per-1 .bottomArea{margin-top:5mm}
+  .page.per-1 .instructions{font-size:11px;line-height:1.35}
+  .page.per-1 .instructions .ititle{font-size:12.5px}
+  .page.per-1 .instructions>div{margin-bottom:1.5mm}
+  .page.per-1 .principalSign{font-size:11px}
+
+  @media print{html,body{width:210mm}.page{page-break-after:always;break-after:page}.page:last-child{page-break-after:auto;break-after:auto}.card{break-inside:avoid}}
   </style></head><body>`;
 
   let out=html0;
   for(let p=0;p<list.length;p+=per){
-    out+='<div class="page">';
+    out+=`<div class="page per-${per}">`;
     list.slice(p,p+per).forEach(s=>{
       const dob=excelDobToDisplay(s.dob);
       out+=`<div class="card">
-        <div class="head schoolName">ಶ್ರೀ ವೀರಬಲ್ಲಾಳ ಗ್ರಾಮಾಂತರ ಪ್ರೌಢಶಾಲೆ</div>
-        <div class="head schoolName">ಬಲ್ಲಾಳಸಮುದ್ರ, ಹೊಸದುರ್ಗ ತಾಲ್ಲೂಕು, ಚಿತ್ರದುರ್ಗ ಜಿಲ್ಲೆ</div>
-        <div class="head examTitle">${esc(type)} ಪರೀಕ್ಷೆ ಪ್ರವೇಶ ಪತ್ರ - ${esc(year)}</div>
-        ${s.photo_url?`<img class="photo" src="${s.photo_url}">`:''}
-        <div class="info">
-          <div class="line"><span class="item"><b>Roll No:</b> ${esc(s.roll)}</span><span class="item"><b>ತರಗತಿ:</b> ${esc(s.cls)}</span><span class="item"><b>ವಿದ್ಯಾರ್ಥಿ ಹೆಸರು:</b> ${esc(s.name)}</span></div>
-          <div class="line"><span class="item"><b>ತಂದೆಯ ಹೆಸರು:</b> ${esc(s.father)}</span><span class="item"><b>SATS No:</b> ${esc(s.sats)}</span><span class="item"><b>ಜನ್ಮ ದಿನಾಂಕ:</b> ${esc(dob)}</span></div>
+        <div class="topBlock">
+          <div class="head schoolName">ಶ್ರೀ ವೀರಬಲ್ಲಾಳ ಗ್ರಾಮಾಂತರ ಪ್ರೌಢಶಾಲೆ ಬಲ್ಲಾಳಸಮುದ್ರ, ಹೊಸದುರ್ಗ ತಾಲ್ಲೂಕು, ಚಿತ್ರದುರ್ಗ ಜಿಲ್ಲೆ</div>
+          <div class="head examTitle">${examHeading}</div>
+          ${s.photo_url?`<img class="photo" src="${s.photo_url}" alt="Student Photo">`:''}
+          <div class="info">
+            <div class="line"><span class="item"><b>Roll No:</b> ${esc(s.roll)}</span></div>
+            <div class="line"><span class="item"><b>ತರಗತಿ:</b> ${esc(s.cls)}</span></div>
+            <div class="line"><span class="item"><b>ವಿದ್ಯಾರ್ಥಿ ಹೆಸರು:</b> ${esc(s.name)}</span></div>
+            <div class="line"><span class="item"><b>ತಂದೆಯ ಹೆಸರು:</b> ${esc(s.father||'')}</span></div>
+            <div class="line"><span class="item"><b>SATS No:</b> ${esc(s.sats)}</span></div>
+            <div class="line"><span class="item"><b>ಜನ್ಮ ದಿನಾಂಕ:</b> ${esc(dob)}</span></div>
+          </div>
         </div>
-        <table class="st"><tr><th>ಕ್ರ.ಸಂ</th><th>ವಿಷಯ</th><th>ಪರೀಕ್ಷಾ ದಿನಾಂಕ</th><th>ವಾರ</th><th>ಸಮಯ</th><th>ಕೊಠಡಿ ಮೇಲ್ವಿಚಾರಕರ ಸಹಿ</th></tr>
-        ${subjects.length?subjects.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.subject)}</td><td class="printDate">${fmt(x.exam_date)}</td><td>${esc(x.weekday)}</td><td>${esc(x.exam_time)}</td><td><div class="roomSig"><span></span></div></td></tr>`).join(''):'<tr><td colspan="6" class="subjectEmpty">ವಿಷಯಗಳನ್ನು ಸೇರಿಸಲಾಗಿಲ್ಲ</td></tr>'}
+
+        <table class="st">
+          <tr><th>ಕ್ರ.ಸಂ</th><th>ವಿಷಯ</th><th>ಪರೀಕ್ಷಾ ದಿನಾಂಕ</th><th>ವಾರ</th><th>ಸಮಯ</th><th>ಕೊಠಡಿ ಮೇಲ್ವಿಚಾರಕರ ಸಹಿ</th></tr>
+          ${subjects.length?subjects.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.subject)}</td><td>${fmt(x.exam_date)}</td><td>${esc(x.weekday)}</td><td>${esc(x.exam_time)}</td><td><div class="roomSig"><span></span></div></td></tr>`).join(''):'<tr><td colspan="6">ವಿಷಯಗಳನ್ನು ಸೇರಿಸಲಾಗಿಲ್ಲ</td></tr>'}
         </table>
+
         <div class="bottomArea">
           <div class="instructions">
-            <div class="ititle">ಪರೀಕ್ಷಾ ಸೂಚನೆಗಳು</div>
+            <div class="ititle">ಪರೀಕ್ಷಾ ಸೂಚನೆಗಳು:</div>
             <div>1. ವಿದ್ಯಾರ್ಥಿಯು ಪ್ರವೇಶ ಪತ್ರವನ್ನು ಪ್ರತಿದಿನ ಕಡ್ಡಾಯವಾಗಿ ತರಬೇಕು.</div>
             <div>2. ಪರೀಕ್ಷೆ ಪ್ರಾರಂಭವಾಗುವ ಕನಿಷ್ಠ 30 ನಿಮಿಷಗಳ ಮೊದಲು ಪರೀಕ್ಷಾ ಕೊಠಡಿಯಲ್ಲಿ ಹಾಜರಿರಬೇಕು.</div>
             <div>3. ಪರೀಕ್ಷಾ ಕೊಠಡಿಯಲ್ಲಿ ಶಿಸ್ತು ಮತ್ತು ಮೌನವನ್ನು ಕಾಪಾಡಬೇಕು.</div>
             <div>4. ಅಗತ್ಯವಾದ ಪೆನ್, ಪೆನ್ಸಿಲ್, ಅಳಿಸುವ ರಬ್ಬರ್, ಸ್ಕೇಲ್ ಮುಂತಾದ ಸಾಮಗ್ರಿಗಳನ್ನು ವಿದ್ಯಾರ್ಥಿಯೇ ತರಬೇಕು.</div>
-            <div>5. ಮೊಬೈಲ್ ಫೋನ್ ಹಾಗೂ ಇತರೆ ಎಲೆಕ್ಟ್ರಾನಿಕ್ ಸಾಧನಗಳನ್ನು ಪರೀಕ್ಷಾ ಕೊಠಡಿಗೆ ತರಬಾರದು.</div>
+            <div class="lastInstructionRow"><span>5. ಮೊಬೈಲ್ ಫೋನ್ ಹಾಗೂ ಇತರೆ ಎಲೆಕ್ಟ್ರಾನಿಕ್ ಸಾಧನಗಳನ್ನು ಪರೀಕ್ಷಾ ಕೊಠಡಿಗೆ ತರಬಾರದು.</span><span class="principalSign">ಮುಖ್ಯ ಶಿಕ್ಷಕರ ಸಹಿ:</span></div>
           </div>
-          <div class="headSig"><div class="space"></div><div class="footLabel">ಮುಖ್ಯ ಶಿಕ್ಷಕರ ಸಹಿ: ____________________</div></div>
         </div>
       </div>`;
     });
@@ -226,49 +317,13 @@ function printCards(){
   }
   out+='</body></html>';
 
-  // Use a hidden print iframe instead of a popup. This avoids Chrome popup blocking
-  // and makes the Print button work directly from the user click.
-  const oldFrame=document.getElementById('examPrintFrame');
-  if(oldFrame) oldFrame.remove();
-  const frame=document.createElement('iframe');
-  frame.id='examPrintFrame';
-  frame.style.position='fixed';
-  frame.style.right='0';
-  frame.style.bottom='0';
-  frame.style.width='0';
-  frame.style.height='0';
-  frame.style.border='0';
-  frame.style.visibility='hidden';
-  document.body.appendChild(frame);
-
-  const fw=frame.contentWindow;
-  const fd=fw.document;
-  fd.open();
-  fd.write(out);
-  fd.close();
-
-  const doPrint=()=>{
-    try{
-      fw.focus();
-      fw.print();
-    }catch(err){
-      alert('Print ತೆರೆಯಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ಮತ್ತೆ Print ಒತ್ತಿ.');
-    }
-  };
-
+  const oldFrame=document.getElementById('examPrintFrame'); if(oldFrame)oldFrame.remove();
+  const frame=document.createElement('iframe'); frame.id='examPrintFrame'; frame.style.position='fixed'; frame.style.right='0'; frame.style.bottom='0'; frame.style.width='0'; frame.style.height='0'; frame.style.border='0'; frame.style.visibility='hidden'; document.body.appendChild(frame);
+  const fw=frame.contentWindow, fd=fw.document; fd.open(); fd.write(out); fd.close();
+  const doPrint=()=>{try{fw.focus();fw.print();}catch(err){alert('Print ತೆರೆಯಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ಮತ್ತೆ Print ಒತ್ತಿ.');}};
   const imgs=Array.from(fd.images||[]);
-  if(!imgs.length){
-    setTimeout(doPrint,250);
-  }else{
-    let left=imgs.length;
-    const done=()=>{left--;if(left<=0)setTimeout(doPrint,250)};
-    imgs.forEach(img=>{
-      if(img.complete) done();
-      else{img.addEventListener('load',done,{once:true});img.addEventListener('error',done,{once:true});}
-    });
-    setTimeout(doPrint,1800);
-  }
-
+  if(!imgs.length)setTimeout(doPrint,250);
+  else{let left=imgs.length;const done=()=>{left--;if(left<=0)setTimeout(doPrint,250)};imgs.forEach(img=>{if(img.complete)done();else{img.addEventListener('load',done,{once:true});img.addEventListener('error',done,{once:true})}});setTimeout(doPrint,1800)}
   $('printModal').classList.add('hide');
 }
 
