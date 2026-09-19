@@ -155,11 +155,36 @@ async function saveStudent(s){let dbase=getDb();if(!dbase)return;if(!examId){con
 async function saveStudents(){let dbase=getDb();if(!dbase)return;if(!examId){const ok=await saveExam(false);if(!ok)return;}for(let s of students.filter(x=>x.selected))await saveStudent(s);note("xm","ಆಯ್ಕೆ ಮಾಡಿದ ವಿದ್ಯಾರ್ಥಿಗಳ data Save ಆಗಿದೆ.",true)}
 function printOptions(){if(!students.some(s=>s.selected))return alert("ವಿದ್ಯಾರ್ಥಿಗಳನ್ನು Select ಮಾಡಿ.");$("printModal").classList.remove("hide")}
 function printCards(){
-  let list=students.filter(s=>s.selected),per=+$('per').value,type=$('type').value,year=$('year').value;
-  if(!list.length)return alert("ವಿದ್ಯಾರ್ಥಿಗಳನ್ನು Select ಮಾಡಿ.");
+  const list=students.filter(s=>s.selected);
+  const per=+$('per').value;
+  const type=$('type').value;
+  const year=$('year').value;
+  if(!list.length){alert("ವಿದ್ಯಾರ್ಥಿಗಳನ್ನು Select ಮಾಡಿ.");return;}
+
   const html0=`<!doctype html><html><head><meta charset="utf-8"><title>Exam Admission Card</title><style>
-  @page{size:A4 portrait;margin:7mm}*{box-sizing:border-box}body{font-family:Arial,"Noto Sans Kannada",sans-serif;margin:0;color:#111} .page{height:283mm;display:grid;grid-template-rows:repeat(${per},1fr);gap:3mm;page-break-after:always}.card{border:1px solid #111;padding:3.5mm 4mm;position:relative;overflow:hidden;display:flex;flex-direction:column}.head{text-align:center;font-weight:800;line-height:1.25;font-size:13px}.photo{position:absolute;right:4mm;top:4mm;width:25mm;height:31mm;object-fit:cover;border:1px solid #222}.info{font-size:10.5px;line-height:1.45;padding-right:29mm;margin-top:3mm;min-height:14mm}.info .line{display:flex;gap:5mm;white-space:nowrap}.info .item{display:inline-block}.st{width:100%;border-collapse:collapse;font-size:8.5px;margin-top:2mm;table-layout:fixed}.st th,.st td{border:1px solid #222;padding:2.5px 2px;text-align:center;line-height:1.15}.st th:nth-child(1){width:7%}.st th:nth-child(2){width:25%}.st th:nth-child(3){width:18%}.st th:nth-child(4){width:14%}.st th:nth-child(5){width:16%}.st th:nth-child(6){width:20%}.roomSig{font-size:7.8px;min-height:8mm;display:flex;align-items:center;justify-content:center;line-height:1.1}.roomSig span{display:block;border-bottom:1px solid #111;min-width:27mm;margin-left:1.5mm;height:4mm}.headSig{margin-top:auto;text-align:right;font-size:9px;min-height:15mm;padding-top:3mm;padding-right:1mm;line-height:1.2}.headSig .space{height:9mm}.footLabel{font-weight:700}.subjectEmpty{padding:2mm;text-align:center}.printDate{white-space:nowrap}@media print{.page{page-break-after:always}.card{break-inside:avoid}}
-  </style></head><body>`,out=html0;
+  @page{size:A4 portrait;margin:7mm}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#fff;color:#111;font-family:Arial,"Noto Sans Kannada",sans-serif}
+  body{width:100%}
+  .page{height:283mm;display:grid;grid-template-rows:repeat(${per},1fr);gap:3mm;page-break-after:always;break-after:page}
+  .page:last-child{page-break-after:auto;break-after:auto}
+  .card{border:1px solid #111;padding:3.5mm 4mm;position:relative;overflow:hidden;display:flex;flex-direction:column;min-height:0;break-inside:avoid}
+  .head{text-align:center;font-weight:800;line-height:1.25;font-size:13px}
+  .photo{position:absolute;right:4mm;top:4mm;width:25mm;height:31mm;object-fit:cover;border:1px solid #222}
+  .info{font-size:10.5px;line-height:1.45;padding-right:29mm;margin-top:3mm;min-height:14mm}
+  .info .line{display:flex;gap:5mm;white-space:nowrap;align-items:baseline}
+  .info .item{display:inline-block}
+  .st{width:100%;border-collapse:collapse;font-size:8.5px;margin-top:2mm;table-layout:fixed}
+  .st th,.st td{border:1px solid #222;padding:2.5px 2px;text-align:center;line-height:1.15}
+  .st th:nth-child(1){width:7%}.st th:nth-child(2){width:25%}.st th:nth-child(3){width:18%}.st th:nth-child(4){width:14%}.st th:nth-child(5){width:16%}.st th:nth-child(6){width:20%}
+  .roomSig{font-size:7.8px;min-height:8mm;display:flex;align-items:center;justify-content:center;line-height:1.1}
+  .roomSig span{display:block;border-bottom:1px solid #111;min-width:27mm;margin-left:1.5mm;height:4mm}
+  .headSig{margin-top:auto;text-align:right;font-size:9px;min-height:15mm;padding-top:3mm;padding-right:1mm;line-height:1.2}
+  .headSig .space{height:9mm}.footLabel{font-weight:700}.subjectEmpty{padding:2mm;text-align:center}.printDate{white-space:nowrap}
+  @media print{html,body{width:210mm} .page{page-break-after:always;break-after:page}.page:last-child{page-break-after:auto;break-after:auto}.card{break-inside:avoid}}
+  </style></head><body>`;
+
+  let out=html0;
   for(let p=0;p<list.length;p+=per){
     out+='<div class="page">';
     list.slice(p,p+per).forEach(s=>{
@@ -181,10 +206,50 @@ function printCards(){
     out+='</div>';
   }
   out+='</body></html>';
-  let w=window.open('','_blank');
-  if(!w){alert('Print window blocked ಆಗಿದೆ. Browser ನಲ್ಲಿ pop-up allow ಮಾಡಿ.');return;}
-  w.document.write(out);w.document.close();
-  setTimeout(()=>w.print(),700);
+
+  // Use a hidden print iframe instead of a popup. This avoids Chrome popup blocking
+  // and makes the Print button work directly from the user click.
+  const oldFrame=document.getElementById('examPrintFrame');
+  if(oldFrame) oldFrame.remove();
+  const frame=document.createElement('iframe');
+  frame.id='examPrintFrame';
+  frame.style.position='fixed';
+  frame.style.right='0';
+  frame.style.bottom='0';
+  frame.style.width='0';
+  frame.style.height='0';
+  frame.style.border='0';
+  frame.style.visibility='hidden';
+  document.body.appendChild(frame);
+
+  const fw=frame.contentWindow;
+  const fd=fw.document;
+  fd.open();
+  fd.write(out);
+  fd.close();
+
+  const doPrint=()=>{
+    try{
+      fw.focus();
+      fw.print();
+    }catch(err){
+      alert('Print ತೆರೆಯಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ಮತ್ತೆ Print ಒತ್ತಿ.');
+    }
+  };
+
+  const imgs=Array.from(fd.images||[]);
+  if(!imgs.length){
+    setTimeout(doPrint,250);
+  }else{
+    let left=imgs.length;
+    const done=()=>{left--;if(left<=0)setTimeout(doPrint,250)};
+    imgs.forEach(img=>{
+      if(img.complete) done();
+      else{img.addEventListener('load',done,{once:true});img.addEventListener('error',done,{once:true});}
+    });
+    setTimeout(doPrint,1800);
+  }
+
   $('printModal').classList.add('hide');
 }
 
