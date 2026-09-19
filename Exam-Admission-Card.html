@@ -9,10 +9,10 @@
 <div><label>Academic Year</label><input id="year" placeholder="2026-27"></div><div><label>ತರಗತಿ</label><select id="cls"><option value="">ತರಗತಿ ಆಯ್ಕೆ ಮಾಡಿ</option><option value="8ನೇ ತರಗತಿ">8ನೇ ತರಗತಿ</option><option value="9ನೇ ತರಗತಿ">9ನೇ ತರಗತಿ</option><option value="10ನೇ ತರಗತಿ">10ನೇ ತರಗತಿ</option></select></div></div><div class="actions"><button class="g" onclick="saveExam()">Save</button></div><div id="em"></div></div>
 
 <div class="box"><h2>2. ಪರೀಕ್ಷಾ ವಿವರಗಳ ಪಟ್ಟಿ</h2><div class="grid">
-<div><label>ವಿಷಯ</label><input id="sub"></div><div><label>ಪರೀಕ್ಷಾ ದಿನಾಂಕ</label><input id="date" type="date" onchange="weekday()"></div><div><label>ವಾರ</label><input id="day" readonly></div><div><label>ಸಮಯ</label><input id="time" placeholder="10:00 AM - 1:00 PM"></div></div><button class="p" onclick="addSubject()">+ ವಿಷಯ ಸೇರಿಸಿ</button><div id="sm"></div>
+<div><label>ವಿಷಯ</label><input id="sub"></div><div><label>ಪರೀಕ್ಷಾ ದಿನಾಂಕ</label><input id="date" type="date" oninput="weekday()" onchange="weekday()"></div><div><label>ವಾರ</label><input id="day" readonly></div><div><label>ಸಮಯ</label><input id="time" placeholder="10:00 AM - 1:00 PM"></div></div><button class="p" onclick="addSubject()">+ ವಿಷಯ ಸೇರಿಸಿ</button><div id="sm"></div>
 <table><thead><tr><th>ಕ್ರ.ಸಂ</th><th>ವಿಷಯ</th><th>ಪರೀಕ್ಷಾ ದಿನಾಂಕ</th><th>ವಾರ</th><th>ಸಮಯ</th><th>Action</th></tr></thead><tbody id="subjects"></tbody></table></div>
 
-<div class="box"><h2>3. Students Excel Upload</h2><div class="grid"><div><label>ತರಗತಿ</label><select id="uploadClass"><option value="">ತರಗತಿ ಆಯ್ಕೆ ಮಾಡಿ</option><option value="8ನೇ ತರಗತಿ">8ನೇ ತರಗತಿ</option><option value="9ನೇ ತರಗತಿ">9ನೇ ತರಗತಿ</option><option value="10ನೇ ತರಗತಿ">10ನೇ ತರಗತಿ</option></select></div><div><label>Excel</label><input id="excel" type="file" accept=".xlsx,.xls,.csv"></div></div><div>Excel columns: <b>Roll No, ವಿದ್ಯಾರ್ಥಿ ಹೆಸರು, ತಂದೆಯ ಹೆಸರು, ತರಗತಿ, SATS No, ಜನ್ಮ ದಿನಾಂಕ</b></div><button class="p" onclick="loadExcel()">Excel Upload / Students Load</button><div id="xm"></div></div>
+<div class="box"><h2>3. Students Excel Upload</h2><div class="grid"><div><label>ತರಗತಿ</label><select id="uploadClass"><option value="">ತರಗತಿ ಆಯ್ಕೆ ಮಾಡಿ</option><option value="8ನೇ ತರಗತಿ">8ನೇ ತರಗತಿ</option><option value="9ನೇ ತರಗತಿ">9ನೇ ತರಗತಿ</option><option value="10ನೇ ತರಗತಿ">10ನೇ ತರಗತಿ</option></select></div><div><label>Excel</label><input id="excel" type="file" accept=".xlsx,.xls,.csv"></div></div><div style="margin-top:8px"><button class="s" type="button" onclick="downloadExcelTemplate()">⬇️ Excel Template Download</button></div><div style="margin-top:6px">Excel columns: <b>Roll No, ವಿದ್ಯಾರ್ಥಿ ಹೆಸರು, ತಂದೆಯ ಹೆಸರು, ತರಗತಿ, SATS No, ಜನ್ಮ ದಿನಾಂಕ</b></div><div style="font-size:12px;color:#555;margin-top:4px">Template Download ಮಾಡಿ, ಅದರಲ್ಲಿ ವಿದ್ಯಾರ್ಥಿಗಳ ವಿವರ ತುಂಬಿ, ನಂತರ ಅದೇ Excel file Upload ಮಾಡಿ.</div><button class="p" type="button" onclick="loadExcel()">Excel Upload / Students Load</button><div id="xm"></div></div>
 
 <div class="box"><h2>4. Students</h2><button class="s" onclick="allSel(true)">ಎಲ್ಲ Select</button><button class="s" onclick="allSel(false)">ಎಲ್ಲ Unselect</button><button class="g" onclick="saveStudents()">Students Save</button><button class="p" onclick="printOptions()">Hall Tickets Print</button><div id="students"></div></div>
 </div>
@@ -21,30 +21,127 @@
 <div id="printModal" class="modal hide"><div><h2>Hall Ticket Print</h2><label>ಒಂದು A4ಗೆ</label><select id="per"><option value="2">2 ವಿದ್ಯಾರ್ಥಿಗಳು</option><option value="4">4 ವಿದ್ಯಾರ್ಥಿಗಳು</option></select><button class="p" onclick="printCards()">Print</button><button class="s" onclick="document.getElementById('printModal').classList.add('hide')">Close</button></div></div>
 
 <script>
-const URL="https://xhskrohrrsxlfbdbhyji.supabase.co",KEY="sb_publishable_0amt5yG7ZIm6JD7oub6JTw_Hv5Nx2cl",db=supabase.createClient(URL,KEY),BUCKET="exam-student-photos";
-let examId=null,subjects=[],students=[],photoIndex=-1;
+const SUPABASE_URL="https://xhskrohrrsxlfbdbhyji.supabase.co",SUPABASE_KEY="sb_publishable_0amt5yG7ZIm6JD7oub6JTw_Hv5Nx2cl",BUCKET="exam-student-photos";
+let db=null,examId=null,subjects=[],students=[],photoIndex=-1;
+function getDb(){
+  if(db)return db;
+  if(!window.supabase){note("em","Supabase library load ಆಗಿಲ್ಲ. Internet connection ಪರಿಶೀಲಿಸಿ ಮತ್ತು page ಅನ್ನು refresh ಮಾಡಿ.");return null;}
+  db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  return db;
+}
 const $=id=>document.getElementById(id),esc=x=>String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 function note(id,t,ok=false){$(id).innerHTML='<div class="'+(ok?"ok":"err")+'">'+esc(t)+'</div>'}
-function weekday(){let d=$("date").value;if(!d)return $("day").value="";$("day").value=["ಭಾನುವಾರ","ಸೋಮವಾರ","ಮಂಗಳವಾರ","ಬುಧವಾರ","ಗುರುವಾರ","ಶುಕ್ರವಾರ","ಶನಿವಾರ"][new Date(d+"T00:00:00").getDay()]}
+function weekday(){
+  const d=$("date").value;
+  if(!d){$("day").value="";return;}
+  const parts=d.split("-");
+  if(parts.length!==3){$("day").value="";return;}
+  const dt=new Date(Number(parts[0]),Number(parts[1])-1,Number(parts[2]));
+  if(Number.isNaN(dt.getTime())){$("day").value="";return;}
+  $("day").value=["ಭಾನುವಾರ","ಸೋಮವಾರ","ಮಂಗಳವಾರ","ಬುಧವಾರ","ಗುರುವಾರ","ಶುಕ್ರವಾರ","ಶನಿವಾರ"][dt.getDay()];
+}
 function fmt(d){if(!d)return"";let a=d.split("-");return a[2]+"-"+a[1]+"-"+a[0]}
-async function saveExam(showMessage=true){let type=$("type").value,year=$("year").value.trim(),cls=$("cls").value.trim();if(!type||!year||!cls){if(showMessage)note("em","ಪರೀಕ್ಷೆ, Academic Year ಮತ್ತು ತರಗತಿ ಆಯ್ಕೆ ಮಾಡಿ.");return false}let q=await db.from("exam_admission_exams").upsert({exam_type:type,academic_year:year,class_name:cls},{onConflict:"exam_type,academic_year,class_name"}).select().single();if(q.error){if(showMessage)note("em",q.error.message);return false}examId=q.data.id;await loadSubjects();if(showMessage)note("em","ಪರೀಕ್ಷೆ Save ಆಗಿದೆ.",true);return true}
-async function loadSubjects(){if(!examId)return;let q=await db.from("exam_admission_subjects").select("*").eq("exam_id",examId).order("sort_order");if(q.error)return note("em",q.error.message);subjects=q.data||[];renderSubjects()}
-async function addSubject(){$("sm").innerHTML="";if(!examId){let ok=await saveExam(false);if(!ok){note("sm","ಮೊದಲು ಪರೀಕ್ಷೆ, Academic Year ಮತ್ತು ತರಗತಿ ಸರಿಯಾಗಿ ಆಯ್ಕೆ ಮಾಡಿ Save ಮಾಡಿ.");return}}let subject=$("sub").value.trim(),date=$("date").value,time=$("time").value.trim();if(!subject||!date||!time){note("sm","ವಿಷಯ, ಪರೀಕ್ಷಾ ದಿನಾಂಕ ಮತ್ತು ಸಮಯ ತುಂಬಿ.");return}let w=["ಭಾನುವಾರ","ಸೋಮವಾರ","ಮಂಗಳವಾರ","ಬುಧವಾರ","ಗುರುವಾರ","ಶುಕ್ರವಾರ","ಶನಿವಾರ"][new Date(date+"T00:00:00").getDay()];$("day").value=w;let q=await db.from("exam_admission_subjects").insert({exam_id:examId,subject,exam_date:date,weekday:w,exam_time:time,sort_order:subjects.length});if(q.error){note("sm","ವಿಷಯ ಸೇರಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ: "+q.error.message);return}$("sub").value="";$("date").value="";$("day").value="";$("time").value="";await loadSubjects();note("sm","ವಿಷಯ ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ.",true)}
+async function saveExam(showMessage=true){
+  try{
+    let dbase=getDb();if(!dbase)return false;
+    let type=$("type").value,year=$("year").value.trim(),cls=$("cls").value.trim();
+    if(!type||!year||!cls){if(showMessage)note("em","ಪರೀಕ್ಷೆ, Academic Year ಮತ್ತು ತರಗತಿ ಆಯ್ಕೆ ಮಾಡಿ.");return false}
+    let q=await dbase.from("exam_admission_exams").upsert({exam_type:type,academic_year:year,class_name:cls},{onConflict:"exam_type,academic_year,class_name"}).select().single();
+    if(q.error){if(showMessage)note("em","Exam Save error: "+q.error.message);return false}
+    examId=q.data.id;
+    await loadSubjects();
+    if(showMessage)note("em","ಪರೀಕ್ಷೆ Save ಆಗಿದೆ.",true);
+    return true;
+  }catch(err){if(showMessage)note("em","Exam Save error: "+(err?.message||err));return false}
+}
+async function loadSubjects(){if(!examId)return;let dbase=getDb();if(!dbase)return;let q=await dbase.from("exam_admission_subjects").select("*").eq("exam_id",examId).order("sort_order");if(q.error)return note("em",q.error.message);subjects=q.data||[];renderSubjects()}
+async function addSubject(){
+  $("sm").innerHTML="";
+  const dbase=getDb();
+  if(!dbase)return;
+  try{
+    const subject=$("sub").value.trim();
+    const date=$("date").value;
+    const time=$("time").value.trim();
+
+    if(!subject||!date||!time){
+      note("sm","ವಿಷಯ, ಪರೀಕ್ಷಾ ದಿನಾಂಕ ಮತ್ತು ಸಮಯ ತುಂಬಿ.");
+      return;
+    }
+
+    // Always make sure the exam exists before inserting a subject.
+    if(!examId){
+      const ok=await saveExam(false);
+      if(!ok){
+        note("sm","ಪರೀಕ್ಷೆಯ ಮೂಲ ವಿವರಗಳನ್ನು ಮೊದಲು Save ಮಾಡಿ.");
+        return;
+      }
+    }
+
+    weekday();
+    const w=$("day").value;
+    if(!w){
+      note("sm","ಪರೀಕ್ಷಾ ದಿನಾಂಕದ ವಾರ ಕಂಡುಬಂದಿಲ್ಲ. ದಿನಾಂಕವನ್ನು ಮತ್ತೊಮ್ಮೆ ಆಯ್ಕೆ ಮಾಡಿ.");
+      return;
+    }
+
+    const nextOrder=subjects.length;
+    const q=await dbase.from("exam_admission_subjects").insert({
+      exam_id:examId,
+      subject:subject,
+      exam_date:date,
+      weekday:w,
+      exam_time:time,
+      sort_order:nextOrder
+    }).select().single();
+
+    if(q.error){
+      note("sm","ವಿಷಯ ಸೇರಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ: "+q.error.message);
+      return;
+    }
+
+    $("sub").value="";
+    $("date").value="";
+    $("day").value="";
+    $("time").value="";
+    await loadSubjects();
+    note("sm","ವಿಷಯ ಯಶಸ್ವಿಯಾಗಿ ಸೇರಿಸಲಾಗಿದೆ.",true);
+  }catch(err){
+    note("sm","ವಿಷಯ ಸೇರಿಸುವಾಗ ದೋಷ: "+(err?.message||err));
+  }
+}
+
 function renderSubjects(){$("subjects").innerHTML=subjects.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.subject)}</td><td>${fmt(x.exam_date)}</td><td>${esc(x.weekday)}</td><td>${esc(x.exam_time)}</td><td><button onclick="moveSub(${i},-1)">↑</button><button onclick="moveSub(${i},1)">↓</button><button onclick="editSub(${i})">✏️</button><button class="r" onclick="delSub('${x.id}')">🗑️</button></td></tr>`).join("")}
-async function moveSub(i,d){let j=i+d;if(j<0||j>=subjects.length)return;[subjects[i],subjects[j]]=[subjects[j],subjects[i]];for(let k=0;k<subjects.length;k++)await db.from("exam_admission_subjects").update({sort_order:k}).eq("id",subjects[k].id);await loadSubjects()}
-async function editSub(i){let x=subjects[i],s=prompt("ವಿಷಯ",x.subject);if(s===null)return;let d=prompt("ದಿನಾಂಕ YYYY-MM-DD",x.exam_date);if(d===null)return;let t=prompt("ಸಮಯ",x.exam_time);if(t===null)return;let w=["ಭಾನುವಾರ","ಸೋಮವಾರ","ಮಂಗಳವಾರ","ಬುಧವಾರ","ಗುರುವಾರ","ಶುಕ್ರವಾರ","ಶನಿವಾರ"][new Date(d+"T00:00:00").getDay()];let q=await db.from("exam_admission_subjects").update({subject:s.trim(),exam_date:d,weekday:w,exam_time:t.trim()}).eq("id",x.id);if(q.error){note("sm",q.error.message);return}await loadSubjects()}
-async function delSub(id){if(confirm("Delete ಮಾಡಬೇಕೇ?")){await db.from("exam_admission_subjects").delete().eq("id",id);await loadSubjects()}}
+async function moveSub(i,d){let dbase=getDb();if(!dbase)return;let j=i+d;if(j<0||j>=subjects.length)return;[subjects[i],subjects[j]]=[subjects[j],subjects[i]];for(let k=0;k<subjects.length;k++)await dbase.from("exam_admission_subjects").update({sort_order:k}).eq("id",subjects[k].id);await loadSubjects()}
+async function editSub(i){let dbase=getDb();if(!dbase)return;let x=subjects[i],s=prompt("ವಿಷಯ",x.subject);if(s===null)return;let d=prompt("ದಿನಾಂಕ YYYY-MM-DD",x.exam_date);if(d===null)return;let t=prompt("ಸಮಯ",x.exam_time);if(t===null)return;let w=["ಭಾನುವಾರ","ಸೋಮವಾರ","ಮಂಗಳವಾರ","ಬುಧವಾರ","ಗುರುವಾರ","ಶುಕ್ರವಾರ","ಶನಿವಾರ"][new Date(d+"T00:00:00").getDay()];let q=await dbase.from("exam_admission_subjects").update({subject:s.trim(),exam_date:d,weekday:w,exam_time:t.trim()}).eq("id",x.id);if(q.error){note("sm",q.error.message);return}await loadSubjects()}
+async function delSub(id){let dbase=getDb();if(!dbase)return;if(confirm("Delete ಮಾಡಬೇಕೇ?")){await dbase.from("exam_admission_subjects").delete().eq("id",id);await loadSubjects()}}
+function downloadExcelTemplate(){
+  const xml=`<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Worksheet ss:Name="Students"><Table><Row><Cell><Data ss:Type="String">Roll No</Data></Cell><Cell><Data ss:Type="String">ವಿದ್ಯಾರ್ಥಿ ಹೆಸರು</Data></Cell><Cell><Data ss:Type="String">ತಂದೆಯ ಹೆಸರು</Data></Cell><Cell><Data ss:Type="String">ತರಗತಿ</Data></Cell><Cell><Data ss:Type="String">SATS No</Data></Cell><Cell><Data ss:Type="String">ಜನ್ಮ ದಿನಾಂಕ</Data></Cell></Row></Table></Worksheet></Workbook>`;
+  const blob=new Blob([xml],{type:"application/vnd.ms-excel"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="Exam-Admission-Card-Students-Template.xls";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
 function get(r,names){let ks=Object.keys(r);for(let n of names){if(r[n]!==undefined)return r[n];let k=ks.find(x=>x.trim().toLowerCase()===n.trim().toLowerCase());if(k)return r[k]}return""}
 function normalizeClass(v){let x=String(v??"").trim().toLowerCase().replace(/\s+/g," ");if(["8","8ನೇ","8 ನೇ","8ನೇ ತರಗತಿ","8 ನೇ ತರಗತಿ","class 8","8th","8th class"].includes(x))return"8ನೇ ತರಗತಿ";if(["9","9ನೇ","9 ನೇ","9ನೇ ತರಗತಿ","9 ನೇ ತರಗತಿ","class 9","9th","9th class"].includes(x))return"9ನೇ ತರಗತಿ";if(["10","10ನೇ","10 ನೇ","10ನೇ ತರಗತಿ","10 ನೇ ತರಗತಿ","class 10","10th","10th class"].includes(x))return"10ನೇ ತರಗತಿ";return String(v??"").trim()}
-async function loadExcel(){let f=$("excel").files[0],wc=$("uploadClass").value.trim();if(!f||!wc)return note("xm","ತರಗತಿ ಮತ್ತು Excel ಆಯ್ಕೆ ಮಾಡಿ.");let b=await f.arrayBuffer(),w=XLSX.read(b,{type:"array"}),rows=XLSX.utils.sheet_to_json(w.Sheets[w.SheetNames[0]],{defval:""});let a=rows.map(r=>({roll:String(get(r,["Roll No","RollNo","Roll"])).trim(),name:String(get(r,["ವಿದ್ಯಾರ್ಥಿ ಹೆಸರು","Student Name","Name"])).trim(),father:String(get(r,["ತಂದೆಯ ಹೆಸರು","Father Name","Father"])).trim(),cls:normalizeClass(get(r,["ತರಗತಿ","Class"])),sats:String(get(r,["SATS No","SATS","SATS NO"])).replace(/\D/g,""),dob:String(get(r,["ಜನ್ಮ ದಿನಾಂಕ","DOB","Date of Birth"])).trim()})).filter(x=>x.cls===wc);if(!a.length)return note("xm","ಆಯ್ಕೆ ಮಾಡಿದ ತರಗತಿಯ ವಿದ್ಯಾರ್ಥಿಗಳು Excel ನಲ್ಲಿ ಕಂಡುಬಂದಿಲ್ಲ. Excel‌ನ ತರಗತಿ column ಪರಿಶೀಲಿಸಿ.");let rr=new Set,ss=new Set,e=[];a.forEach((x,i)=>{if(!x.roll)e.push(`Row ${i+2}: Roll No ಇಲ್ಲ`);else if(rr.has(x.roll))e.push(`Row ${i+2}: Duplicate Roll No ${x.roll}`);rr.add(x.roll);if(!/^\d{9}$/.test(x.sats))e.push(`Row ${i+2}: SATS No 9 digits ಅಲ್ಲ`);else if(ss.has(x.sats))e.push(`Row ${i+2}: Duplicate SATS No ${x.sats}`);ss.add(x.sats);if(!x.name)e.push(`Row ${i+2}: ವಿದ್ಯಾರ್ಥಿ ಹೆಸರು ಇಲ್ಲ`)});if(e.length)return note("xm",e.slice(0,20).join(" | "));students=a.map(x=>({...x,selected:true,photo_url:""}));renderStudents();note("xm",students.length+" ವಿದ್ಯಾರ್ಥಿಗಳು load ಆಗಿದ್ದಾರೆ.",true)}
+async function loadExcel(){let f=$("excel").files[0],wc=$("uploadClass").value.trim();if(!f||!wc)return note("xm","ಮೊದಲು ತರಗತಿ ಮತ್ತು Excel file ಆಯ್ಕೆ ಮಾಡಿ.");if(!window.XLSX)return note("xm","Excel library load ಆಗಿಲ್ಲ. Internet connection ಪರಿಶೀಲಿಸಿ ಮತ್ತು page refresh ಮಾಡಿ.");let b=await f.arrayBuffer(),w=XLSX.read(b,{type:"array"}),rows=XLSX.utils.sheet_to_json(w.Sheets[w.SheetNames[0]],{defval:""});let a=rows.map(r=>({roll:String(get(r,["Roll No","RollNo","Roll"])).trim(),name:String(get(r,["ವಿದ್ಯಾರ್ಥಿ ಹೆಸರು","Student Name","Name"])).trim(),father:String(get(r,["ತಂದೆಯ ಹೆಸರು","Father Name","Father"])).trim(),cls:normalizeClass(get(r,["ತರಗತಿ","Class"])),sats:String(get(r,["SATS No","SATS","SATS NO"])).replace(/\D/g,""),dob:String(get(r,["ಜನ್ಮ ದಿನಾಂಕ","DOB","Date of Birth"])).trim()})).filter(x=>x.cls===wc);if(!a.length)return note("xm","ಆಯ್ಕೆ ಮಾಡಿದ ತರಗತಿಯ ವಿದ್ಯಾರ್ಥಿಗಳು Excel ನಲ್ಲಿ ಕಂಡುಬಂದಿಲ್ಲ. Excel‌ನ ತರಗತಿ column ಪರಿಶೀಲಿಸಿ.");let rr=new Set,ss=new Set,e=[];a.forEach((x,i)=>{if(!x.roll)e.push(`Row ${i+2}: Roll No ಇಲ್ಲ`);else if(rr.has(x.roll))e.push(`Row ${i+2}: Duplicate Roll No ${x.roll}`);rr.add(x.roll);if(!/^\d{9}$/.test(x.sats))e.push(`Row ${i+2}: SATS No 9 digits ಅಲ್ಲ`);else if(ss.has(x.sats))e.push(`Row ${i+2}: Duplicate SATS No ${x.sats}`);ss.add(x.sats);if(!x.name)e.push(`Row ${i+2}: ವಿದ್ಯಾರ್ಥಿ ಹೆಸರು ಇಲ್ಲ`)});if(e.length)return note("xm",e.slice(0,20).join(" | "));students=a.map(x=>({...x,selected:true,photo_url:""}));renderStudents();note("xm",students.length+" ವಿದ್ಯಾರ್ಥಿಗಳು load ಆಗಿದ್ದಾರೆ.",true)}
 function renderStudents(){$("students").innerHTML=`<table><thead><tr><th>Select</th><th>Roll No</th><th>Photo</th><th>ವಿದ್ಯಾರ್ಥಿ ಹೆಸರು</th><th>ತಂದೆಯ ಹೆಸರು</th><th>ತರಗತಿ</th><th>SATS No</th><th>ಜನ್ಮ ದಿನಾಂಕ</th></tr></thead><tbody>${students.map((s,i)=>`<tr><td><input type="checkbox" ${s.selected?"checked":""} onchange="students[${i}].selected=this.checked"></td><td>${esc(s.roll)}</td><td>${s.photo_url?`<img class="photo" src="${s.photo_url}">`:`<div class="photo"></div>`}<br><button class="p" onclick="choosePhoto(${i})">${s.photo_url?"🔄 ಬದಲಿಸಿ":"📷 Upload"}</button>${s.photo_url?`<button class="r" onclick="removePhoto(${i})">🗑️</button>`:""}</td><td>${esc(s.name)}</td><td>${esc(s.father)}</td><td>${esc(s.cls)}</td><td>${esc(s.sats)}</td><td>${esc(s.dob)}</td></tr>`).join("")}</tbody></table>`}
 function allSel(v){students.forEach(s=>s.selected=v);renderStudents()}
 function choosePhoto(i){photoIndex=i;$("photo").value="";$("pm").innerHTML="";$("photoModal").classList.remove("hide")}
 function closePhoto(){$("photoModal").classList.add("hide")}
-async function savePhoto(){let f=$("photo").files[0];if(!f)return note("pm","Photo ಆಯ್ಕೆ ಮಾಡಿ.");let s=students[photoIndex],path="student-photos/"+s.sats+"_"+s.roll,q=await db.storage.from(BUCKET).upload(path,f,{upsert:true,contentType:f.type});if(q.error)return note("pm",q.error.message);let u=db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;s.photo_url=u;await saveStudent(s);closePhoto();renderStudents()}
-async function removePhoto(i){if(!confirm("Photo delete ಮಾಡಬೇಕೇ?"))return;let s=students[i];await db.storage.from(BUCKET).remove(["student-photos/"+s.sats+"_"+s.roll]);s.photo_url="";await saveStudent(s);renderStudents()}
-async function saveStudent(s){if(!examId)await saveExam();let q=await db.from("exam_admission_students").upsert({exam_id:examId,roll_no:s.roll,student_name:s.name,father_name:s.father,class_name:s.cls,sats_no:s.sats,dob:s.dob,photo_url:s.photo_url||null},{onConflict:"exam_id,roll_no"});if(q.error)console.error(q.error)}
-async function saveStudents(){if(!examId)await saveExam();for(let s of students.filter(x=>x.selected))await saveStudent(s);note("xm","ಆಯ್ಕೆ ಮಾಡಿದ ವಿದ್ಯಾರ್ಥಿಗಳ data Save ಆಗಿದೆ.",true)}
+async function savePhoto(){let dbase=getDb();if(!dbase)return;let f=$("photo").files[0];if(!f)return note("pm","Photo ಆಯ್ಕೆ ಮಾಡಿ.");let s=students[photoIndex],path="student-photos/"+s.sats+"_"+s.roll,q=await dbase.storage.from(BUCKET).upload(path,f,{upsert:true,contentType:f.type});if(q.error)return note("pm",q.error.message);let u=dbase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;s.photo_url=u;await saveStudent(s);closePhoto();renderStudents()}
+async function removePhoto(i){let dbase=getDb();if(!dbase)return;if(!confirm("Photo delete ಮಾಡಬೇಕೇ?"))return;let s=students[i];await dbase.storage.from(BUCKET).remove(["student-photos/"+s.sats+"_"+s.roll]);s.photo_url="";await saveStudent(s);renderStudents()}
+async function saveStudent(s){let dbase=getDb();if(!dbase)return;if(!examId){const ok=await saveExam(false);if(!ok)return;}let q=await dbase.from("exam_admission_students").upsert({exam_id:examId,roll_no:s.roll,student_name:s.name,father_name:s.father,class_name:s.cls,sats_no:s.sats,dob:s.dob,photo_url:s.photo_url||null},{onConflict:"exam_id,roll_no"});if(q.error)console.error(q.error)}
+async function saveStudents(){let dbase=getDb();if(!dbase)return;if(!examId){const ok=await saveExam(false);if(!ok)return;}for(let s of students.filter(x=>x.selected))await saveStudent(s);note("xm","ಆಯ್ಕೆ ಮಾಡಿದ ವಿದ್ಯಾರ್ಥಿಗಳ data Save ಆಗಿದೆ.",true)}
 function printOptions(){if(!students.some(s=>s.selected))return alert("ವಿದ್ಯಾರ್ಥಿಗಳನ್ನು Select ಮಾಡಿ.");$("printModal").classList.remove("hide")}
 function printCards(){let list=students.filter(s=>s.selected),per=+$("per").value,type=$("type").value,year=$("year").value,cls=$("cls").value,html0=`<!doctype html><html><head><meta charset="utf-8"><title>Exam Admission Card</title><style>@page{size:A4 portrait;margin:8mm}body{font-family:Arial,"Noto Sans Kannada",sans-serif;margin:0}.page{height:281mm;display:grid;grid-template-rows:repeat(${per},1fr);gap:4mm;page-break-after:always}.card{border:1px solid #111;padding:5mm;position:relative}.head{text-align:center;font-weight:800}.photo{position:absolute;right:5mm;top:5mm;width:28mm;height:34mm;object-fit:cover;border:1px solid #222}.info{font-size:12px;line-height:1.8;padding-right:32mm}.st{width:100%;border-collapse:collapse;font-size:10px;margin-top:5px}.st th,.st td{border:1px solid #222;padding:4px;text-align:center}.sig{text-align:right;margin-top:8mm;font-size:11px}</style></head><body>`,out=html0;for(let p=0;p<list.length;p+=per){out+="<div class=page>";list.slice(p,p+per).forEach(s=>{out+=`<div class=card><div class=head>ಪರೀಕ್ಷಾ ಪ್ರವೇಶ ಪತ್ರ</div><div class=head>${esc(type)} - ${esc(year)}</div>${s.photo_url?`<img class=photo src="${s.photo_url}">`:""}<div class=info><b>Roll No:</b> ${esc(s.roll)} &nbsp; <b>ತರಗತಿ:</b> ${esc(s.cls)}<br><b>ವಿದ್ಯಾರ್ಥಿ ಹೆಸರು:</b> ${esc(s.name)}<br><b>ತಂದೆಯ ಹೆಸರು:</b> ${esc(s.father)}<br><b>SATS No:</b> ${esc(s.sats)} &nbsp; <b>ಜನ್ಮ ದಿನಾಂಕ:</b> ${esc(s.dob)}</div><table class=st><tr><th>ಕ್ರ.ಸಂ</th><th>ವಿಷಯ</th><th>ಪರೀಕ್ಷಾ ದಿನಾಂಕ</th><th>ವಾರ</th><th>ಸಮಯ</th></tr>${subjects.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.subject)}</td><td>${fmt(x.exam_date)}</td><td>${esc(x.weekday)}</td><td>${esc(x.exam_time)}</td></tr>`).join("")}</table><div class=sig>ಕೊಠಡಿ ಮೇಲ್ವಿಚಾರಕರ ಸಹಿ: __________________</div></div>`});out+="</div>"}out+="</body></html>";let w=window.open("","_blank");w.document.write(out);w.document.close();setTimeout(()=>w.print(),500);$("printModal").classList.add("hide")}
+document.addEventListener("DOMContentLoaded",()=>{
+  const classEl=$("cls"), uploadClassEl=$("uploadClass");
+  if(classEl && uploadClassEl){classEl.addEventListener("change",()=>{uploadClassEl.value=classEl.value;});}
+  const dateEl=$("date");
+  if(dateEl){
+    dateEl.addEventListener("input",weekday);
+    dateEl.addEventListener("change",weekday);
+  }
+  weekday();
+});
 </script></body></html>
