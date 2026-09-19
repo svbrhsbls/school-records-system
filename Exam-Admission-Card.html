@@ -169,18 +169,26 @@ function printCards(){
   .page{height:283mm;display:grid;grid-template-rows:repeat(${per},1fr);gap:3mm;page-break-after:always;break-after:page}
   .page:last-child{page-break-after:auto;break-after:auto}
   .card{border:1px solid #111;padding:3.5mm 4mm;position:relative;overflow:hidden;display:flex;flex-direction:column;min-height:0;break-inside:avoid}
-  .head{text-align:center;font-weight:800;line-height:1.25;font-size:13px}
+  .head{text-align:center;font-weight:800;line-height:1.22;font-size:13px}
+  .schoolName{font-size:12.5px;font-weight:800;line-height:1.15;margin-bottom:0.5mm}
+  .examTitle{font-size:13px;font-weight:800;line-height:1.15}
   .photo{position:absolute;right:4mm;top:4mm;width:25mm;height:31mm;object-fit:cover;border:1px solid #222}
-  .info{font-size:10.5px;line-height:1.45;padding-right:29mm;margin-top:3mm;min-height:14mm}
-  .info .line{display:flex;gap:5mm;white-space:nowrap;align-items:baseline}
+  .info{font-size:10.5px;line-height:1.4;padding-right:29mm;margin-top:2.5mm;min-height:13.5mm;font-weight:700}
+  .info .line{display:flex;gap:4.5mm;white-space:nowrap;align-items:baseline}
   .info .item{display:inline-block}
-  .st{width:100%;border-collapse:collapse;font-size:8.5px;margin-top:2mm;table-layout:fixed}
-  .st th,.st td{border:1px solid #222;padding:2.5px 2px;text-align:center;line-height:1.15}
+  .st{width:100%;border-collapse:collapse;font-size:9.5px;margin-top:1.8mm;table-layout:fixed;font-weight:700}
+  .st th,.st td{border:1px solid #222;padding:1.5px 2px;text-align:center;line-height:1.05;font-weight:700}
+  .st th{font-size:10px;font-weight:800;height:6.5mm}
+  .st td{font-size:9.5px;height:6.8mm}
   .st th:nth-child(1){width:7%}.st th:nth-child(2){width:25%}.st th:nth-child(3){width:18%}.st th:nth-child(4){width:14%}.st th:nth-child(5){width:16%}.st th:nth-child(6){width:20%}
-  .roomSig{font-size:7.8px;min-height:8mm;display:flex;align-items:center;justify-content:center;line-height:1.1}
-  .roomSig span{display:block;border-bottom:1px solid #111;min-width:27mm;margin-left:1.5mm;height:4mm}
-  .headSig{margin-top:auto;text-align:right;font-size:9px;min-height:15mm;padding-top:3mm;padding-right:1mm;line-height:1.2}
-  .headSig .space{height:9mm}.footLabel{font-weight:700}.subjectEmpty{padding:2mm;text-align:center}.printDate{white-space:nowrap}
+  .roomSig{font-size:8px;min-height:6.5mm;display:flex;align-items:center;justify-content:center;line-height:1.05}
+  .roomSig span{display:block;border-bottom:1px solid #111;min-width:27mm;margin-left:1.5mm;height:3.5mm}
+  .bottomArea{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:5mm;min-height:18mm;padding-top:2mm}
+  .instructions{width:68%;font-size:8px;line-height:1.18;font-weight:700;text-align:left}
+  .instructions .ititle{font-size:9px;font-weight:800;margin-bottom:1mm}
+  .instructions div{margin-bottom:.7mm}
+  .headSig{width:29%;text-align:right;font-size:9px;min-height:17mm;padding-top:2mm;padding-right:1mm;line-height:1.2;display:flex;flex-direction:column;justify-content:flex-end}
+  .headSig .space{height:11mm}.footLabel{font-weight:800;white-space:nowrap}.subjectEmpty{padding:2mm;text-align:center}.printDate{white-space:nowrap}
   @media print{html,body{width:210mm} .page{page-break-after:always;break-after:page}.page:last-child{page-break-after:auto;break-after:auto}.card{break-inside:avoid}}
   </style></head><body>`;
 
@@ -190,8 +198,9 @@ function printCards(){
     list.slice(p,p+per).forEach(s=>{
       const dob=excelDobToDisplay(s.dob);
       out+=`<div class="card">
-        <div class="head">ಪರೀಕ್ಷಾ ಪ್ರವೇಶ ಪತ್ರ</div>
-        <div class="head">${esc(type)} - ${esc(year)}</div>
+        <div class="head schoolName">ಶ್ರೀ ವೀರಬಲ್ಲಾಳ ಗ್ರಾಮಾಂತರ ಪ್ರೌಢಶಾಲೆ</div>
+        <div class="head schoolName">ಬಲ್ಲಾಳಸಮುದ್ರ, ಹೊಸದುರ್ಗ ತಾಲ್ಲೂಕು, ಚಿತ್ರದುರ್ಗ ಜಿಲ್ಲೆ</div>
+        <div class="head examTitle">${esc(type)} ಪರೀಕ್ಷೆ ಪ್ರವೇಶ ಪತ್ರ - ${esc(year)}</div>
         ${s.photo_url?`<img class="photo" src="${s.photo_url}">`:''}
         <div class="info">
           <div class="line"><span class="item"><b>Roll No:</b> ${esc(s.roll)}</span><span class="item"><b>ತರಗತಿ:</b> ${esc(s.cls)}</span><span class="item"><b>ವಿದ್ಯಾರ್ಥಿ ಹೆಸರು:</b> ${esc(s.name)}</span></div>
@@ -200,7 +209,17 @@ function printCards(){
         <table class="st"><tr><th>ಕ್ರ.ಸಂ</th><th>ವಿಷಯ</th><th>ಪರೀಕ್ಷಾ ದಿನಾಂಕ</th><th>ವಾರ</th><th>ಸಮಯ</th><th>ಕೊಠಡಿ ಮೇಲ್ವಿಚಾರಕರ ಸಹಿ</th></tr>
         ${subjects.length?subjects.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.subject)}</td><td class="printDate">${fmt(x.exam_date)}</td><td>${esc(x.weekday)}</td><td>${esc(x.exam_time)}</td><td><div class="roomSig"><span></span></div></td></tr>`).join(''):'<tr><td colspan="6" class="subjectEmpty">ವಿಷಯಗಳನ್ನು ಸೇರಿಸಲಾಗಿಲ್ಲ</td></tr>'}
         </table>
-        <div class="headSig"><div class="space"></div><div class="footLabel">ಮುಖ್ಯ ಶಿಕ್ಷಕರ ಸಹಿ: ____________________</div></div>
+        <div class="bottomArea">
+          <div class="instructions">
+            <div class="ititle">ಪರೀಕ್ಷಾ ಸೂಚನೆಗಳು</div>
+            <div>1. ವಿದ್ಯಾರ್ಥಿಯು ಪ್ರವೇಶ ಪತ್ರವನ್ನು ಪ್ರತಿದಿನ ಕಡ್ಡಾಯವಾಗಿ ತರಬೇಕು.</div>
+            <div>2. ಪರೀಕ್ಷೆ ಪ್ರಾರಂಭವಾಗುವ ಕನಿಷ್ಠ 30 ನಿಮಿಷಗಳ ಮೊದಲು ಪರೀಕ್ಷಾ ಕೊಠಡಿಯಲ್ಲಿ ಹಾಜರಿರಬೇಕು.</div>
+            <div>3. ಪರೀಕ್ಷಾ ಕೊಠಡಿಯಲ್ಲಿ ಶಿಸ್ತು ಮತ್ತು ಮೌನವನ್ನು ಕಾಪಾಡಬೇಕು.</div>
+            <div>4. ಅಗತ್ಯವಾದ ಪೆನ್, ಪೆನ್ಸಿಲ್, ಅಳಿಸುವ ರಬ್ಬರ್, ಸ್ಕೇಲ್ ಮುಂತಾದ ಸಾಮಗ್ರಿಗಳನ್ನು ವಿದ್ಯಾರ್ಥಿಯೇ ತರಬೇಕು.</div>
+            <div>5. ಮೊಬೈಲ್ ಫೋನ್ ಹಾಗೂ ಇತರೆ ಎಲೆಕ್ಟ್ರಾನಿಕ್ ಸಾಧನಗಳನ್ನು ಪರೀಕ್ಷಾ ಕೊಠಡಿಗೆ ತರಬಾರದು.</div>
+          </div>
+          <div class="headSig"><div class="space"></div><div class="footLabel">ಮುಖ್ಯ ಶಿಕ್ಷಕರ ಸಹಿ: ____________________</div></div>
+        </div>
       </div>`;
     });
     out+='</div>';
