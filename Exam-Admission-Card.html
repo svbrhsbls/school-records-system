@@ -240,8 +240,44 @@ async function deleteSelectedStudents(){
 }
 function choosePhoto(i){photoIndex=i;$("photo").value="";$("pm").innerHTML="";$("photoModal").classList.remove("hide")}
 function closePhoto(){$("photoModal").classList.add("hide")}
-async function savePhoto(){let dbase=getDb();if(!dbase)return;let f=$("photo").files[0];if(!f)return note("pm","Photo ಆಯ್ಕೆ ಮಾಡಿ.");let s=students[photoIndex],path="student-photos/"+s.sats+"_"+s.roll,q=await dbase.storage.from(BUCKET).upload(path,f,{upsert:true,contentType:f.type});if(q.error)return note("pm",q.error.message);s.photo_url=dbase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;if(!await saveStudent(s))return;closePhoto();renderStudents()}
-async function removePhoto(i){let dbase=getDb();if(!dbase)return;if(!confirm("Photo delete ಮಾಡಬೇಕೇ?"))return;let s=students[i];await dbase.storage.from(BUCKET).remove(["student-photos/"+s.sats+"_"+s.roll]);s.photo_url="";if(!await saveStudent(s))return;renderStudents()}
+async function savePhoto(){
+  let dbase=getDb();
+  if(!dbase)return;
+  let input=$("photo"),f=input.files[0];
+  if(!f)return note("pm","Photo ಆಯ್ಕೆ ಮಾಡಿ.");
+  let s=students[photoIndex];
+  if(!s)return note("pm","Student ಮಾಹಿತಿ ಸಿಗಲಿಲ್ಲ.");
+  let path="student-photos/"+s.sats+"_"+s.roll;
+
+  // Same storage path is reused so replacing a photo does not create extra files.
+  // cacheControl=0 plus a version query prevents the browser/CDN from showing the old photo.
+  let q=await dbase.storage.from(BUCKET).upload(path,f,{
+    upsert:true,
+    contentType:f.type,
+    cacheControl:"0"
+  });
+  if(q.error)return note("pm",q.error.message);
+
+  let publicUrl=dbase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+  s.photo_url=publicUrl+"?v="+Date.now();
+
+  if(!await saveStudent(s))return;
+  input.value="";
+  closePhoto();
+  renderStudents();
+}
+async function removePhoto(i){
+  let dbase=getDb();
+  if(!dbase)return;
+  if(!confirm("Photo delete ಮಾಡಬೇಕೇ?"))return;
+  let s=students[i];
+  let path="student-photos/"+s.sats+"_"+s.roll;
+  let q=await dbase.storage.from(BUCKET).remove([path]);
+  if(q.error){alert("Photo delete error: "+q.error.message);return;}
+  s.photo_url="";
+  if(!await saveStudent(s))return;
+  renderStudents();
+}
 async function saveStudent(s){
  let dbase=getDb();if(!dbase)return false;if(!examId){const ok=await saveExam(false);if(!ok)return false;}
  const payload={exam_id:examId,roll_no:s.roll,student_name:s.name,father_name:s.father,class_name:s.cls,sats_no:s.sats,dob:s.dob,photo_url:s.photo_url||null};let q;
