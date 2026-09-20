@@ -303,9 +303,19 @@ function printCards(){
   body{width:100%}
   .page{height:283mm;display:flex;flex-direction:column;page-break-after:always;break-after:page}
   .page:last-child{page-break-after:auto;break-after:auto}
-  .page.per-2{gap:7mm}
-  .page.per-2 .card{height:138mm;flex:0 0 138mm}
-  .page.per-1 .card{height:283mm;flex:0 0 283mm}
+  .page.per-2{
+  gap:9mm;
+}
+
+.page.per-2 .card{
+  height:137mm;
+  flex:0 0 137mm;
+}
+
+.page.per-1 .card{
+  height:283mm;
+  flex:0 0 283mm;
+}
 
   .card{border:1px solid #111;padding:3.5mm 4.5mm;position:relative;overflow:hidden;display:flex;flex-direction:column;break-inside:avoid;background:#fff}
 
