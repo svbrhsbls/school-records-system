@@ -61,6 +61,17 @@
 <div class="box"><h2>1. ಪರೀಕ್ಷೆಯ ಮೂಲ ವಿವರಗಳು</h2><div class="grid">
 <div><label>ಪರೀಕ್ಷೆ</label><select id="type"><option value="">ಆಯ್ಕೆ ಮಾಡಿ</option><option>ಅರ್ಧವಾರ್ಷಿಕ ಪರೀಕ್ಷೆ</option><option>ವಾರ್ಷಿಕ ಪರೀಕ್ಷೆ</option></select></div>
 <div><label>Academic Year</label><input id="year" placeholder="2026-27"></div><div><label>ತರಗತಿ</label><select id="cls"><option value="">ತರಗತಿ ಆಯ್ಕೆ ಮಾಡಿ</option><option value="8ನೇ ತರಗತಿ">8ನೇ ತರಗತಿ</option><option value="9ನೇ ತರಗತಿ">9ನೇ ತರಗತಿ</option><option value="10ನೇ ತರಗತಿ">10ನೇ ತರಗತಿ</option></select></div></div><div class="actions"><button id="examSaveBtn" class="g" onclick="saveExam()">Save</button><button id="examEditBtn" class="s hide" onclick="editExam()">Edit</button></div><div id="em"></div></div>
+<div id="sslcSettingsBox" class="box hide">
+  <h2>10ನೇ ತರಗತಿ Admission Ticket Heading</h2>
+  <div class="grid">
+    <div><label>ಮೊದಲ ಸಾಲು</label><input id="sslcLine1" placeholder="KARNATAKA SCHOOL EXAMINATION AND ASSESSMENT BOARD"></div>
+    <div><label>ಎರಡನೇ ಸಾಲು</label><input id="sslcLine2" placeholder="SSLC C-2026 STATE LEVEL PREPARATORY EXAM-02 ADMISSION TICKET"></div>
+    <div><label>ಮೂರನೇ ಸಾಲು</label><input id="sslcLine3" placeholder="SCHOOL CODE AND ADDRESS:"></div>
+    <div><label>ನಾಲ್ಕನೇ ಸಾಲು</label><input id="sslcLine4" placeholder="EXAM CENTRE CODE AND ADDRESS:"></div>
+  </div>
+  <button class="g" type="button" onclick="saveSSLCSettings()">10ನೇ ತರಗತಿ Heading Save</button>
+  <div id="sslcMsg"></div>
+</div>
 
 <div class="box"><h2>2. ಪರೀಕ್ಷಾ ವಿವರಗಳ ಪಟ್ಟಿ</h2><div class="grid">
 <div><label>ವಿಷಯ</label><input id="sub"></div><div><label>ಪರೀಕ್ಷಾ ದಿನಾಂಕ</label><input id="date" type="date" oninput="weekday()" onchange="weekday()"></div><div><label>ವಾರ</label><input id="day" readonly></div><div><label>ಸಮಯ</label><input id="time" placeholder="10:00 AM - 1:00 PM"></div></div><button class="p" onclick="addSubject()">+ ವಿಷಯ ಸೇರಿಸಿ</button><div id="sm"></div>
@@ -98,6 +109,46 @@ function weekday(){
 function fmt(d){if(!d)return"";let a=d.split("-");return a[2]+"-"+a[1]+"-"+a[0]}
 function setExamLocked(locked){["type","year","cls"].forEach(id=>$(id).disabled=locked);$("examSaveBtn").classList.toggle("hide",locked);$("examEditBtn").classList.toggle("hide",!locked);}
 function persistExamState(){if(!examId)return;localStorage.setItem("examAdmissionExamState",JSON.stringify({examId,type:$("type").value,year:$("year").value.trim(),cls:$("cls").value}));}
+function sslcSettingsKey(){return `examAdmissionSSLCSettings:${$("year").value.trim()}:${$("type").value.trim()}`;}
+function sslcStudentKey(year,roll){return `examAdmissionSSLCStudentNo:${String(year||"").trim()}:${String(roll||"").trim()}`;}
+function getSSLCSettings(){
+  try{return JSON.parse(localStorage.getItem(sslcSettingsKey())||"{}")||{};}catch(e){return {};}
+}
+function loadSSLCSettings(){
+  const s=getSSLCSettings();
+  ["1","2","3","4"].forEach(n=>{const el=$("sslcLine"+n);if(el)el.value=s["line"+n]||"";});
+}
+function saveSSLCSettings(){
+  if($("cls").value!=="10ನೇ ತರಗತಿ" || $("type").value!=="ವಾರ್ಷಿಕ ಪರೀಕ್ಷೆ")return;
+  const obj={};
+  ["1","2","3","4"].forEach(n=>obj["line"+n]=$("sslcLine"+n).value.trim());
+  localStorage.setItem(sslcSettingsKey(),JSON.stringify(obj));
+  note("sslcMsg","10ನೇ ತರಗತಿಯ Heading Save ಆಗಿದೆ.",true);
+}
+function toggleSSLCSettings(){
+  const box=$("sslcSettingsBox");
+  if(!box)return;
+  const yes=$("cls").value==="10ನೇ ತರಗತಿ" && $("type").value==="ವಾರ್ಷಿಕ ಪರೀಕ್ಷೆ";
+  box.classList.toggle("hide",!yes);
+  if(yes)loadSSLCSettings();
+}
+function sslcStudentNo(year,roll){
+  return localStorage.getItem(sslcStudentKey(year,roll))||"";
+}
+function setSSLCStudentNo(year,roll,value){
+  const key=sslcStudentKey(year,roll);
+  const v=String(value??"").trim();
+  if(v)localStorage.setItem(key,v);else localStorage.removeItem(key);
+}
+function sslcStudentNoLockKey(year,roll){
+  return `examAdmissionSSLCStudentNoLocked:${String(year||"").trim()}:${String(roll||"").trim()}`;
+}
+function sslcStudentNoLocked(year,roll){
+  return localStorage.getItem(sslcStudentNoLockKey(year,roll))==="1";
+}
+function lockSSLCStudentNo(year,roll){
+  localStorage.setItem(sslcStudentNoLockKey(year,roll),"1");
+}
 async function loadStudentsFromDb(){
  const year=$("year").value.trim(), cls=$("cls").value.trim();
  if(!year||!cls)return;
@@ -108,7 +159,9 @@ async function loadStudentsFromDb(){
  students=(q.data||[]).map(s=>({
    id:s.id,roll:s.roll_no,name:s.student_name,father:s.father_name||"",
    cls:s.class_name,sats:s.sats_no,dob:excelDobToDisplay(s.dob||""),
-   photo_url:s.photo_url||"",selected:false
+   photo_url:s.photo_url||"",selected:false,
+    sslc_no:cls==="10ನೇ ತರಗತಿ"?sslcStudentNo(year,s.roll):"",
+   sslc_no_locked:cls==="10ನೇ ತರಗತಿ"?sslcStudentNoLocked(year,s.roll):false
  }));
  renderStudents();
 }
@@ -252,18 +305,39 @@ async function loadExcel(){
  note("xm",saved+" ವಿದ್ಯಾರ್ಥಿಗಳ data databaseನಲ್ಲಿ Save ಆಗಿದೆ. ಇದೇ students ಅರ್ಧವಾರ್ಷಿಕ ಮತ್ತು ವಾರ್ಷಿಕ ಎರಡೂ ಪರೀಕ್ಷೆಗಳಿಗೆ ಬರುತ್ತಾರೆ.",true);
 }
 function renderStudents(){
- $("students").innerHTML=`<table><thead><tr><th>Select</th><th>Roll No</th><th>Photo</th><th>ವಿದ್ಯಾರ್ಥಿ ಹೆಸರು</th><th>ತಂದೆಯ ಹೆಸರು</th><th>ತರಗತಿ</th><th>SATS No</th><th>ಜನ್ಮ ದಿನಾಂಕ</th><th>Action</th></tr></thead><tbody>${students.map((s,i)=>`<tr><td><input type="checkbox" ${s.selected?"checked":""} onchange="students[${i}].selected=this.checked"></td><td>${esc(s.roll)}</td><td>${s.photo_url?`<img class="photo" src="${esc(s.photo_url)}">`:`<div class="photo"></div>`}<br><button class="p" onclick="choosePhoto(${i})">${s.photo_url?"🔄 ಬದಲಿಸಿ":"📷 Upload"}</button>${s.photo_url?`<button class="r" onclick="removePhoto(${i})">🗑️</button>`:""}</td><td>${esc(s.name)}</td><td>${esc(s.father)}</td><td>${esc(s.cls)}</td><td>${esc(s.sats)}</td><td>${esc(s.dob)}</td><td><button class="s" onclick="editStudent(${i})">✏️ Edit</button><button class="r" onclick="deleteStudent(${i})">🗑️ Delete</button></td></tr>`).join("")}</tbody></table>`;
+ const is10Annual=$("cls").value==="10ನೇ ತರಗತಿ" && $("type").value==="ವಾರ್ಷಿಕ ಪರೀಕ್ಷೆ";
+ $("students").innerHTML=`<table><thead><tr><th>Select</th><th>Roll No</th><th>Photo</th><th>ವಿದ್ಯಾರ್ಥಿ ಹೆಸರು</th><th>ತಂದೆಯ ಹೆಸರು</th><th>ತರಗತಿ</th><th>SATS No</th><th>ಜನ್ಮ ದಿನಾಂಕ</th>${is10Annual?"<th>10ನೇ ತರಗತಿ Number</th>":""}<th>Action</th></tr></thead><tbody>${students.map((s,i)=>`<tr><td><input type="checkbox" ${s.selected?"checked":""} onchange="students[${i}].selected=this.checked"></td><td>${esc(s.roll)}</td><td>${s.photo_url?`<img class="photo" src="${esc(s.photo_url)}">`:`<div class="photo"></div>`}<br><button class="p" onclick="choosePhoto(${i})">${s.photo_url?"🔄 ಬದಲಿಸಿ":"📷 Upload"}</button>${s.photo_url?`<button class="r" onclick="removePhoto(${i})">🗑️</button>`:""}</td><td>${esc(s.name)}</td><td>${esc(s.father)}</td><td>${esc(s.cls)}</td><td>${esc(s.sats)}</td><td>${esc(s.dob)}</td>${is10Annual?`<td><input value="${esc(s.sslc_no||"")}" placeholder="ನಿಮ್ಮ Number" ${s.sslc_no_locked?"disabled":""} oninput="students[${i}].sslc_no=this.value" onchange="saveAndLockSSLCNo(${i},this.value)"></td>`:""}<td><button class="s" onclick="editStudent(${i})">✏️ Edit</button><button class="r" onclick="deleteStudent(${i})">🗑️ Delete</button></td></tr>`).join("")}</tbody></table>`;
+}
+async function saveAndLockSSLCNo(i,value){
+  const s=students[i];
+  if(!s)return;
+  const year=$("year").value.trim();
+  const v=String(value??"").trim();
+  if(!v){
+    s.sslc_no="";
+    s.sslc_no_locked=false;
+    setSSLCStudentNo(year,s.roll,"");
+    localStorage.removeItem(sslcStudentNoLockKey(year,s.roll));
+    renderStudents();
+    return;
+  }
+  setSSLCStudentNo(year,s.roll,v);
+  lockSSLCStudentNo(year,s.roll);
+  s.sslc_no=v;
+  s.sslc_no_locked=true;
+  renderStudents();
 }
 function allSel(v){students.forEach(s=>s.selected=v);renderStudents();}
 async function editStudent(i){
  const s=students[i],roll=prompt("Roll No",s.roll);if(roll===null)return;const name=prompt("ವಿದ್ಯಾರ್ಥಿ ಹೆಸರು",s.name);if(name===null)return;const father=prompt("ತಂದೆಯ ಹೆಸರು",s.father);if(father===null)return;const cls=prompt("ತರಗತಿ",s.cls);if(cls===null)return;const sats=prompt("SATS No (9 digits)",s.sats);if(sats===null)return;const dob=prompt("ಜನ್ಮ ದಿನಾಂಕ (DD-MM-YYYY)",s.dob);if(dob===null)return;
+ const special=(normalizeClass(cls)==="10ನೇ ತರಗತಿ")?prompt("10ನೇ ತರಗತಿ Number",s.sslc_no||""):"";if(normalizeClass(cls)==="10ನೇ ತರಗತಿ"&&special===null)return;
  const nr=roll.trim(),ns=sats.replace(/\D/g,""),nc=normalizeClass(cls);if(!nr||!name.trim())return alert("Roll No ಮತ್ತು ವಿದ್ಯಾರ್ಥಿ ಹೆಸರು ಕಡ್ಡಾಯ.");if(!["8ನೇ ತರಗತಿ","9ನೇ ತರಗತಿ","10ನೇ ತರಗತಿ"].includes(nc))return alert("ತರಗತಿ 8ನೇ, 9ನೇ ಅಥವಾ 10ನೇ ಇರಬೇಕು.");if(!/^\d{9}$/.test(ns))return alert("SATS No ಕಡ್ಡಾಯವಾಗಿ 9 digits ಇರಬೇಕು.");if(nc!==$("cls").value)return alert("Student ತರಗತಿ Exam ತರಗತಿಗೆ ಒಂದೇ ಇರಬೇಕು.");if(students.some((x,j)=>j!==i&&x.roll===nr))return alert("ಈ Roll No ಈಗಾಗಲೇ ಇದೆ.");if(students.some((x,j)=>j!==i&&x.sats===ns))return alert("ಈ SATS No ಈಗಾಗಲೇ ಇದೆ.");
- const updated={...s,roll:nr,name:name.trim(),father:father.trim(),cls:nc,sats:ns,dob:excelDobToDisplay(dob)};if(!await saveStudent(updated))return;students[i]=updated;renderStudents();note("xm","Student ಮಾಹಿತಿ update ಆಗಿದೆ.",true);
+ const updated={...s,roll:nr,name:name.trim(),father:father.trim(),cls:nc,sats:ns,dob:excelDobToDisplay(dob),sslc_no:nc==="10ನೇ ತರಗತಿ"?(special||""):"",sslc_no_locked:nc==="10ನೇ ತರಗತಿ"?!!special:false};if(!await saveStudent(updated))return;if(nc==="10ನೇ ತರಗತಿ"){setSSLCStudentNo($("year").value,nr,updated.sslc_no);if(updated.sslc_no)lockSSLCStudentNo($("year").value,nr);else localStorage.removeItem(sslcStudentNoLockKey($("year").value,nr));}else setSSLCStudentNo($("year").value,nr,"");students[i]=updated;renderStudents();note("xm","Student ಮಾಹಿತಿ update ಆಗಿದೆ.",true);
 }
 async function addStudent(){
- if(!examId){const ok=await saveExam(false);if(!ok)return;}const roll=prompt("Roll No");if(roll===null)return;const name=prompt("ವಿದ್ಯಾರ್ಥಿ ಹೆಸರು");if(name===null)return;const father=prompt("ತಂದೆಯ ಹೆಸರು","");if(father===null)return;const cls=prompt("ತರಗತಿ",$("cls").value);if(cls===null)return;const sats=prompt("SATS No (9 digits)");if(sats===null)return;const dob=prompt("ಜನ್ಮ ದಿನಾಂಕ (DD-MM-YYYY)","");if(dob===null)return;
+ if(!examId){const ok=await saveExam(false);if(!ok)return;}const roll=prompt("Roll No");if(roll===null)return;const name=prompt("ವಿದ್ಯಾರ್ಥಿ ಹೆಸರು");if(name===null)return;const father=prompt("ತಂದೆಯ ಹೆಸರು","");if(father===null)return;const cls=prompt("ತರಗತಿ",$("cls").value);if(cls===null)return;const sats=prompt("SATS No (9 digits)");if(sats===null)return;const dob=prompt("ಜನ್ಮ ದಿನಾಂಕ (DD-MM-YYYY)","");if(dob===null)return;const special=(normalizeClass(cls)==="10ನೇ ತರಗತಿ")?prompt("10ನೇ ತರಗತಿ Number",""):"";if(normalizeClass(cls)==="10ನೇ ತರಗತಿ"&&special===null)return;
  const nr=roll.trim(),ns=sats.replace(/\D/g,""),nc=normalizeClass(cls);if(!nr||!name.trim())return alert("Roll No ಮತ್ತು ವಿದ್ಯಾರ್ಥಿ ಹೆಸರು ಕಡ್ಡಾಯ.");if(nc!==$("cls").value)return alert("Student ತರಗತಿ Exam ತರಗತಿಗೆ ಒಂದೇ ಇರಬೇಕು.");if(!/^\d{9}$/.test(ns))return alert("SATS No ಕಡ್ಡಾಯವಾಗಿ 9 digits ಇರಬೇಕು.");if(students.some(x=>x.roll===nr))return alert("ಈ Roll No ಈಗಾಗಲೇ ಇದೆ.");if(students.some(x=>x.sats===ns))return alert("ಈ SATS No ಈಗಾಗಲೇ ಇದೆ.");
- const s={roll:nr,name:name.trim(),father:father.trim(),cls:nc,sats:ns,dob:excelDobToDisplay(dob),photo_url:"",selected:false};if(!await saveStudent(s))return;await loadStudentsFromDb();note("xm","ಹೊಸ ವಿದ್ಯಾರ್ಥಿ Save ಆಗಿದ್ದಾನೆ.",true);
+ const s={roll:nr,name:name.trim(),father:father.trim(),cls:nc,sats:ns,dob:excelDobToDisplay(dob),photo_url:"",selected:false,sslc_no:nc==="10ನೇ ತರಗತಿ"?(special||""):""};if(!await saveStudent(s))return;if(nc==="10ನೇ ತರಗತಿ")setSSLCStudentNo($("year").value,nr,s.sslc_no);await loadStudentsFromDb();note("xm","ಹೊಸ ವಿದ್ಯಾರ್ಥಿ Save ಆಗಿದ್ದಾನೆ.",true);
 }
 async function deleteStudent(i){
  const s=students[i];if(!confirm(`${s.name} ವಿದ್ಯಾರ್ಥಿಯನ್ನು ಅಳಿಸಬೇಕೇ?`))return;const dbase=getDb();if(!dbase)return;if(s.photo_url)await dbase.storage.from(BUCKET).remove(["student-photos/"+s.sats+"_"+s.roll]);if(s.id){const q=await dbase.from("exam_admission_student_master").delete().eq("id",s.id);if(q.error)return alert("Delete error: "+q.error.message);}students.splice(i,1);renderStudents();
@@ -342,6 +416,18 @@ async function saveStudent(s){
 }
 async function saveStudents(){let dbase=getDb();if(!dbase)return;if(!examId){const ok=await saveExam(false);if(!ok)return;}const selected=students.filter(x=>x.selected);if(!selected.length)return alert("Students select ಮಾಡಿ.");for(const s of selected){if(!await saveStudent(s))return;}await loadStudentsFromDb();note("xm","ಆಯ್ಕೆ ಮಾಡಿದ ವಿದ್ಯಾರ್ಥಿಗಳ data Save ಆಗಿದೆ. ಇದೇ students ಅರ್ಧವಾರ್ಷಿಕ ಮತ್ತು ವಾರ್ಷಿಕ ಎರಡೂ ಪರೀಕ್ಷೆಗಳಿಗೆ ಲಭ್ಯ.",true);}
 function printOptions(){if(!students.some(s=>s.selected))return alert("ವಿದ್ಯಾರ್ಥಿಗಳನ್ನು Select ಮಾಡಿ.");$("printModal").classList.remove("hide")}
+function sslcSubjectInfo(subject){
+  const s=String(subject||"").trim().toUpperCase();
+  const map={
+    "KANNADA":{version:"A",code:"01K"},"ಕನ್ನಡ":{version:"A",code:"01K"},
+    "ENGLISH":{version:"A",code:"31E"},"ಇಂಗ್ಲೀಷ್":{version:"A",code:"31E"},"ಇಂಗ್ಲಿಷ್":{version:"A",code:"31E"},
+    "HINDI":{version:"A",code:"61H"},"ಹಿಂದಿ":{version:"A",code:"61H"},
+    "MATHEMATICS":{version:"A",code:"81K"},"ಗಣಿತ":{version:"A",code:"81K"},"ಗಣಿತಶಾಸ್ತ್ರ":{version:"A",code:"81K"},
+    "SCIENCE":{version:"A",code:"83K"},"ವಿಜ್ಞಾನ":{version:"A",code:"83K"},
+    "SOCIAL SCIENCE":{version:"A",code:"85K"},"ಸಮಾಜ ವಿಜ್ಞಾನ":{version:"A",code:"85K"},"ಸಾಮಾಜಿಕ ವಿಜ್ಞಾನ":{version:"A",code:"85K"}
+  };
+  return map[s]||{version:"A",code:""};
+}
 function printCards(){
   const list=students.filter(s=>s.selected);
   const per=+$('per').value;
@@ -349,149 +435,67 @@ function printCards(){
   const year=$('year').value.trim();
   if(!list.length){alert('ವಿದ್ಯಾರ್ಥಿಗಳನ್ನು Select ಮಾಡಿ.');return;}
 
+  if($("cls").value==="10ನೇ ತರಗತಿ" && type==="ವಾರ್ಷಿಕ ಪರೀಕ್ಷೆ"){
+    saveSSLCSettings();
+    printSSLCAdmissionCards(list,per,type,year);
+    return;
+  }
+
   const examHeading = type ? `${esc(type)} ಪ್ರವೇಶ ಪತ್ರ - ${esc(year)}` : `ಪ್ರವೇಶ ಪತ್ರ - ${esc(year)}`;
-
   const html0=`<!doctype html><html><head><meta charset="utf-8"><title>Exam Admission Card</title><style>
-  @page{size:A4 portrait;margin:7mm}
-  *{box-sizing:border-box}
-  html,body{margin:0;padding:0;background:#fff;color:#111;font-family:Arial,"Noto Sans Kannada",sans-serif}
-  body{width:100%}
-  .page{height:283mm;display:flex;flex-direction:column;page-break-after:always;break-after:page}
-  .page:last-child{page-break-after:auto;break-after:auto}
-  .page.per-2{
-  gap:22mm;
-}
-
-.page.per-2 .card{
-  height:137mm;
-  flex:0 0 137mm;
-}
-
-.page.per-1 .card{
-  height:283mm;
-  flex:0 0 283mm;
-}
-
-  .card{border:1px solid #111;padding:3.5mm 4.5mm;position:relative;overflow:hidden;display:flex;flex-direction:column;break-inside:avoid;background:#fff}
-
-  .topBlock{position:relative;flex:0 0 auto;padding-right:31mm}
-  .head{text-align:center;font-weight:800;line-height:1.12}
-  .schoolName{width:100%;white-space:nowrap;font-size:12.8px;font-weight:900;line-height:1.05;margin:0 0 .8mm;text-align:center}
-  .examTitle{width:100%;font-size:12.5px;font-weight:800;line-height:1.1;text-align:center;margin:0 0 2.5mm}
-
-  .photo{position:absolute;right:0;top:1mm;width:25mm;height:31mm;object-fit:cover;border:1px solid #222;background:#fff}
-
-  .info{font-size:11px;line-height:1.3;margin-top:1mm;font-weight:800;width:calc(100% - 31mm)}
- .info .line{
-  display:grid;
-  grid-template-columns:28mm 4mm minmax(0,1fr);
-  align-items:baseline;
-  white-space:nowrap;
-  margin:0 0 1.35mm;
-}
-
-.info .label{
-  text-align:left;
-  font-weight:800;
-}
-
-.info .colon{
-  text-align:center;
-  font-weight:800;
-}
-
-.info .value{
-  text-align:left;
-  font-weight:800;
-  min-width:0;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-  .info .label{font-weight:800;text-align:left}
-  .info .colon{font-weight:800;text-align:center}
-  .info .value{font-weight:800;min-width:0;overflow:hidden;text-overflow:ellipsis}
-
-  .st{width:100%;border-collapse:collapse;font-size:12px;margin-top:1.5mm;table-layout:fixed;font-weight:900;clear:both}
-  .st th,.st td{border:1px solid #222;padding:2.2px 2px;text-align:center;line-height:1.1;font-weight:900}
-  .st th{font-size:12.5px;font-weight:900;height:7.5mm}
-  .st td{font-size:12px;height:8mm}.st th:nth-child(5),.st td:nth-child(5){white-space:nowrap}
-  .st th:nth-child(1){width:7%}.st th:nth-child(2){width:24%}.st th:nth-child(3){width:18%}.st th:nth-child(4){width:13%}.st th:nth-child(5){width:18%}.st th:nth-child(6){width:20%}
-  .roomSig{min-height:6.5mm;display:flex;align-items:center;justify-content:center;line-height:1.05}
-  .roomSig span{display:block;min-width:27mm;height:3.5mm}
-
-  .bottomArea{margin-top:3mm;display:block;width:100%;padding-top:0}
-  .instructions{width:100%;font-size:8px;line-height:1.18;font-weight:700;text-align:left}
-  .instructions .ititle{font-size:9px;font-weight:800;margin-bottom:1mm}
-  .instructions>div{margin-bottom:.7mm}
-  .lastInstructionRow{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;column-gap:5mm}
-  .lastInstructionRow>span:first-child{min-width:0}
-  .principalSign{white-space:nowrap;text-align:right;font-weight:800;font-size:8.5px}
-
-  /* 1 student: use the page height without creating a blank area in the card content. */
-  .page.per-1 .card{padding:6mm}
-  .page.per-1 .topBlock{padding-right:36mm}
-  .page.per-1 .schoolName{font-size:13.5px;white-space:nowrap;font-weight:900}
-  .page.per-1 .examTitle{font-size:15px;margin-bottom:4mm}
-  .page.per-1 .photo{width:31mm;height:38mm;top:1mm}
-  .page.per-1 .info{font-size:13px;line-height:1.38;width:calc(100% - 38mm);font-weight:800}
-  .page.per-1 .info .line{grid-template-columns:35mm 3mm minmax(0,1fr);margin-bottom:2mm}
-  .page.per-1 .info .label,.page.per-1 .info .colon,.page.per-1 .info .value{font-weight:900}
-  .page.per-1 .st{margin-top:4mm}
-  .page.per-1 .st th{font-size:13.5px;height:8.7mm;font-weight:900}
-  .page.per-1 .st td{font-size:13px;height:9.2mm;font-weight:900}.page.per-1 .st th:nth-child(5),.page.per-1 .st td:nth-child(5){white-space:nowrap}
-  .page.per-1 .bottomArea{margin-top:5mm}
-  .page.per-1 .instructions{font-size:11px;line-height:1.35}
-  .page.per-1 .instructions .ititle{font-size:12.5px}
-  .page.per-1 .instructions>div{margin-bottom:1.5mm}
-  .page.per-1 .principalSign{font-size:11px}
-
-  @media print{html,body{width:210mm}.page{page-break-after:always;break-after:page}.page:last-child{page-break-after:auto;break-after:auto}.card{break-inside:avoid}}
-  </style></head><body>`;
-
+  @page{size:A4 portrait;margin:7mm}*{box-sizing:border-box}html,body{margin:0;padding:0;background:#fff;color:#111;font-family:Arial,"Noto Sans Kannada",sans-serif}body{width:100%}.page{height:283mm;display:flex;flex-direction:column;page-break-after:always;break-after:page}.page:last-child{page-break-after:auto;break-after:auto}.page.per-2{gap:22mm}.page.per-2 .card{height:137mm;flex:0 0 137mm}.page.per-1 .card{height:283mm;flex:0 0 283mm}.card{border:1px solid #111;padding:3.5mm 4.5mm;position:relative;overflow:hidden;display:flex;flex-direction:column;break-inside:avoid;background:#fff}.topBlock{position:relative;flex:0 0 auto;padding-right:31mm}.head{text-align:center;font-weight:800;line-height:1.12}.schoolName{width:100%;white-space:nowrap;font-size:12.8px;font-weight:900;line-height:1.05;margin:0 0 .8mm;text-align:center}.examTitle{width:100%;font-size:12.5px;font-weight:800;line-height:1.1;text-align:center;margin:0 0 2.5mm}.photo{position:absolute;right:0;top:1mm;width:25mm;height:31mm;object-fit:cover;border:1px solid #222;background:#fff}.info{font-size:11px;line-height:1.3;margin-top:1mm;font-weight:800;width:calc(100% - 31mm)}.info .line{display:grid;grid-template-columns:28mm 4mm minmax(0,1fr);align-items:baseline;white-space:nowrap;margin:0 0 1.35mm}.info .label{text-align:left;font-weight:800}.info .colon{text-align:center;font-weight:800}.info .value{text-align:left;font-weight:800;min-width:0;overflow:hidden;text-overflow:ellipsis}.st{width:100%;border-collapse:collapse;font-size:12px;margin-top:1.5mm;table-layout:fixed;font-weight:900;clear:both}.st th,.st td{border:1px solid #222;padding:2.2px 2px;text-align:center;line-height:1.1;font-weight:900}.st th{font-size:12.5px;font-weight:900;height:7.5mm}.st td{font-size:12px;height:8mm}.st th:nth-child(5),.st td:nth-child(5){white-space:nowrap}.st th:nth-child(1){width:7%}.st th:nth-child(2){width:24%}.st th:nth-child(3){width:18%}.st th:nth-child(4){width:13%}.st th:nth-child(5){width:18%}.st th:nth-child(6){width:20%}.roomSig{min-height:6.5mm;display:flex;align-items:center;justify-content:center;line-height:1.05}.roomSig span{display:block;min-width:27mm;height:3.5mm}.bottomArea{margin-top:3mm;display:block;width:100%;padding-top:0}.instructions{width:100%;font-size:8px;line-height:1.18;font-weight:700;text-align:left}.instructions .ititle{font-size:9px;font-weight:800;margin-bottom:1mm}.instructions>div{margin-bottom:.7mm}.lastInstructionRow{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;column-gap:5mm}.lastInstructionRow>span:first-child{min-width:0}.principalSign{white-space:nowrap;text-align:right;font-weight:800;font-size:8.5px}.page.per-1 .card{padding:6mm}.page.per-1 .topBlock{padding-right:36mm}.page.per-1 .schoolName{font-size:13.5px;white-space:nowrap;font-weight:900}.page.per-1 .examTitle{font-size:15px;margin-bottom:4mm}.page.per-1 .photo{width:31mm;height:38mm;top:1mm}.page.per-1 .info{font-size:13px;line-height:1.38;width:calc(100% - 38mm);font-weight:800}.page.per-1 .info .line{grid-template-columns:35mm 3mm minmax(0,1fr);margin-bottom:2mm}.page.per-1 .st{margin-top:4mm}.page.per-1 .st th{font-size:13.5px;height:8.7mm;font-weight:900}.page.per-1 .st td{font-size:13px;height:9.2mm;font-weight:900}.page.per-1 .bottomArea{margin-top:5mm}.page.per-1 .instructions{font-size:11px;line-height:1.35}.page.per-1 .instructions .ititle{font-size:12.5px}.page.per-1 .instructions>div{margin-bottom:1.5mm}.page.per-1 .principalSign{font-size:11px}@media print{html,body{width:210mm}.page{page-break-after:always;break-after:page}.page:last-child{page-break-after:auto;break-after:auto}.card{break-inside:avoid}} .ticket,.ticket *{font-weight:900 !important;-webkit-text-stroke:0.16px currentColor}.subtable th,.subtable td{font-weight:900 !important}.h4,.tt,.roll,.sname,.snum,.good,.signs{font-weight:900 !important}
+</style></head><body>`;
   let out=html0;
   for(let p=0;p<list.length;p+=per){
     out+=`<div class="page per-${per}">`;
     list.slice(p,p+per).forEach(s=>{
       const dob=excelDobToDisplay(s.dob);
-      out+=`<div class="card">
-        <div class="topBlock">
-          <div class="head schoolName">ಶ್ರೀ ವೀರಬಲ್ಲಾಳ ಗ್ರಾಮಾಂತರ ಪ್ರೌಢಶಾಲೆ ಬಲ್ಲಾಳಸಮುದ್ರ, ಹೊಸದುರ್ಗ ತಾಲ್ಲೂಕು, ಚಿತ್ರದುರ್ಗ ಜಿಲ್ಲೆ</div>
-          <div class="head examTitle">${examHeading}</div>
-          ${s.photo_url?`<img class="photo" src="${s.photo_url}" alt="Student Photo">`:''}
-          <div class="info">
-            <div class="line"><span class="label">Roll No</span><span class="colon">:</span><span class="value">${esc(s.roll)}</span></div>
-            <div class="line"><span class="label">ತರಗತಿ</span><span class="colon">:</span><span class="value">${esc(s.cls)}</span></div>
-            <div class="line"><span class="label">ವಿದ್ಯಾರ್ಥಿ ಹೆಸರು</span><span class="colon">:</span><span class="value">${esc(s.name)}</span></div>
-            <div class="line"><span class="label">ತಂದೆಯ ಹೆಸರು</span><span class="colon">:</span><span class="value">${esc(s.father||'')}</span></div>
-            <div class="line"><span class="label">SATS No</span><span class="colon">:</span><span class="value">${esc(s.sats)}</span></div>
-            <div class="line"><span class="label">ಜನ್ಮ ದಿನಾಂಕ</span><span class="colon">:</span><span class="value">${esc(dob)}</span></div>
-          </div>
-        </div>
-
-        <table class="st">
-          <tr><th>ಕ್ರ.ಸಂ</th><th>ವಿಷಯ</th><th>ಪರೀಕ್ಷಾ ದಿನಾಂಕ</th><th>ವಾರ</th><th>ಸಮಯ</th><th>ಕೊಠಡಿ ಮೇಲ್ವಿಚಾರಕರ ಸಹಿ</th></tr>
-          ${subjects.length?subjects.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.subject)}</td><td>${fmt(x.exam_date)}</td><td>${esc(x.weekday)}</td><td>${esc(x.exam_time)}</td><td><div class="roomSig"><span></span></div></td></tr>`).join(''):'<tr><td colspan="6">ವಿಷಯಗಳನ್ನು ಸೇರಿಸಲಾಗಿಲ್ಲ</td></tr>'}
-        </table>
-
-        <div class="bottomArea">
-          <div class="instructions">
-            <div class="ititle">ಪರೀಕ್ಷಾ ಸೂಚನೆಗಳು:</div>
-            <div>1. ವಿದ್ಯಾರ್ಥಿಯು ಪ್ರವೇಶ ಪತ್ರವನ್ನು ಪ್ರತಿದಿನ ಕಡ್ಡಾಯವಾಗಿ ತರಬೇಕು.</div>
-            <div>2. ಪರೀಕ್ಷೆ ಪ್ರಾರಂಭವಾಗುವ ಕನಿಷ್ಠ 30 ನಿಮಿಷಗಳ ಮೊದಲು ಪರೀಕ್ಷಾ ಕೊಠಡಿಯಲ್ಲಿ ಹಾಜರಿರಬೇಕು.</div>
-            <div>3. ಪರೀಕ್ಷಾ ಕೊಠಡಿಯಲ್ಲಿ ಶಿಸ್ತು ಮತ್ತು ಮೌನವನ್ನು ಕಾಪಾಡಬೇಕು.</div>
-            <div>4. ಅಗತ್ಯವಾದ ಪೆನ್, ಪೆನ್ಸಿಲ್, ಅಳಿಸುವ ರಬ್ಬರ್, ಸ್ಕೇಲ್ ಮುಂತಾದ ಸಾಮಗ್ರಿಗಳನ್ನು ವಿದ್ಯಾರ್ಥಿಯೇ ತರಬೇಕು.</div>
-            <div class="lastInstructionRow"><span>5. ಮೊಬೈಲ್ ಫೋನ್ ಹಾಗೂ ಇತರೆ ಎಲೆಕ್ಟ್ರಾನಿಕ್ ಸಾಧನಗಳನ್ನು ಪರೀಕ್ಷಾ ಕೊಠಡಿಗೆ ತರಬಾರದು.</span><span class="principalSign">ಮುಖ್ಯ ಶಿಕ್ಷಕರ ಸಹಿ:</span></div>
-          </div>
-        </div>
-      </div>`;
+      out+=`<div class="card"><div class="topBlock"><div class="head schoolName">ಶ್ರೀ ವೀರಬಲ್ಲಾಳ ಗ್ರಾಮಾಂತರ ಪ್ರೌಢಶಾಲೆ ಬಲ್ಲಾಳಸಮುದ್ರ, ಹೊಸದುರ್ಗ ತಾಲ್ಲೂಕು, ಚಿತ್ರದುರ್ಗ ಜಿಲ್ಲೆ</div><div class="head examTitle">${examHeading}</div>${s.photo_url?`<img class="photo" src="${s.photo_url}" alt="Student Photo">`:''}<div class="info"><div class="line"><span class="label">Roll No</span><span class="colon">:</span><span class="value">${esc(s.roll)}</span></div><div class="line"><span class="label">ತರಗತಿ</span><span class="colon">:</span><span class="value">${esc(s.cls)}</span></div><div class="line"><span class="label">ವಿದ್ಯಾರ್ಥಿ ಹೆಸರು</span><span class="colon">:</span><span class="value">${esc(s.name)}</span></div><div class="line"><span class="label">ತಂದೆಯ ಹೆಸರು</span><span class="colon">:</span><span class="value">${esc(s.father||'')}</span></div><div class="line"><span class="label">SATS No</span><span class="colon">:</span><span class="value">${esc(s.sats)}</span></div><div class="line"><span class="label">ಜನ್ಮ ದಿನಾಂಕ</span><span class="colon">:</span><span class="value">${esc(dob)}</span></div></div></div><table class="st"><tr><th>ಕ್ರ.ಸಂ</th><th>ವಿಷಯ</th><th>ಪರೀಕ್ಷಾ ದಿನಾಂಕ</th><th>ವಾರ</th><th>ಸಮಯ</th><th>ಕೊಠಡಿ ಮೇಲ್ವಿಚಾರಕರ ಸಹಿ</th></tr>${subjects.length?subjects.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.subject)}</td><td>${fmt(x.exam_date)}</td><td>${esc(x.weekday)}</td><td>${esc(x.exam_time)}</td><td><div class="roomSig"><span></span></div></td></tr>`).join(''):'<tr><td colspan="6">ವಿಷಯಗಳನ್ನು ಸೇರಿಸಲಾಗಿಲ್ಲ</td></tr>'}</table><div class="bottomArea"><div class="instructions"><div class="ititle">ಪರೀಕ್ಷಾ ಸೂಚನೆಗಳು:</div><div>1. ವಿದ್ಯಾರ್ಥಿಯು ಪ್ರವೇಶ ಪತ್ರವನ್ನು ಪ್ರತಿದಿನ ಕಡ್ಡಾಯವಾಗಿ ತರಬೇಕು.</div><div>2. ಪರೀಕ್ಷೆ ಪ್ರಾರಂಭವಾಗುವ ಕನಿಷ್ಠ 30 ನಿಮಿಷಗಳ ಮೊದಲು ಪರೀಕ್ಷಾ ಕೊಠಡಿಯಲ್ಲಿ ಹಾಜರಿರಬೇಕು.</div><div>3. ಪರೀಕ್ಷಾ ಕೊಠಡಿಯಲ್ಲಿ ಶಿಸ್ತು ಮತ್ತು ಮೌನವನ್ನು ಕಾಪಾಡಬೇಕು.</div><div>4. ಅಗತ್ಯವಾದ ಪೆನ್, ಪೆನ್ಸಿಲ್, ಅಳಿಸುವ ರಬ್ಬರ್, ಸ್ಕೇಲ್ ಮುಂತಾದ ಸಾಮಗ್ರಿಗಳನ್ನು ವಿದ್ಯಾರ್ಥಿಯೇ ತರಬೇಕು.</div><div class="lastInstructionRow"><span>5. ಮೊಬೈಲ್ ಫೋನ್ ಹಾಗೂ ಇತರೆ ಎಲೆಕ್ಟ್ರಾನಿಕ್ ಸಾಧನಗಳನ್ನು ಪರೀಕ್ಷಾ ಕೊಠಡಿಗೆ ತರಬಾರದು.</span><span class="principalSign">ಮುಖ್ಯ ಶಿಕ್ಷಕರ ಸಹಿ:</span></div></div></div></div>`;
     });
     out+='</div>';
   }
   out+='</body></html>';
+  openExamPrintFrame(out);
+}
 
-  const oldFrame=document.getElementById('examPrintFrame'); if(oldFrame)oldFrame.remove();
-  const frame=document.createElement('iframe'); frame.id='examPrintFrame'; frame.style.position='fixed'; frame.style.right='0'; frame.style.bottom='0'; frame.style.width='0'; frame.style.height='0'; frame.style.border='0'; frame.style.visibility='hidden'; document.body.appendChild(frame);
-  const fw=frame.contentWindow, fd=fw.document; fd.open(); fd.write(out); fd.close();
+function printSSLCAdmissionCards(list,per,type,year){
+  const cfg=getSSLCSettings();
+  const lines=[cfg.line1||"",cfg.line2||"",cfg.line3||"",cfg.line4||""];
+  if(lines.every(x=>!x)){alert("10ನೇ ತರಗತಿಯ 4 Heading ಸಾಲುಗಳನ್ನು ಮೊದಲು ನಮೂದಿಸಿ Save ಮಾಡಿ.");return;}
+  const pages=[];
+  const cardsPerPage=per===2?2:1;
+  for(let p=0;p<list.length;p+=cardsPerPage)pages.push(list.slice(p,p+cardsPerPage));
+  let out=`<!doctype html><html><head><meta charset="utf-8"><title>SSLC Admission Ticket</title><style>
+  @page{size:A4 portrait;margin:7mm}*{box-sizing:border-box}html,body{margin:0;padding:0;background:#fff;color:#111;font-family:Arial,"Noto Sans Kannada",sans-serif}.page{width:100%;height:283mm;display:flex;flex-direction:column;gap:${cardsPerPage===2?"12mm":"0"};page-break-after:always;break-after:page}.page:last-child{page-break-after:auto;break-after:auto}.ticket{border:1px solid #111;padding:3.5mm 4mm;position:relative;overflow:hidden;flex:1;min-height:0;break-inside:avoid}.h4{text-align:center;font-weight:900;line-height:1.08;font-size:11.5px;min-height:5mm}.h4:nth-child(2){font-size:12px}.h4:nth-child(3),.h4:nth-child(4){font-size:10.5px}.tt{border:1px solid #111;border-bottom:0;text-align:center;font-size:12px;font-weight:900;padding:1.5mm 0;margin-top:2mm}.main{display:grid;grid-template-columns:15mm 40mm 1fr;border:1px solid #111}.roll{display:flex;align-items:center;justify-content:center;font-weight:900;font-size:11px;border-right:1px solid #111}.studentbox{border-right:1px solid #111;text-align:center;font-weight:900}.studentbox img{display:block;width:40mm;height:50mm;object-fit:cover;margin:2mm auto 0;border-bottom:1px solid #111}.sname{font-weight:900;font-size:11px;padding:2mm 1mm;min-height:8mm;border:1px solid #111;border-left:0;border-right:0;background:#fff;display:flex;align-items:center;justify-content:center}.snum{font-weight:900;font-size:11px;padding:2mm 1mm;min-height:9mm;word-break:break-all}.subtable{width:100%;border-collapse:collapse;table-layout:fixed}.subtable th,.subtable td{border:1px solid #111;text-align:center;font-weight:900;padding:1.2mm 1mm;font-size:9.5px;line-height:1.05}.subtable th{height:13mm;font-size:9.5px}.subtable td{height:10mm}.subtable th:nth-child(1){width:22%}.subtable th:nth-child(2){width:11%}.subtable th:nth-child(3){width:14%}.subtable th:nth-child(4){width:23%}.subtable th:nth-child(5){width:30%}.good{font-weight:900;text-align:center;font-size:9.5px;padding:2.5mm 0 1.5mm}.signs{display:flex;justify-content:space-between;align-items:flex-end;margin-top:8mm;font-weight:900;font-size:10px}.signs .right{text-align:right}.note{font-size:9px;margin-top:1mm}.ticket .small-gap{height:1mm}@media print{html,body{width:210mm}.page{page-break-after:always;break-after:page}.page:last-child{page-break-after:auto;break-after:auto}.ticket{break-inside:avoid}}</style></head><body>`;
+  pages.forEach(group=>{
+    out+=`<div class="page">`;
+    group.forEach(s=>{
+      const no=s.sslc_no||sslcStudentNo(year,s.roll)||"";
+      const photo=s.photo_url?`<img src="${esc(s.photo_url)}" alt="Student Photo">`:`<div style="width:40mm;height:50mm"></div>`;
+      out+=`<div class="ticket">
+        ${lines.map(x=>`<div class="h4">${esc(x)}</div>`).join("")}
+        <div class="tt">ವೇಳಾಪಟ್ಟಿ / TIME TABLE</div>
+        <div class="main">
+          <div class="roll">${esc(s.roll)}</div>
+          <div class="studentbox">${photo}<div class="sname">${esc(s.name)}</div><div class="snum">${esc(no)}</div></div>
+          <table class="subtable">
+            <tr><th>SUBJECT</th><th>VERSION<br>OF QP</th><th>SUBJECT<br>CODE</th><th>DATE AND<br>TIME</th><th>ROOM SUPERVISOR<br>SIGNATURE</th></tr>
+            ${subjects.length?subjects.map(x=>{const inf=sslcSubjectInfo(x.subject);return `<tr><td>${esc(x.subject)}</td><td>${esc(inf.version)}</td><td>${esc(inf.code)}</td><td>${esc(fmt(x.exam_date))}<br>${esc(x.exam_time)}</td><td></td></tr>`}).join(""):`<tr><td colspan="5">ವಿಷಯಗಳನ್ನು ಸೇರಿಸಲಾಗಿಲ್ಲ</td></tr>`}
+          </table>
+        </div>
+        <div class="good">** ವಿದ್ಯಾರ್ಥಿಗಳಿಗೆ ಶುಭ ಹಾರೈಕೆಗಳು **</div>
+        <div class="signs"><span>STUDENT SIGNATURE</span><span class="right">HEADMASTER SIGNATURE</span></div>
+      </div>`;
+    });
+    out+=`</div>`;
+  });
+  out+='</body></html>';
+  openExamPrintFrame(out);
+}
+function openExamPrintFrame(out){
+  const oldFrame=document.getElementById('examPrintFrame');if(oldFrame)oldFrame.remove();
+  const frame=document.createElement('iframe');frame.id='examPrintFrame';frame.style.position='fixed';frame.style.right='0';frame.style.bottom='0';frame.style.width='0';frame.style.height='0';frame.style.border='0';frame.style.visibility='hidden';document.body.appendChild(frame);
+  const fw=frame.contentWindow,fd=fw.document;fd.open();fd.write(out);fd.close();
   const doPrint=()=>{try{fw.focus();fw.print();}catch(err){alert('Print ತೆರೆಯಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ. ಮತ್ತೆ Print ಒತ್ತಿ.');}};
   const imgs=Array.from(fd.images||[]);
   if(!imgs.length)setTimeout(doPrint,250);
@@ -501,7 +505,7 @@ function printCards(){
 
 document.addEventListener("DOMContentLoaded",()=>{
   const classEl=$("cls"), uploadClassEl=$("uploadClass");
-  if(classEl && uploadClassEl){classEl.addEventListener("change",()=>{uploadClassEl.value=classEl.value;});}
+  if(classEl && uploadClassEl){classEl.addEventListener("change",()=>{uploadClassEl.value=classEl.value;toggleSSLCSettings();renderStudents();});}
   const dateEl=$("date");
   if(dateEl){
     dateEl.addEventListener("input",weekday);
@@ -509,6 +513,6 @@ document.addEventListener("DOMContentLoaded",()=>{
   }
   weekday();
 });
-async function initializeExamPage(){const saved=localStorage.getItem("examAdmissionExamState");if(saved){try{const st=JSON.parse(saved);if(st.type&&st.year&&st.cls){$("type").value=st.type;$("year").value=st.year;$("cls").value=st.cls;examId=st.examId||null;if(examId){setExamLocked(true);await loadSubjects();await loadStudentsFromDb();}else await findExistingExam();}}catch(e){console.warn(e)}}}
-document.addEventListener("DOMContentLoaded",()=>{weekday();initializeExamPage();["type","year","cls"].forEach(id=>$(id).addEventListener("change",()=>{if(!$(id).disabled)findExistingExam();}));});
+async function initializeExamPage(){const saved=localStorage.getItem("examAdmissionExamState");if(saved){try{const st=JSON.parse(saved);if(st.type&&st.year&&st.cls){$("type").value=st.type;$("year").value=st.year;$("cls").value=st.cls;examId=st.examId||null;toggleSSLCSettings();if(examId){setExamLocked(true);await loadSubjects();await loadStudentsFromDb();}else await findExistingExam();}}catch(e){console.warn(e)}}else toggleSSLCSettings();}
+document.addEventListener("DOMContentLoaded",()=>{weekday();initializeExamPage();["type","year","cls"].forEach(id=>$(id).addEventListener("change",()=>{toggleSSLCSettings();renderStudents();if(!$(id).disabled)findExistingExam();}));});
 </script></body></html>
