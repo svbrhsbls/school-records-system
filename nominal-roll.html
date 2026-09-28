@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="kn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nominal Roll</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial,"Noto Sans Kannada",sans-serif;margin:0;background:#f3f6fa;color:#111}
+header{background:#123b63;color:#fff;text-align:center;padding:14px}
+header h1{margin:0;font-size:22px}
+.wrap{max-width:1250px;margin:16px auto;padding:0 12px}
+.box{background:#fff;border:1px solid #d5dde6;border-radius:9px;padding:15px;margin-bottom:15px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+label{font-weight:700;font-size:13px}
+input,select{width:100%;padding:8px;border:1px solid #b9c4d0;border-radius:6px;margin-top:4px}
+button{border:0;border-radius:6px;padding:9px 13px;font-weight:700;cursor:pointer;margin:3px}
+.p{background:#1769aa;color:#fff}.g{background:#18864b;color:#fff}.s{background:#e8edf3}.r{background:#c62828;color:#fff}
+.note{margin-top:8px;font-weight:700}.err{color:#b00020}.ok{color:#08763a}
+.hide{display:none}
+
+#annualHeadingBox{display:none}
+.heading-grid{display:grid;grid-template-columns:1fr;gap:7px}
+.heading-grid input{font-weight:700}
+
+#rollOutput{background:#fff}
+.sheet-page{width:210mm;min-height:297mm;margin:0 auto;background:#fff;padding:9mm 9mm 12mm;page-break-after:always}
+.sheet-page:last-child{page-break-after:auto}
+.school-head{text-align:center;font-weight:800;line-height:1.25;margin-bottom:6px}
+.school-head .board{font-size:16px}
+.school-head .school{font-size:14px}
+.school-head .centre{font-size:13px}
+.school-head .exam-title{font-size:14px;margin-top:3px}
+
+.student-block{display:grid;grid-template-columns:10mm 45mm 1fr;border:1px solid #111;margin-bottom:4mm;break-inside:avoid;min-height:56mm;height:auto}
+.crno{display:flex;align-items:center;justify-content:center;border-right:1px solid #111;font-size:16px;font-weight:900}
+.identity{border-right:1px solid #111;display:flex;flex-direction:column;min-width:0}
+.photo{width:100%;height:40mm;object-fit:cover;display:block;background:#eee}
+.no-photo{height:40mm;display:flex;align-items:center;justify-content:center;font-size:11px;color:#777;border-bottom:1px solid #111}
+.name{height:8mm;border-top:1px solid #111;border-bottom:1px solid #111;display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;font-weight:900;white-space:nowrap;overflow:hidden}
+.roll{height:8mm;display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;font-weight:900;white-space:nowrap;overflow:hidden}
+
+.subject-area{min-width:0}
+.subject-table{width:100%;height:100%;border-collapse:collapse;table-layout:fixed}
+.subject-table th,.subject-table th,.subject-table td{border:1px solid #111;text-align:center;font-size:11px;font-weight:800;padding:1px 2px;line-height:1.12}
+.subject-table th{font-size:11px;height:12mm}
+.subject-table th:nth-child(1){width:29%}
+.subject-table th:nth-child(2){width:13%}
+.subject-table th:nth-child(3){width:19%}
+.subject-table th:nth-child(4){width:19%}
+.subject-table th:nth-child(5){width:20%}
+.subject-table td:nth-child(4){font-size:10px}
+.subject-table td:nth-child(5){font-size:10px}
+.no-subject-code .subject-table th:nth-child(1){width:35%}
+.no-subject-code .subject-table th:nth-child(2){width:20%}
+.no-subject-code .subject-table th:nth-child(3){width:22%}
+.no-subject-code .subject-table th:nth-child(4){width:23%}
+
+.annual-lines{text-align:center;font-weight:900;line-height:1.25;margin-bottom:5px}
+.annual-lines div{font-size:13px}
+.annual-lines div:first-child{font-size:16px}
+
+.empty{text-align:center;padding:30px;font-weight:700}
+
+@page{size:A4 portrait;margin:0}
+@media print{
+ body{background:#fff}
+ header,.controls,.box:not(#rollOutput){display:none!important}
+ .wrap{max-width:none;margin:0;padding:0}
+ #rollOutput{border:0}
+ .sheet-page{margin:0;width:210mm;height:297mm;min-height:297mm;padding:9mm 9mm 12mm;overflow:hidden}
+}
+</style>
+</head>
+<body>
+<header><h1>📄 Nominal Roll</h1></header>
+
+<div class="wrap controls">
+  <div class="box">
+    <h2 style="margin:0 0 12px">Nominal Roll Settings</h2>
+    <div class="grid">
+      <div>
+        <label>Exam</label>
+        <select id="examType">
+          <option value="">ಆಯ್ಕೆ ಮಾಡಿ</option>
+          <option>ಅರ್ಧವಾರ್ಷಿಕ ಪರೀಕ್ಷೆ</option>
+          <option>ವಾರ್ಷಿಕ ಪರೀಕ್ಷೆ</option>
+        </select>
+      </div>
+      <div>
+        <label>Academic Year</label>
+        <input id="academicYear" placeholder="2026-27">
+      </div>
+      <div>
+        <label>ತರಗತಿ</label>
+        <select id="className">
+          <option value="">ತರಗತಿ ಆಯ್ಕೆ ಮಾಡಿ</option>
+          <option value="8ನೇ ತರಗತಿ">8ನೇ ತರಗತಿ</option>
+          <option value="9ನೇ ತರಗತಿ">9ನೇ ತರಗತಿ</option>
+          <option value="10ನೇ ತರಗತಿ">10ನೇ ತರಗತಿ</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="annualHeadingBox" class="box" style="margin-top:12px;margin-bottom:0;padding:10px">
+      <b>10ನೇ ವಾರ್ಷಿಕ ಪರೀಕ್ಷೆ – 4 Line Heading</b>
+      <div class="heading-grid" style="margin-top:7px">
+        <input id="line1" placeholder="ಮೊದಲ ಸಾಲು">
+        <input id="line2" placeholder="ಎರಡನೇ ಸಾಲು">
+        <input id="line3" placeholder="ಮೂರನೇ ಸಾಲು">
+        <input id="line4" placeholder="ನಾಲ್ಕನೇ ಸಾಲು">
+      </div>
+    </div>
+
+    <div style="margin-top:10px">
+      <button class="g" id="saveSettingsBtn" onclick="saveNominalSettings()">Save</button>
+      <button class="s" id="editSettingsBtn" onclick="editNominalSettings()" style="display:none">Edit</button>
+      <button class="p" onclick="loadRoll()">Nominal Roll Load</button>
+      <button class="g" onclick="printRoll()">Print / PDF</button>
+    </div>
+    <div id="status" class="note"></div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div id="rollOutput">
+    <div class="empty">Exam, Academic Year ಮತ್ತು ತರಗತಿ ಆಯ್ಕೆ ಮಾಡಿ <b>Nominal Roll Load</b> ಒತ್ತಿ.</div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL="https://xhskrohrrsxlfbdbhyji.supabase.co";
+const SUPABASE_KEY="sb_publishable_0amt5yG7ZIm6JD7oub6JTw_Hv5Nx2cl";
+const BUCKET="exam-student-photos";
+const db=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+const $=id=>document.getElementById(id);
+const esc=x=>String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+
+function normalizeClass(v){
+  const x=String(v??"").trim().toLowerCase().replace(/\s+/g," ");
+  if(["8","8ನೇ","8 ನೇ","8ನೇ ತರಗತಿ","8 ನೇ ತರಗತಿ","class 8","8th","8th class"].includes(x))return"8ನೇ ತರಗತಿ";
+  if(["9","9ನೇ","9 ನೇ","9ನೇ ತರಗತಿ","9 ನೇ ತರಗತಿ","class 9","9th","9th class"].includes(x))return"9ನೇ ತರಗತಿ";
+  if(["10","10ನೇ","10 ನೇ","10ನೇ ತರಗತಿ","10 ನೇ ತರಗತಿ","class 10","10th","10th class"].includes(x))return"10ನೇ ತರಗತಿ";
+  return String(v??"").trim();
+}
+function fmtDate(d){
+  if(!d)return"";
+  const a=String(d).split("-");
+  if(a.length===3)return a[2].padStart(2,"0")+"-"+a[1].padStart(2,"0")+"-"+a[0];
+  return String(d);
+}
+function subjectCode(subject){
+  const s=String(subject||"").trim().toUpperCase();
+  if(s.includes("KANNADA")||s.includes("ಕನ್ನಡ"))return"01K";
+  if(s.includes("ENGLISH")||s.includes("ಇಂಗ್ಲಿಷ್")||s.includes("ಇಂಗ್ಲೀಷ್")||s.includes("ಇಂಗ್ಲೀಷ"))return"31E";
+  if(s.includes("HINDI")||s.includes("ಹಿಂದಿ"))return"61H";
+  if(s.includes("MATHEMATICS")||s.includes("ಗಣಿತ"))return"81K";
+  if(s.includes("SCIENCE")||s.includes("ವಿಜ್ಞಾನ"))return"83K";
+  if(s.includes("SOCIAL SCIENCE")||s.includes("ಸಾಮಾಜಿಕ"))return"85K";
+  if(s.includes("ದೈಹಿಕ")||s.includes("ಶಿ/ವೃ")||s.includes("PHYSICAL EDUCATION"))return"";
+  return"";
+}
+function getNominalRollNo(student, isAnnual10){
+  const roll=String(student?.roll_no ?? student?.roll ?? "").trim();
+
+  // 10th Annual Exam ಮಾತ್ರ: Exam-Admission-Card ನಲ್ಲಿ manually entered
+  // "10ನೇ ತರಗತಿ Number" ಅನ್ನು ಅದೇ Roll No. ಗೆ ಹೊಂದಿಸಿ ತೋರಿಸಬೇಕು.
+  // Number ಹಾಕದೇ ಇದ್ದರೆ ಖಾಲಿಯಾಗಿರಬೇಕು. Number ಬದಲಿಸಿದರೆ ಹೊಸ value ತಕ್ಷಣ ಬಳಸಬೇಕು.
+  if(isAnnual10){
+    const year=String($("academicYear").value||"").trim();
+    // First use the value returned by Exam-Admission-Card/Supabase when available.
+    const dbValue=String(student?.sslc_no||student?.sslc_number||"").trim();
+    if(dbValue)return dbValue;
+    // Fallback for pages opened on the same origin as Exam-Admission-Card.
+    try{
+      const key=`examAdmissionSSLCStudentNo:${year}:${roll}`;
+      return String(localStorage.getItem(key)||"").trim();
+    }catch(e){
+      return "";
+    }
+  }
+
+  // 8th, 9th ಮತ್ತು 10th Half-yearly: ಹಳೆಯ Roll No. ಹಾಗೆಯೇ.
+  return roll;
+}
+
+function subjectOrder(a,b){
+  const order=["KANNADA","SCIENCE","HINDI","SOCIAL SCIENCE","MATHEMATICS","ENGLISH"];
+  const ia=order.findIndex(x=>String(a.subject||"").toUpperCase().includes(x));
+  const ib=order.findIndex(x=>String(b.subject||"").toUpperCase().includes(x));
+  return (ia<0?99:ia)-(ib<0?99:ib);
+}
+function showStatus(msg,ok=false){
+  $("status").className="note "+(ok?"ok":"err");
+  $("status").textContent=msg;
+}
+function updateAnnualBox(){
+  const yes=$("examType").value==="ವಾರ್ಷಿಕ ಪರೀಕ್ಷೆ" && $("className").value==="10ನೇ ತರಗತಿ";
+  $("annualHeadingBox").style.display=yes?"block":"none";
+}
+$("examType").addEventListener("change",updateAnnualBox);
+$("className").addEventListener("change",updateAnnualBox);
+
+async function withTimeout(promise, ms, label){
+  let timer;
+  const timeout=new Promise((_,reject)=>{
+    timer=setTimeout(()=>reject(new Error(label+" ಸಮಯ ಮೀರಿದೆ. Supabase connection ಪರಿಶೀಲಿಸಿ.")),ms);
+  });
+  try{return await Promise.race([promise,timeout]);}
+  finally{clearTimeout(timer);}
+}
+
+
+const SETTINGS_KEY="nominal_roll_saved_settings_v1";
+
+function getNominalSettings(){
+  return {
+    examType:$("examType").value,
+    academicYear:$("academicYear").value.trim(),
+    className:$("className").value,
+    line1:$("line1").value,
+    line2:$("line2").value,
+    line3:$("line3").value,
+    line4:$("line4").value
+  };
+}
+function settingsStorageKey(s){
+  return SETTINGS_KEY+"_"+s.examType+"_"+s.academicYear+"_"+s.className;
+}
+function applySettingsLock(locked){
+  ["examType","academicYear","className"].forEach(id=>$(id).disabled=locked);
+  $("line1").disabled=locked;
+  $("line2").disabled=locked;
+  $("line3").disabled=locked;
+  $("line4").disabled=locked;
+  $("saveSettingsBtn").style.display=locked?"none":"inline-block";
+  $("editSettingsBtn").style.display=locked?"inline-block":"none";
+}
+function saveNominalSettings(){
+  const s=getNominalSettings();
+  if(!s.examType||!s.academicYear||!s.className){
+    showStatus("Exam, Academic Year ಮತ್ತು ತರಗತಿ ಆಯ್ಕೆ ಮಾಡಿ.");
+    return;
+  }
+  if(s.examType==="ವಾರ್ಷಿಕ ಪರೀಕ್ಷೆ" && s.className==="10ನೇ ತರಗತಿ"){
+    if(!s.line1.trim()&&!s.line2.trim()&&!s.line3.trim()&&!s.line4.trim()){
+      showStatus("10ನೇ ವಾರ್ಷಿಕ ಪರೀಕ್ಷೆಗೆ 4 heading lines ಹಾಕಿ.");
+      return;
+    }
+  }
+  localStorage.setItem(settingsStorageKey(s),JSON.stringify(s));
+  localStorage.setItem(SETTINGS_KEY+"_current",JSON.stringify(s));
+  applySettingsLock(true);
+  updateAnnualBox();
+  showStatus("Nominal Roll settings Save ಆಗಿದೆ ಮತ್ತು Lock ಆಗಿದೆ.",true);
+}
+function editNominalSettings(){
+  applySettingsLock(false);
+  showStatus("Edit mode. ಬದಲಾವಣೆ ಮಾಡಿ Save ಒತ್ತಿ.",true);
+}
+function restoreSavedNominalSettings(){
+  try{
+    const raw=localStorage.getItem(SETTINGS_KEY+"_current");
+    if(!raw)return;
+    const s=JSON.parse(raw);
+    if(!s)return;
+    $("examType").value=s.examType||"";
+    $("academicYear").value=s.academicYear||"";
+    $("className").value=s.className||"";
+    $("line1").value=s.line1||"";
+    $("line2").value=s.line2||"";
+    $("line3").value=s.line3||"";
+    $("line4").value=s.line4||"";
+    updateAnnualBox();
+    applySettingsLock(true);
+  }catch(e){}
+}
+window.addEventListener("DOMContentLoaded",restoreSavedNominalSettings);
+
+async function loadRoll(){
+  const type=$("examType").value, year=$("academicYear").value.trim(), cls=normalizeClass($("className").value);
+  if(!type||!year||!cls){showStatus("Exam, Academic Year ಮತ್ತು ತರಗತಿ ಆಯ್ಕೆ ಮಾಡಿ.");return;}
+  if(type==="ವಾರ್ಷಿಕ ಪರೀಕ್ಷೆ" && cls==="10ನೇ ತರಗತಿ"){
+    if(!$("line1").value.trim()&&!$("line2").value.trim()&&!$("line3").value.trim()&&!$("line4").value.trim()){
+      showStatus("10ನೇ ವಾರ್ಷಿಕ ಪರೀಕ್ಷೆಗೆ 4 heading lines ಹಾಕಿ.");
+      return;
+    }
+  }
+
+  showStatus("Exam-Admission-Card data ಹುಡುಕಲಾಗುತ್ತಿದೆ...",true);
+
+  try{
+    /*
+      Exam-Admission-Card ಮತ್ತು Nominal Roll ಒಂದೇ Supabase data ಬಳಸುತ್ತವೆ.
+      maybeSingle() ಬದಲಾಗಿ limit(1) ಬಳಸಲಾಗಿದೆ — ಒಂದೇ examಗೆ duplicate row ಇದ್ದರೂ
+      Nominal Roll load ಆಗುವಂತೆ.
+    */
+    const ex=await withTimeout(
+      db.from("exam_admission_exams")
+        .select("*")
+        .eq("exam_type",type)
+        .eq("academic_year",year)
+        .eq("class_name",cls)
+        .order("created_at",{ascending:false})
+        .limit(1),
+      12000,
+      "Exam data load"
+    );
+
+    if(ex.error){showStatus("Exam data error: "+ex.error.message);return;}
+    if(!ex.data || !ex.data.length){
+      showStatus("ಈ Academic Year / Exam / Classಗೆ Exam-Admission-Card data ಸಿಗಲಿಲ್ಲ.");
+      return;
+    }
+    const exam=ex.data[0];
+
+    showStatus("ವಿದ್ಯಾರ್ಥಿಗಳ data load ಆಗುತ್ತಿದೆ...",true);
+    const st=await withTimeout(
+      db.from("exam_admission_student_master")
+        .select("*")
+        .eq("academic_year",year)
+        .eq("class_name",cls)
+        .order("roll_no"),
+      12000,
+      "Student data load"
+    );
+
+    if(st.error){showStatus("Student data error: "+st.error.message);return;}
+    const students=st.data||[];
+    if(!students.length){showStatus("ಈ ತರಗತಿಗೆ Exam-Admission-Cardನಲ್ಲಿ ವಿದ್ಯಾರ್ಥಿಗಳ data ಸಿಗಲಿಲ್ಲ.");return;}
+
+    showStatus("Subject ಮತ್ತು Date data load ಆಗುತ್ತಿದೆ...",true);
+    const su=await withTimeout(
+      db.from("exam_admission_subjects")
+        .select("*")
+        .eq("exam_id",exam.id)
+        .order("exam_date"),
+      12000,
+      "Subject data load"
+    );
+
+    if(su.error){showStatus("Subject data error: "+su.error.message);return;}
+    const subjects=(su.data||[]).sort(subjectOrder);
+
+    renderRoll(students,subjects);
+    showStatus(students.length+" ವಿದ್ಯಾರ್ಥಿಗಳ Nominal Roll ಸಿದ್ಧವಾಗಿದೆ.",true);
+  }catch(err){
+    console.error(err);
+    showStatus("Load ಆಗಲಿಲ್ಲ: "+(err?.message||String(err)));
+  }
+}
+
+function renderRoll(students,subjects){
+  const pages=[];
+  for(let i=0;i<students.length;i+=4)pages.push(students.slice(i,i+4));
+
+  let out="";
+  pages.forEach((group,pageIndex)=>{
+    const type=$("examType").value, cls=normalizeClass($("className").value);
+    const annual10=type==="ವಾರ್ಷಿಕ ಪರೀಕ್ಷೆ"&&cls==="10ನೇ ತರಗತಿ";
+    const hideSubjectCode=(cls==="8ನೇ ತರಗತಿ"||cls==="9ನೇ ತರಗತಿ");
+
+    out+=`<section class="sheet-page">`;
+
+    if(annual10){
+      out+=`<div class="annual-lines">
+        <div>${esc($("line1").value)}</div>
+        <div>${esc($("line2").value)}</div>
+        <div>${esc($("line3").value)}</div>
+        <div>${esc($("line4").value)}</div>
+      </div>`;
+    }else{
+      out+=`<div class="school-head">
+        <div class="school">ಶ್ರೀ ವೀರಬಲ್ಲಾಳ ಗ್ರಾಮಾಂತರ ಪ್ರೌಢಶಾಲೆ</div><div class="school">ಬಲ್ಲಾಳಸಮುದ್ರ ಹೊಸದುರ್ಗ (ತಾ) ಚಿತ್ರದುರ್ಗ (ಜಿ)</div>
+        <div class="exam-title">${esc($("academicYear").value.trim())} ${esc(type)}</div>
+        <div class="exam-title">NOMINAL ROLL/ATTENDANCE CUM ABSENTEES SHEET</div>
+      </div>`;
+    }
+
+    group.forEach((s,j)=>{
+      const serial=String(pageIndex*4+j+1).padStart(2,"0");
+      const photo=s.photo_url?esc(s.photo_url):"";
+      const nominalRollNo=getNominalRollNo(s,annual10);
+      out+=`<div class="student-block">
+        <div class="crno">${serial}</div>
+        <div class="identity">
+          ${photo?`<img class="photo" src="${photo}" alt="">`:`<div class="no-photo">PHOTO</div>`}
+          <div class="name">${esc(s.student_name)}</div>
+          <div class="roll">${esc(nominalRollNo)}</div>
+        </div>
+        <div class="subject-area ${hideSubjectCode?"no-subject-code":""}">
+          <table class="subject-table">
+            <thead><tr>
+              <th>SUBJECT</th>
+              ${hideSubjectCode?"":`<th>SUBJECT<br>CODE</th>`}
+              <th>DATE</th>
+              <th>STUDENT<br>SIGNATURE</th>
+              <th>ROOM<br>SUPERVISOR<br>SIGNATURE</th>
+            </tr></thead>
+            <tbody>`;
+
+      const selectedSubjects=subjects.slice();
+      selectedSubjects.forEach(x=>{
+        out+=`<tr>
+          <td>${esc(x.subject||"")}</td>
+          ${hideSubjectCode?"":`<td>${esc(subjectCode(x.subject))}</td>`}
+          <td>${esc(fmtDate(x.exam_date))}</td>
+          <td></td><td></td>
+        </tr>`;
+      });
+
+      out+=`</tbody></table></div></div>`;
+    });
+
+    out+=`</section>`;
+  });
+
+  $("rollOutput").innerHTML=out;
+}
+
+function printRoll(){
+  if(!$("rollOutput").querySelector(".student-block")){alert("ಮೊದಲು Nominal Roll Load ಮಾಡಿ.");return;}
+  window.print();
+}
+</script>
+</body>
+</html>
