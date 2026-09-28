@@ -143,9 +143,6 @@ function setSSLCStudentNo(year,roll,value){
 function sslcStudentNoLockKey(year,roll){
   return `examAdmissionSSLCStudentNoLocked:${String(year||"").trim()}:${String(roll||"").trim()}`;
 }
-function rollBackupKey(year,cls,sats){return `examAdmissionRollNo:${String(year||"").trim()}:${String(cls||"").trim()}:${String(sats||"").trim()}`;}
-function saveRollBackup(year,cls,sats,roll){const v=String(roll??"").trim(),key=rollBackupKey(year,cls,sats);if(v)localStorage.setItem(key,v);else localStorage.removeItem(key);}
-function getRollBackup(year,cls,sats){return localStorage.getItem(rollBackupKey(year,cls,sats))||"";}
 function sslcStudentNoLocked(year,roll){
   return localStorage.getItem(sslcStudentNoLockKey(year,roll))==="1";
 }
@@ -159,16 +156,13 @@ async function loadStudentsFromDb(){
  const q=await dbase.from("exam_admission_student_master").select("*")
    .eq("academic_year",year).eq("class_name",cls).order("roll_no");
  if(q.error){note("xm",q.error.message);return;}
- students=(q.data||[]).map(s=>{
-   const savedRoll=String(s.roll_no||getRollBackup(year,cls,s.sats_no)||"").trim();
-   return {
-   id:s.id,roll:savedRoll,name:s.student_name,father:s.father_name||"",
+ students=(q.data||[]).map(s=>({
+   id:s.id,roll:s.roll_no,name:s.student_name,father:s.father_name||"",
    cls:s.class_name,sats:s.sats_no,dob:excelDobToDisplay(s.dob||""),
    photo_url:s.photo_url||"",selected:false,
-    sslc_no:cls==="10ನೇ ತರಗತಿ"?sslcStudentNo(year,savedRoll):"",
-   sslc_no_locked:cls==="10ನೇ ತರಗತಿ"?sslcStudentNoLocked(year,savedRoll):false
- };});
- students.forEach(s=>saveRollBackup(year,s.cls,s.sats,s.roll));
+    sslc_no:cls==="10ನೇ ತರಗತಿ"?String(s.sslc_no||sslcStudentNo(year,s.roll)||"").trim():"",
+   sslc_no_locked:cls==="10ನೇ ತರಗತಿ"?(String(s.sslc_no||"").trim()!=="" || sslcStudentNoLocked(year,s.roll)):false
+ }));
  renderStudents();
 }
 async function findExistingExam(){const type=$("type").value,year=$("year").value.trim(),cls=$("cls").value;if(!type||!year||!cls)return;const dbase=getDb();if(!dbase)return;const q=await dbase.from("exam_admission_exams").select("*").eq("exam_type",type).eq("academic_year",year).eq("class_name",cls).maybeSingle();if(q.error){note("em",q.error.message);return;}if(q.data){examId=q.data.id;persistExamState();setExamLocked(true);await loadSubjects();await loadStudentsFromDb();note("em","ಈ ಪರೀಕ್ಷೆಯ ವಿವರಗಳು ಈಗಾಗಲೇ Save ಆಗಿವೆ.",true);}else{examId=null;subjects=[];renderSubjects();await loadStudentsFromDb();}}
@@ -324,11 +318,26 @@ async function saveAndLockSSLCNo(i,value){
     s.sslc_no_locked=false;
     setSSLCStudentNo(year,s.roll,"");
     localStorage.removeItem(sslcStudentNoLockKey(year,s.roll));
+    try{
+      const dbase=getDb();
+      if(dbase && s.id){
+        const uq=await dbase.from("exam_admission_student_master").update({sslc_no:null}).eq("id",s.id);
+        if(uq.error) console.warn("Optional sslc_no DB clear skipped:",uq.error.message);
+      }
+    }catch(e){}
     renderStudents();
     return;
   }
   setSSLCStudentNo(year,s.roll,v);
   lockSSLCStudentNo(year,s.roll);
+  // If the Supabase table has an sslc_no column, keep the same number there too.
+  try{
+    const dbase=getDb();
+    if(dbase && s.id){
+      const uq=await dbase.from("exam_admission_student_master").update({sslc_no:v}).eq("id",s.id);
+      if(uq.error) console.warn("Optional sslc_no DB save skipped:",uq.error.message);
+    }
+  }catch(e){ console.warn("Optional sslc_no DB save skipped",e); }
   s.sslc_no=v;
   s.sslc_no_locked=true;
   renderStudents();
@@ -418,7 +427,6 @@ async function saveStudent(s){
    if(!q.error&&q.data)s.id=q.data.id;
  }
  if(q.error){note("xm","Student Save error: "+q.error.message);return false;}
- saveRollBackup(year,s.cls||cls,s.sats,s.roll);
  return true;
 }
 async function saveStudents(){let dbase=getDb();if(!dbase)return;if(!examId){const ok=await saveExam(false);if(!ok)return;}const selected=students.filter(x=>x.selected);if(!selected.length)return alert("Students select ಮಾಡಿ.");for(const s of selected){if(!await saveStudent(s))return;}await loadStudentsFromDb();note("xm","ಆಯ್ಕೆ ಮಾಡಿದ ವಿದ್ಯಾರ್ಥಿಗಳ data Save ಆಗಿದೆ. ಇದೇ students ಅರ್ಧವಾರ್ಷಿಕ ಮತ್ತು ವಾರ್ಷಿಕ ಎರಡೂ ಪರೀಕ್ಷೆಗಳಿಗೆ ಲಭ್ಯ.",true);}
