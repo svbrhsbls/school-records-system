@@ -265,6 +265,16 @@
 
 
     /* =====================================================
+       SAFE POST-LOGIN DESTINATION
+       ===================================================== */
+    function getPostLoginDestination() {
+        const requested = new URLSearchParams(window.location.search).get("redirect");
+        // Only allow known pages on this same GitHub Pages site.
+        const allowed = new Set(["dashboard.html", "Exam-Admission-Card.html"]);
+        return requested && allowed.has(requested) ? requested : "dashboard.html";
+    }
+
+    /* =====================================================
        LOGIN
        ===================================================== */
 
@@ -350,7 +360,7 @@
 
                 setTimeout(function () {
 
-                    window.location.href = "dashboard.html";
+                    window.location.href = getPostLoginDestination();
 
                 }, 700);
 
@@ -406,7 +416,7 @@
 
             if (data && data.session) {
 
-                window.location.href = "dashboard.html";
+                window.location.href = getPostLoginDestination();
 
             }
 
