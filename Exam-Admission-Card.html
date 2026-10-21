@@ -536,7 +536,7 @@ async function initializeProtectedExamPage(){
     // Require a valid Supabase login before loading any exam/student data.
     const {data:{user},error:userError}=await dbase.auth.getUser();
     if(userError || !user){
-      location.replace("login.html");
+      location.replace("login.html?redirect=Exam-Admission-Card.html");
       return;
     }
     // Match the same active-school mapping used by dashboard.html.
@@ -549,7 +549,7 @@ async function initializeProtectedExamPage(){
     if(schoolError || !schoolUser || !schoolUser.school_id){
       alert("ಈ ಪುಟವನ್ನು ತೆರೆಯಲು ಸಕ್ರಿಯ ಶಾಲಾ Login ಅಗತ್ಯವಿದೆ. ಮತ್ತೆ Login ಮಾಡಿ.");
       await dbase.auth.signOut();
-      location.replace("login.html");
+      location.replace("login.html?redirect=Exam-Admission-Card.html");
       return;
     }
     weekday();
@@ -561,7 +561,7 @@ async function initializeProtectedExamPage(){
     }));
   }catch(err){
     console.error("Exam page authentication check failed:",err);
-    location.replace("login.html");
+    location.replace("login.html?redirect=Exam-Admission-Card.html");
   }
 }
 document.addEventListener("DOMContentLoaded",()=>{initializeProtectedExamPage();});
