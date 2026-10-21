@@ -97,7 +97,18 @@ function storagePhotoPath(value){
 }
 async function refreshSignedPhotoUrls(){
   const dbase=getDb();if(!dbase)return;
-  for(const s of students){s.photo_display_url="";const path=storagePhotoPath(s.photo_url);if(!path)continue;const q=await dbase.storage.from(BUCKET).createSignedUrl(path,3600);if(!q.error&&q.data?.signedUrl)s.photo_display_url=q.data.signedUrl;else console.warn("Student photo URL unavailable:",q.error?.message||path);}
+  for(const s of students){
+    s.photo_display_url="";
+    const path=storagePhotoPath(s.photo_url);
+    if(!path)continue;
+    // While the bucket remains Public, keep the working public URL as a fallback.
+    // If signed URLs are allowed, prefer the temporary signed URL (works with a Private bucket).
+    const pub=dbase.storage.from(BUCKET).getPublicUrl(path);
+    if(pub?.data?.publicUrl)s.photo_display_url=pub.data.publicUrl;
+    const q=await dbase.storage.from(BUCKET).createSignedUrl(path,3600);
+    if(!q.error&&q.data?.signedUrl)s.photo_display_url=q.data.signedUrl;
+    else console.warn("Signed student photo URL unavailable; using public URL if bucket is public:",q.error?.message||path);
+  }
 }
 function getDb(){
   if(db)return db;
@@ -173,6 +184,8 @@ async function loadStudentsFromDb(){
     sslc_no:cls==="10ನೇ ತರಗತಿ"?String(s.sslc_no||sslcStudentNo(year,s.roll)||"").trim():"",
    sslc_no_locked:cls==="10ನೇ ತರಗತಿ"?(String(s.sslc_no||"").trim()!=="" || sslcStudentNoLocked(year,s.roll)):false
  }));
+ // Create temporary authenticated URLs for private-bucket student photos before rendering.
+ await refreshSignedPhotoUrls();
  renderStudents();
 }
 async function findExistingExam(){const type=$("type").value,year=$("year").value.trim(),cls=$("cls").value;if(!type||!year||!cls)return;const dbase=getDb();if(!dbase)return;const q=await dbase.from("exam_admission_exams").select("*").eq("exam_type",type).eq("academic_year",year).eq("class_name",cls).maybeSingle();if(q.error){note("em",q.error.message);return;}if(q.data){examId=q.data.id;persistExamState();setExamLocked(true);await loadSubjects();await loadStudentsFromDb();note("em","ಈ ಪರೀಕ್ಷೆಯ ವಿವರಗಳು ಈಗಾಗಲೇ Save ಆಗಿವೆ.",true);}else{examId=null;subjects=[];renderSubjects();await loadStudentsFromDb();}}
