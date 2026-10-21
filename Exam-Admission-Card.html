@@ -529,5 +529,40 @@ document.addEventListener("DOMContentLoaded",()=>{
   weekday();
 });
 async function initializeExamPage(){const saved=localStorage.getItem("examAdmissionExamState");if(saved){try{const st=JSON.parse(saved);if(st.type&&st.year&&st.cls){$("type").value=st.type;$("year").value=st.year;$("cls").value=st.cls;examId=st.examId||null;toggleSSLCSettings();if(examId){setExamLocked(true);await loadSubjects();await loadStudentsFromDb();}else await findExistingExam();}}catch(e){console.warn(e)}}else toggleSSLCSettings();}
-document.addEventListener("DOMContentLoaded",()=>{weekday();initializeExamPage();["type","year","cls"].forEach(id=>$(id).addEventListener("change",()=>{toggleSSLCSettings();renderStudents();if(!$(id).disabled)findExistingExam();}));});
+async function initializeProtectedExamPage(){
+  const dbase=getDb();
+  if(!dbase)return;
+  try{
+    // Require a valid Supabase login before loading any exam/student data.
+    const {data:{user},error:userError}=await dbase.auth.getUser();
+    if(userError || !user){
+      location.replace("login.html");
+      return;
+    }
+    // Match the same active-school mapping used by dashboard.html.
+    const {data:schoolUser,error:schoolError}=await dbase
+      .from("school_users")
+      .select("school_id")
+      .eq("user_id",user.id)
+      .eq("is_active",true)
+      .maybeSingle();
+    if(schoolError || !schoolUser || !schoolUser.school_id){
+      alert("ಈ ಪುಟವನ್ನು ತೆರೆಯಲು ಸಕ್ರಿಯ ಶಾಲಾ Login ಅಗತ್ಯವಿದೆ. ಮತ್ತೆ Login ಮಾಡಿ.");
+      await dbase.auth.signOut();
+      location.replace("login.html");
+      return;
+    }
+    weekday();
+    await initializeExamPage();
+    ["type","year","cls"].forEach(id=>$(id).addEventListener("change",()=>{
+      toggleSSLCSettings();
+      renderStudents();
+      if(!$(id).disabled)findExistingExam();
+    }));
+  }catch(err){
+    console.error("Exam page authentication check failed:",err);
+    location.replace("login.html");
+  }
+}
+document.addEventListener("DOMContentLoaded",()=>{initializeProtectedExamPage();});
 </script></body></html>
